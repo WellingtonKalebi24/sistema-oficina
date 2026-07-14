@@ -32,8 +32,16 @@
 **Plans:** 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 01-01-PLAN.md — Gated npm workspace scaffold and RED walking-skeleton contract.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 01-02-PLAN.md — Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 01-03-PLAN.md — Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
 
 **Scope**
