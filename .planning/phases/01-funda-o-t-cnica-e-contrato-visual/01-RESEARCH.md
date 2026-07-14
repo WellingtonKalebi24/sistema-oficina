@@ -437,17 +437,11 @@ export const formatCurrencyBr = (value: number) =>
 | A2 | One neutral `FoundationCheck` table is the safest walking-skeleton model. | Summary / Pitfalls | Planner may choose a different neutral model, but must avoid business-domain creep. |
 | A3 | Docker daemon unavailability is local-state related, not a project blocker. | Environment Availability | Planner may need a setup checkpoint if Docker Desktop is not running. |
 
-## Open Questions
+## Resolved Decisions
 
-1. **Should the planner pin latest versions or previous stable minors for SUS packages?**
-   - What we know: Package legitimacy flagged several widely used packages only because latest publishes are recent. [VERIFIED: package-legitimacy check]
-   - What's unclear: Whether project policy prefers latest current releases or conservative older minors. [ASSUMED]
-   - Recommendation: Add human checkpoint before install for each SUS package group, then pin exact versions in `package-lock.json`. [VERIFIED: package_legitimacy_protocol]
+1. **SUS/latest package policy:** Packages marked SUS because the latest publish is recent require a blocking package-legitimacy checkpoint before installation. If a SUS/latest package cannot be verified at that checkpoint, the executor must fall back to the previous stable minor version for that same legitimate package and pin the resolved version in `package-lock.json`. [VERIFIED: package_legitimacy_protocol]
 
-2. **Should `FoundationCheck` remain after Phase 1?**
-   - What we know: It proves real DB write/read without implementing business modules. [VERIFIED: 01-CONTEXT.md]
-   - What's unclear: Whether to keep it as diagnostics or remove it when real modules exist. [ASSUMED]
-   - Recommendation: Mark it as internal/dev-only in docs and revisit after Phase 2. [ASSUMED]
+2. **`FoundationCheck` lifecycle:** `FoundationCheck` is a temporary walking-skeleton diagnostic model. It may be removed or replaced after the real tenant/auth modules exist, because its Phase 1 purpose is only to prove database-backed API and UI behavior without creating business-domain tables. [VERIFIED: 01-CONTEXT.md]
 
 ## Environment Availability
 
