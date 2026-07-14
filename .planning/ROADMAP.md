@@ -29,6 +29,12 @@
 **Mode:** mvp
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, VUX-01, VUX-02, VUX-03, VUX-04, VUX-05
 **UI hint:** yes
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Gated npm workspace scaffold and RED walking-skeleton contract.
+- [ ] 01-02-PLAN.md — Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
+- [ ] 01-03-PLAN.md — Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
 
 **Scope**
 
