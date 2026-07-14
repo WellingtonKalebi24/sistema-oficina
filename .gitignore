@@ -1,6 +1,7 @@
 .codex/
 .npm-cache/
 .tmp/
+.planning/research/.cache/
 node_modules/
 dist/
 build/
