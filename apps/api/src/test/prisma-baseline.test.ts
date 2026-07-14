@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { seedFoundationChecks } from "../../../../prisma/seed";
+import { seedFoundationChecks } from "../../../../prisma/seed.js";
 
 const schemaPath = fileURLToPath(new URL("../../../../prisma/schema.prisma", import.meta.url));
 
@@ -15,7 +16,14 @@ type FoundationCheckDelegate = {
   }): Promise<Array<{ label: string; status: string }>>;
 };
 
-const prisma = new PrismaClient() as PrismaClient & {
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required for Prisma foundation baseline tests.");
+}
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter }) as PrismaClient & {
   foundationCheck: FoundationCheckDelegate;
 };
 

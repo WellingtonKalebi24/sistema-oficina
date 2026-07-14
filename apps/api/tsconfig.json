@@ -4,10 +4,8 @@
     "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
     "types": ["node", "vitest/globals"],
-    "noEmit": false
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src", "../../prisma/seed.ts"]
 }
