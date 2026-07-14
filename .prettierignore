@@ -1,0 +1,11 @@
+node_modules
+.npm-cache
+.codex
+.planning
+.tmp
+dist
+build
+coverage
+package-lock.json
+AGENTS.md
+PROJETO.md
