@@ -7,14 +7,14 @@
 
 ### Foundation
 
-- [ ] **FND-01**: Developer can run the web app, API and PostgreSQL locally through Docker Compose.
+- [x] **FND-01**: Developer can run the web app, API and PostgreSQL locally through Docker Compose.
 - [ ] **FND-02**: Developer can execute database migrations from a clean PostgreSQL database.
-- [ ] **FND-03**: Developer can run lint, formatting check, type check and automated tests for the project.
+- [x] **FND-03**: Developer can run lint, formatting check, type check and automated tests for the project.
 - [ ] **FND-04**: API exposes a health check that verifies application startup and database connectivity.
 - [ ] **FND-05**: API handles errors through a global error strategy that avoids leaking secrets.
 - [ ] **FND-06**: Application emits structured logs with enough context for debugging and audit follow-up.
 - [ ] **FND-07**: Developer can seed controlled development data without affecting production configuration.
-- [ ] **FND-08**: Developer can follow local setup documentation to start and verify the system.
+- [x] **FND-08**: Developer can follow local setup documentation to start and verify the system.
 
 ### Identity And Tenant
 
@@ -179,14 +179,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FND-01 | Phase 1 | Pending |
+| FND-01 | Phase 1 | Complete |
 | FND-02 | Phase 1 | Pending |
-| FND-03 | Phase 1 | Pending |
+| FND-03 | Phase 1 | Complete |
 | FND-04 | Phase 1 | Pending |
 | FND-05 | Phase 1 | Pending |
 | FND-06 | Phase 1 | Pending |
 | FND-07 | Phase 1 | Pending |
-| FND-08 | Phase 1 | Pending |
+| FND-08 | Phase 1 | Complete |
 | IDT-01 | Phase 2 | Pending |
 | IDT-02 | Phase 2 | Pending |
 | IDT-03 | Phase 2 | Pending |
@@ -296,6 +296,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VUX-05 | Phase 1 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 115 total
 - Mapped to phases: 115
 - Unmapped: 0

@@ -8,7 +8,7 @@
 
 | # | Phase | Goal | Requirements | UI hint |
 |---|-------|------|--------------|---------|
-| 1 | Fundação Técnica e Contrato Visual | Criar uma base executável, testável e visualmente coerente | FND-01..FND-08, VUX-01..VUX-05 | yes |
+| 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
 | 2 | Autenticação, Tenant e Permissões | Garantir acesso seguro e isolamento entre oficinas | IDT-01..IDT-13 | yes |
 | 3 | Clientes e Veículos | Gerenciar clientes, veículos e histórico básico | CAV-01..CAV-09 | yes |
 | 4 | Serviços, Produtos, Compras e Estoque | Controlar catálogos, fornecedores, compras, saldos e reservas | STK-01..STK-14 | yes |
@@ -29,12 +29,12 @@
 **Mode:** mvp
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, VUX-01, VUX-02, VUX-03, VUX-04, VUX-05
 **UI hint:** yes
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Gated npm workspace scaffold and RED walking-skeleton contract.
+- [x] 01-01-PLAN.md — Gated npm workspace scaffold and RED walking-skeleton contract.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
