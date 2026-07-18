@@ -77,6 +77,24 @@ Plans:
 **Mode:** mvp
 **Requirements:** IDT-01, IDT-02, IDT-03, IDT-04, IDT-05, IDT-06, IDT-07, IDT-08, IDT-09, IDT-10, IDT-11, IDT-12, IDT-13
 **UI hint:** yes
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Package legitimacy checkpoint and approved auth/admin dependency installation.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Bootstrap, login, sessions, password recovery, route protection, identity migration and auth audit.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Tenant settings, user lifecycle, configurable roles, permission overrides, backend authorization and tenant isolation.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 02-04-PLAN.md — Authenticated admin UI, visual-contract compliance, local setup updates and final phase verification.
 
 **Scope**
 
