@@ -77,7 +77,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** IDT-01, IDT-02, IDT-03, IDT-04, IDT-05, IDT-06, IDT-07, IDT-08, IDT-09, IDT-10, IDT-11, IDT-12, IDT-13
 **UI hint:** yes
-**Plans:** 4 plans
+**Plans:** 6 plans
 
 Plans:
 **Wave 1**
@@ -86,15 +86,23 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Bootstrap, login, sessions, password recovery, route protection, identity migration and auth audit.
+- [ ] 02-02-PLAN.md — Identity, tenant, session, permission and audit schema with RED auth fixture tests.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Tenant settings, user lifecycle, configurable roles, permission overrides, backend authorization and tenant isolation.
+- [ ] 02-03-PLAN.md — Bootstrap, login, browser-managed opaque refresh sessions, current-session logout and current-user API.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — Authenticated admin UI, visual-contract compliance, local setup updates and final phase verification.
+- [ ] 02-04-PLAN.md — Password reset, change password, EmailSender adapter, sanitized auth audit and requireAuth middleware.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 02-05-PLAN.md — Permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 02-06-PLAN.md — Authenticated admin UI, visual-contract compliance, local setup updates and final phase verification.
 
 **Scope**
 
