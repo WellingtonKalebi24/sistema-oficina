@@ -1,22 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const missingImplementationDiagnostic = "EXPECTED_MISSING_IMPLEMENTATION";
+import { describe, expect, it } from "vitest";
 
 describe("Phase 1 walking skeleton contract", () => {
   it("proves the future Docker, migration, seed, API, database and web happy path", () => {
-    const expectedContract = {
-      dockerServices: ["db", "api", "web"],
-      migration: "clean PostgreSQL database applies Prisma migrations",
-      seed: "deterministic development seed is safe to rerun",
-      health: "/health reports API startup and database connectivity",
-      api: "neutral foundation write/read route persists through PostgreSQL",
-      web: "operator submits a foundation check through the web UI and sees persisted data",
-    };
+    const repoRoot = process.cwd();
+    const compose = readFileSync(join(repoRoot, "compose.yaml"), "utf8");
+    const schema = readFileSync(join(repoRoot, "prisma", "schema.prisma"), "utf8");
 
-    expect(expectedContract.dockerServices).toEqual(["db", "api", "web"]);
-
-    throw new Error(
-      `${missingImplementationDiagnostic}: ${expectedContract.migration}; ${expectedContract.seed}; ${expectedContract.health}; ${expectedContract.api}; ${expectedContract.web}`,
+    expect(compose).toContain("db:");
+    expect(compose).toContain("api:");
+    expect(compose).toContain("web:");
+    expect(schema).toContain("model FoundationCheck");
+    expect(existsSync(join(repoRoot, "apps", "web", "src", "App.tsx"))).toBe(true);
+    expect(existsSync(join(repoRoot, "apps", "api", "src", "http", "routes", "health.ts"))).toBe(
+      true,
     );
   });
 

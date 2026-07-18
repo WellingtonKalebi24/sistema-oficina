@@ -16,11 +16,9 @@ type FoundationCheckDelegate = {
   }): Promise<Array<{ label: string; status: string }>>;
 };
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required for Prisma foundation baseline tests.");
-}
+const connectionString =
+  process.env.DATABASE_URL ??
+  "postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public";
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter }) as PrismaClient & {

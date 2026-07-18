@@ -31,11 +31,9 @@ type FoundationCheckListResponse = {
   data: FoundationCheckResponse["data"][];
 };
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required for API tests.");
-}
+const connectionString =
+  process.env.DATABASE_URL ??
+  "postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public";
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter }) as PrismaClient & {
@@ -53,6 +51,8 @@ const logStream: DestinationStream = {
 };
 
 beforeAll(async () => {
+  process.env.DATABASE_URL = connectionString;
+
   server = createServer(
     createApp({
       enableTestRoutes: true,
@@ -80,16 +80,19 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
+  if (server) {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
 
-      resolve();
+        resolve();
+      });
     });
-  });
+  }
+
   await prisma.$disconnect();
 });
 
