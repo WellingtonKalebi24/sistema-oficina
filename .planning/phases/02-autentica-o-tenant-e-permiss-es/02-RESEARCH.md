@@ -432,22 +432,19 @@ export function requirePermission(permission: PermissionKey) {
 | A4 | Cross-tenant relationship bugs usually happen when related IDs are not tenant-validated. | Common Pitfalls | Planner may need to enumerate every relation write explicitly. |
 | A5 | Audit secret leaks usually come from generic body logging or broad snapshots. | Common Pitfalls | Planner may need route-specific logging tests even if audit code looks safe. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Refresh token storage contract**
    - What we know: Multi-session is locked and logout invalidates only the current session. [VERIFIED: .planning/phases/02-autentica-o-tenant-e-permiss-es/02-CONTEXT.md]
-   - What's unclear: Whether refresh token is stored in an `HttpOnly` cookie or browser-managed memory/storage. [ASSUMED]
-   - Recommendation: Planner should choose one explicitly; if cookie-based, include CSRF/origin checks. [CITED: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html]
+   - RESOLVED: Use opaque refresh token secrets tied to persisted `Session` rows and stored in the browser-managed Phase 2 client session contract alongside the short-lived access token. Store only refresh-token hashes server-side, rotate the active session on refresh, and revoke only the active/current session on logout. Do not use refresh cookies in Phase 2, so cookie CSRF controls are not part of this implementation slice.
 
 2. **Email provider for recovery**
    - What we know: Email is allowed only for auth recovery. [VERIFIED: .planning/phases/02-autentica-o-tenant-e-permiss-es/02-CONTEXT.md]
-   - What's unclear: Real SMTP credentials/provider are not present in `.env.example`. [VERIFIED: codebase grep]
-   - Recommendation: Implement an SMTP adapter and a dev/test fake sender; planner should not require real email delivery for automated tests. [CITED: https://nodemailer.com/smtp]
+   - RESOLVED: Implement an `EmailSender` abstraction with a fake sender for automated tests and an env-gated SMTP adapter for real recovery email delivery. Automated verification must not require real SMTP credentials, and the adapter must remain scoped to authentication recovery only.
 
 3. **Admin permission namespace**
    - What we know: Phase 02 needs configurable permissions and user-specific overrides. [VERIFIED: .planning/REQUIREMENTS.md]
-   - What's unclear: Exact permission key names are not locked. [VERIFIED: .planning/phases/02-autentica-o-tenant-e-permiss-es/02-CONTEXT.md]
-   - Recommendation: Use stable dot keys such as `tenant.settings.update`, `users.create`, `users.createAdmin`, `roles.manage`, and `permissions.manage`. [ASSUMED]
+   - RESOLVED: Use stable dot-key permissions. Minimum Phase 2 keys are `tenant.settings.read`, `tenant.settings.update`, `users.read`, `users.create`, `users.update`, `users.deactivate`, `users.createAdmin`, `roles.manage`, `permissions.manage`, and `audit.read`. Treat `users.createAdmin` as admin-level and require it before creating or granting admin-level permissions.
 
 ## Environment Availability
 
