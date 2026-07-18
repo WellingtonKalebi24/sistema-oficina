@@ -29,7 +29,7 @@
 **Mode:** mvp
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, VUX-01, VUX-02, VUX-03, VUX-04, VUX-05
 **UI hint:** yes
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -38,11 +38,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
+- [x] 01-02-PLAN.md — Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
+- [x] 01-03-PLAN.md — Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
 
 **Scope**
 
