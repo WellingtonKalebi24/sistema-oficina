@@ -7,7 +7,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
 import {
-  createTenantWithAdmin,
   createTestEmailSender,
   getAuditRows,
   loginAs,

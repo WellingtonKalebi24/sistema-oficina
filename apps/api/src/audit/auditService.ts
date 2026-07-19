@@ -17,10 +17,7 @@ export type AuditLogInput = {
   userId?: string | null;
 };
 
-export async function writeAuditLog(
-  prisma: PrismaDatabase,
-  input: AuditLogInput,
-): Promise<void> {
+export async function writeAuditLog(prisma: PrismaDatabase, input: AuditLogInput): Promise<void> {
   await prisma.auditLog.create({
     data: {
       action: input.action,

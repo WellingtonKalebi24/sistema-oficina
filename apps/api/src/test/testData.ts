@@ -23,16 +23,16 @@ type IdentityPrisma = PrismaClient & {
   passwordResetToken: DeleteManyDelegate;
   session: DeleteManyDelegate;
   auditLog: DeleteManyDelegate & {
-    findMany(args: {
-      orderBy: { createdAt: "asc" | "desc" };
-    }): Promise<Array<{
-      action: string;
-      entity: string;
-      payload: unknown;
-      recordId: string | null;
-      tenantId: string | null;
-      userId: string | null;
-    }>>;
+    findMany(args: { orderBy: { createdAt: "asc" | "desc" } }): Promise<
+      Array<{
+        action: string;
+        entity: string;
+        payload: unknown;
+        recordId: string | null;
+        tenantId: string | null;
+        userId: string | null;
+      }>
+    >;
   };
   userPermissionOverride: DeleteManyDelegate;
   userRole: DeleteManyDelegate;
