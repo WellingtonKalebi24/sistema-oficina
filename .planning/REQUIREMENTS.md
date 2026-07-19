@@ -26,11 +26,11 @@
 - [x] **IDT-06**: User session can be refreshed with secure refresh token handling.
 - [x] **IDT-07**: User can log out and invalidate the active session.
 - [x] **IDT-08**: User can request and complete a secure password reset.
-- [ ] **IDT-09**: User can change password after authentication.
+- [x] **IDT-09**: User can change password after authentication.
 - [x] **IDT-10**: API blocks protected routes when authentication is missing or invalid.
 - [ ] **IDT-11**: API blocks actions when the authenticated user lacks required permission.
 - [ ] **IDT-12**: User from one tenant cannot read or modify data from another tenant.
-- [ ] **IDT-13**: Authentication, permission and sensitive user-management events are audited.
+- [x] **IDT-13**: Authentication, permission and sensitive user-management events are audited.
 
 ### Customers And Vehicles
 
@@ -195,11 +195,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDT-06 | Phase 2 | Complete |
 | IDT-07 | Phase 2 | Complete |
 | IDT-08 | Phase 2 | Complete |
-| IDT-09 | Phase 2 | Pending |
+| IDT-09 | Phase 2 | Complete |
 | IDT-10 | Phase 2 | Complete |
 | IDT-11 | Phase 2 | Pending |
 | IDT-12 | Phase 2 | Pending |
-| IDT-13 | Phase 2 | Pending |
+| IDT-13 | Phase 2 | Complete |
 | CAV-01 | Phase 3 | Pending |
 | CAV-02 | Phase 3 | Pending |
 | CAV-03 | Phase 3 | Pending |

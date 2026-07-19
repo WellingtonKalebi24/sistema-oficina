@@ -9,7 +9,7 @@
 | # | Phase | Goal | Requirements | UI hint |
 |---|-------|------|--------------|---------|
 | 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
-| 2 | Autenticação, Tenant e Permissões | 3/6 | In Progress|  |
+| 2 | Autenticação, Tenant e Permissões | 4/6 | In Progress|  |
 | 3 | Clientes e Veículos | Gerenciar clientes, veículos e histórico básico | CAV-01..CAV-09 | yes |
 | 4 | Serviços, Produtos, Compras e Estoque | Controlar catálogos, fornecedores, compras, saldos e reservas | STK-01..STK-14 | yes |
 | 5 | Agenda e Recepção | Cobrir agendamento, check-in, checklist e anexos | REC-01..REC-08 | yes |
@@ -77,7 +77,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** IDT-01, IDT-02, IDT-03, IDT-04, IDT-05, IDT-06, IDT-07, IDT-08, IDT-09, IDT-10, IDT-11, IDT-12, IDT-13
 **UI hint:** yes
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -94,7 +94,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — Password reset, change password, EmailSender adapter, sanitized auth audit and requireAuth middleware.
+- [x] 02-04-PLAN.md — Password reset, change password, EmailSender adapter, sanitized auth audit and requireAuth middleware.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 

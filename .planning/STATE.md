@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
 stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-07-19T12:02:44.937Z"
+last_updated: "2026-07-19T12:15:12.909Z"
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 9
-  completed_plans: 6
-  percent: 67
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State: JO.IA
@@ -69,7 +69,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 2 with plan 02-04 for protected backend authorization and permission-sensitive administration.
+Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
 
 ## Tests Executed
 
@@ -79,6 +79,8 @@ Continue Phase 2 with plan 02-04 for protected backend authorization and permiss
 - 02-03: `npm run db:migrate` passed.
 - 02-03: `npm run test -w apps/api -- auth-bootstrap auth-sessions` passed with 6 auth tests.
 - 02-03: `npm run verify` passed.
+- 02-04: `npm run test -w apps/api -- auth-sessions audit && npm run typecheck -w apps/api` passed.
+- 02-04: `npm run verify` passed.
 
 ## Known Issues
 
@@ -87,8 +89,8 @@ Continue Phase 2 with plan 02-04 for protected backend authorization and permiss
 
 ## Session
 
-**Last session:** 2026-07-19T12:02:17.306Z
-**Stopped at:** Completed 02-03-PLAN.md
+**Last session:** 2026-07-19T12:14:51.401Z
+**Stopped at:** Completed 02-04-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -101,6 +103,7 @@ Continue Phase 2 with plan 02-04 for protected backend authorization and permiss
 | Phase 02 P01 | 14min | 2 tasks | 4 files |
 | Phase 02 P02 | 35min | 2 tasks | 10 files |
 | Phase 02 P03 | 12min | 2 tasks | 12 files |
+| Phase 02 P04 | 9min | 2 tasks | 13 files |
 
 ## Decisions
 
@@ -118,3 +121,6 @@ Continue Phase 2 with plan 02-04 for protected backend authorization and permiss
 - [Phase 02]: Implemented refresh sessions as opaque browser-managed tokens submitted in JSON, not cookies, matching the resolved research contract.
 - [Phase 02]: Kept /auth/bootstrap compatibility with the previous RED test contract while also exposing /bootstrap/status and /bootstrap/create-first-admin.
 - [Phase 02]: Root verification now delegates to workspace test scripts so API PostgreSQL integration tests preserve their serial Vitest config.
+- [Phase 02]: Kept EmailSender narrowly scoped to authentication password recovery; no customer notification, communication module, queue or delivery/read tracking was introduced. — Preserves the project communication prohibition while allowing the locked auth recovery exception.
+- [Phase 02]: Centralized auth audit redaction in writeAuditLog by dropping metadata keys shaped like passwords, tokens, reset codes, hashes or secrets before persistence. — Makes D-13 audit secrecy enforceable from auth routes and future protected routes.
+- [Phase 02]: Added a local narrow Nodemailer declaration instead of installing another package during execution, avoiding an unplanned package-legitimacy gate. — Typecheck needed declarations, but adding an unplanned package would exceed 02-04 scope.
