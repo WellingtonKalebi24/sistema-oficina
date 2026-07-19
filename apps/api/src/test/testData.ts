@@ -23,7 +23,9 @@ type IdentityPrisma = PrismaClient & {
   passwordResetToken: DeleteManyDelegate;
   session: DeleteManyDelegate;
   auditLog: DeleteManyDelegate & {
-    findMany(args: { orderBy: { createdAt: "asc" | "desc" } }): Promise<Array<{ payload: unknown }>>;
+    findMany(args: {
+      orderBy: { createdAt: "asc" | "desc" };
+    }): Promise<Array<{ payload: unknown }>>;
   };
   userPermissionOverride: DeleteManyDelegate;
   userRole: DeleteManyDelegate;
@@ -36,20 +38,14 @@ type IdentityPrisma = PrismaClient & {
     }): Promise<unknown>;
   };
   role: DeleteManyDelegate & {
-    create(args: {
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   user: DeleteManyDelegate & {
-    create(args: {
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   companySetting: DeleteManyDelegate;
   tenant: DeleteManyDelegate & {
-    create(args: {
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
 };
 

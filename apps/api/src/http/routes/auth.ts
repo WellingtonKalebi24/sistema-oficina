@@ -196,20 +196,17 @@ async function authenticateUser(
   prisma: PrismaDatabase,
   email: string,
   password: string,
-): Promise<
-  | {
-      permissions: string[];
-      user: {
-        email: string;
-        id: string;
-        name: string;
-        passwordHash: string;
-        status: string;
-        tenantId: string;
-      };
-    }
-  | null
-> {
+): Promise<{
+  permissions: string[];
+  user: {
+    email: string;
+    id: string;
+    name: string;
+    passwordHash: string;
+    status: string;
+    tenantId: string;
+  };
+} | null> {
   const users = await prisma.user.findMany({
     where: {
       email,
@@ -265,7 +262,10 @@ async function resolveAuthContext(
   }
 }
 
-async function getEffectivePermissionKeys(prisma: PrismaDatabase, userId: string): Promise<string[]> {
+async function getEffectivePermissionKeys(
+  prisma: PrismaDatabase,
+  userId: string,
+): Promise<string[]> {
   const user = await prisma.user.findUnique({
     include: {
       permissionOverrides: {

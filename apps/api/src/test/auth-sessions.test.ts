@@ -73,7 +73,12 @@ describe("auth sessions", () => {
     const fixture = await createTenantWithAdmin(prisma);
 
     const first = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "device-a");
-    const second = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "device-b");
+    const second = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "device-b",
+    );
 
     expect(first.sessionId).not.toBe(second.sessionId);
     expect(first.refreshToken).not.toBe(second.refreshToken);
@@ -83,8 +88,18 @@ describe("auth sessions", () => {
 
   it("refresh rotates only the active session refresh secret", async () => {
     const fixture = await createTenantWithAdmin(prisma);
-    const active = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "active-device");
-    const other = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "other-device");
+    const active = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "active-device",
+    );
+    const other = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "other-device",
+    );
 
     const refreshResponse = await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
@@ -119,8 +134,18 @@ describe("auth sessions", () => {
 
   it("logout revokes only the current session", async () => {
     const fixture = await createTenantWithAdmin(prisma);
-    const current = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "current-device");
-    const other = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "other-device");
+    const current = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "current-device",
+    );
+    const other = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "other-device",
+    );
 
     const logoutResponse = await fetch(`${baseUrl}/auth/logout`, {
       method: "POST",
@@ -160,7 +185,12 @@ describe("auth sessions", () => {
 
   it("returns sanitized current-user data only for an active bearer session", async () => {
     const fixture = await createTenantWithAdmin(prisma);
-    const current = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "current-device");
+    const current = await loginAs(
+      { baseUrl },
+      fixture.adminEmail,
+      fixture.adminPassword,
+      "current-device",
+    );
 
     const missingAuthResponse = await fetch(`${baseUrl}/auth/me`);
     const currentUserResponse = await fetch(`${baseUrl}/auth/me`, {

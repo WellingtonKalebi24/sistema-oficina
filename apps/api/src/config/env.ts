@@ -83,11 +83,7 @@ function parseNodeEnv(value: string | undefined): ApiEnv["nodeEnv"] {
   return "development";
 }
 
-function parsePositiveInteger(
-  value: string | undefined,
-  fallback: number,
-  name: string,
-): number {
+function parsePositiveInteger(value: string | undefined, fallback: number, name: string): number {
   if (!value) {
     return fallback;
   }
