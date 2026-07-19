@@ -21,6 +21,16 @@ The committed values are sample-only. Do not commit real secrets. The expected l
 - API: `http://localhost:3001`
 - PostgreSQL host port: `55432`
 
+Phase 2 authentication uses these local variables from `.env.example`:
+
+- `JWT_ACCESS_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`
+- `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_DAYS`
+- `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX`
+- `PASSWORD_RESET_TTL_MINUTES`
+- `VITE_API_BASE_URL=http://localhost:3001`
+
+SMTP variables are optional for local development and are limited to authentication password recovery. Do not configure customer communication, message delivery or notification features.
+
 ## Install
 
 ```powershell
@@ -35,12 +45,12 @@ Start the database and API:
 docker compose up --build -d db api
 ```
 
-Apply migrations and seed deterministic foundation data:
+Apply migrations and seed deterministic foundation and permission data:
 
 ```powershell
 $env:DATABASE_URL="postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public"
-npx prisma migrate deploy
-npx prisma db seed
+npm run db:migrate
+npm run db:seed
 ```
 
 Expected migration status:
@@ -91,7 +101,23 @@ Open the web app:
 http://localhost:5173
 ```
 
-Submit a neutral foundation label, such as `local-smoke`, and confirm it appears in the returned table.
+Use the Phase 2 web flow:
+
+1. If `/bootstrap/status` reports `bootstrapped: false`, the web app opens the bootstrap form.
+2. Create the first tenant and administrator with local development values.
+3. Return to login and enter with the administrator email/password.
+4. Confirm the authenticated shell shows compact sections for `Oficina`, `Usuarios`, `Papeis`, `Permissoes` and `Seguranca`.
+5. Use `Oficina` for company settings, `Usuarios` for user creation, `Papeis` for role setup and `Permissoes` for permission overrides.
+
+The frontend may hide menu entries based on effective permissions, but backend authorization remains authoritative. A backend `403` appears in the UI as `Acesso bloqueado pela permissao do servidor.`
+
+Useful local API checks:
+
+```powershell
+curl.exe http://localhost:3001/health
+curl.exe http://localhost:3001/bootstrap/status
+curl.exe -I http://localhost:5173
+```
 
 ## Quality Gates
 
@@ -102,6 +128,20 @@ npm run verify
 ```
 
 The command runs format check, lint, type check and tests across workspaces.
+
+Phase 2 final validation:
+
+```powershell
+$env:DATABASE_URL="postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public"
+npm run db:migrate
+npm run verify
+npm run docker:config
+docker compose up --build -d db api web
+docker compose ps
+curl.exe http://localhost:3001/health
+curl.exe http://localhost:3001/bootstrap/status
+curl.exe -I http://localhost:5173
+```
 
 ## Troubleshooting
 
