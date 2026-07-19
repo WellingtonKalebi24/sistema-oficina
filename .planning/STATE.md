@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-07-19T12:30:34.105Z"
+stopped_at: Completed 02-06-PLAN.md
+last_updated: "2026-07-19T12:47:49.603Z"
 progress:
   total_phases: 12
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 17
 ---
 
 # Project State: JO.IA
@@ -89,8 +89,8 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 
 ## Session
 
-**Last session:** 2026-07-19T12:30:34.047Z
-**Stopped at:** Completed 02-05-PLAN.md
+**Last session:** 2026-07-19T12:47:49.229Z
+**Stopped at:** Completed 02-06-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -105,6 +105,7 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 | Phase 02 P03 | 12min | 2 tasks | 12 files |
 | Phase 02 P04 | 9min | 2 tasks | 13 files |
 | Phase 02 P05 | 12min | 2 tasks | 16 files |
+| Phase 02 P06 | 14min | 3 tasks | 9 files |
 
 ## Decisions
 
@@ -128,3 +129,5 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 - [Phase 02]: Plan 05 centralized permission keys in apps/api/src/permissions/permissions.ts for seed, bootstrap, auth serialization and admin route validation. — Prevents permission key drift across backend enforcement and fixtures.
 - [Phase 02]: Plan 05 mounted protected admin APIs after existing public health/bootstrap/auth/foundation/test routes. — Preserves existing diagnostics while enforcing backend authorization on admin routes.
 - [Phase 02]: Plan 05 requires users.createAdmin for admin-level role permission grants and allow overrides. — Implements D-03 and prevents privilege escalation by users who can create only regular users.
+- [Phase 02]: Used react-router for the authenticated web shell while keeping backend authorization authoritative and displaying API 403 as a server-permission blocked state.
+- [Phase 02]: Browser session storage is limited to access token, opaque refresh token, session id, tenant id, user profile and effective permissions.
