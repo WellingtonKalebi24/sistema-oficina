@@ -18,16 +18,16 @@
 
 ### Identity And Tenant
 
-- [ ] **IDT-01**: Admin can create and manage a tenant and its company settings.
+- [x] **IDT-01**: Admin can create and manage a tenant and its company settings.
 - [ ] **IDT-02**: Admin can create, edit, deactivate and list users within the authenticated tenant.
-- [ ] **IDT-03**: Admin can create roles and assign permissions to users.
-- [ ] **IDT-04**: Admin can grant user-specific permission overrides.
+- [x] **IDT-03**: Admin can create roles and assign permissions to users.
+- [x] **IDT-04**: Admin can grant user-specific permission overrides.
 - [x] **IDT-05**: User can log in with secure password verification.
 - [x] **IDT-06**: User session can be refreshed with secure refresh token handling.
-- [ ] **IDT-07**: User can log out and invalidate the active session.
+- [x] **IDT-07**: User can log out and invalidate the active session.
 - [x] **IDT-08**: User can request and complete a secure password reset.
 - [ ] **IDT-09**: User can change password after authentication.
-- [ ] **IDT-10**: API blocks protected routes when authentication is missing or invalid.
+- [x] **IDT-10**: API blocks protected routes when authentication is missing or invalid.
 - [ ] **IDT-11**: API blocks actions when the authenticated user lacks required permission.
 - [ ] **IDT-12**: User from one tenant cannot read or modify data from another tenant.
 - [ ] **IDT-13**: Authentication, permission and sensitive user-management events are audited.
@@ -187,16 +187,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FND-06 | Phase 1 | Pending |
 | FND-07 | Phase 1 | Pending |
 | FND-08 | Phase 1 | Complete |
-| IDT-01 | Phase 2 | Pending |
+| IDT-01 | Phase 2 | Complete |
 | IDT-02 | Phase 2 | Pending |
-| IDT-03 | Phase 2 | Pending |
-| IDT-04 | Phase 2 | Pending |
+| IDT-03 | Phase 2 | Complete |
+| IDT-04 | Phase 2 | Complete |
 | IDT-05 | Phase 2 | Complete |
 | IDT-06 | Phase 2 | Complete |
-| IDT-07 | Phase 2 | Pending |
+| IDT-07 | Phase 2 | Complete |
 | IDT-08 | Phase 2 | Complete |
 | IDT-09 | Phase 2 | Pending |
-| IDT-10 | Phase 2 | Pending |
+| IDT-10 | Phase 2 | Complete |
 | IDT-11 | Phase 2 | Pending |
 | IDT-12 | Phase 2 | Pending |
 | IDT-13 | Phase 2 | Pending |
