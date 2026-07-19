@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 1 - Fundação Técnica e Contrato Visual
+current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-07-18T18:23:23.550Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-19T11:34:19.651Z"
 progress:
   total_phases: 12
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 8
+  total_plans: 9
+  completed_plans: 4
+  percent: 44
 ---
 
 # Project State: JO.IA
 
 **Last updated:** 2026-07-14
 **Status:** Ready to execute
-**Current phase:** Phase 1 - Fundação Técnica e Contrato Visual
+**Current phase:** Phase 2 - Autenticação, Tenant e Permissões
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 **Core value:** Uma oficina consegue executar e auditar todo o ciclo de atendimento de um veículo, da entrada ao pagamento, com isolamento seguro por tenant e sem depender de comunicações automáticas com o cliente.
-**Current focus:** Preparar base técnica executável e contrato visual antes de iniciar módulos de negócio.
+**Current focus:** Executar autenticação, tenant, permissões, sessões, recuperação de senha e auditoria com isolamento seguro.
 
 ## Completed
 
@@ -38,6 +38,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 1 plan 01-01 completed: npm workspace scaffold, strict tooling and RED walking-skeleton contract.
 - Phase 1 plan 01-02 completed: Prisma/PostgreSQL foundation, Express API health/write-read route and Docker Compose db/api runtime.
 - Phase 1 plan 01-03 completed: React/Vite web walking skeleton, Docker web service, local setup docs, visual contract and skeleton record.
+- Phase 2 plan 02-01 completed: approved auth/admin dependency installation after SUS package legitimacy checkpoint.
 
 ## Current Decisions
 
@@ -66,7 +67,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Start Phase 2 planning for Autenticação, Tenant e Permissões.
+Continue Phase 2 with plan 02-02 for identity, tenant, session, permission and audit schema.
 
 ## Tests Executed
 
@@ -79,9 +80,9 @@ Start Phase 2 planning for Autenticação, Tenant e Permissões.
 
 ## Session
 
-**Last session:** 2026-07-18T17:55:26.959Z
-**Stopped at:** Phase 2 context gathered
-**Resume file:** .planning/phases/02-autentica-o-tenant-e-permiss-es/02-CONTEXT.md
+**Last session:** 2026-07-19T11:34:08.615Z
+**Stopped at:** Completed 02-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -90,6 +91,7 @@ Start Phase 2 planning for Autenticação, Tenant e Permissões.
 | Phase 01 P01 | 12min | 2 tasks | 19 files |
 | Phase 01 P02 | multi-session | 3 tasks | Prisma, API, Docker Compose |
 | Phase 01 P03 | same-session | 3 tasks | Web UI, Docker web, docs, visual contract |
+| Phase 02 P01 | 14min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -99,3 +101,5 @@ Start Phase 2 planning for Autenticação, Tenant e Permissões.
 - [Phase 01]: Plan 02 kept the schema neutral with only FoundationCheck; no business, auth, tenant or communication entities were introduced.
 - [Phase 01]: Docker Desktop storage for this machine was moved to E:\DockerDesktop\wsl\disk via junction to keep builds off the nearly full C: drive.
 - [Phase 01]: Plan 03 completed the full walking skeleton and established docs/VISUAL_CONTRACT.md as the UI contract for later operational screens.
+- [Phase 02]: Plan 01 installed only exact approved auth/admin package names after the SUS package checkpoint: nodemailer, express-rate-limit and react-router.
+- [Phase 02]: Nodemailer remains scoped to authentication password recovery only; no customer communication or notification capability was introduced.

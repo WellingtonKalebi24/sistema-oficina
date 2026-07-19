@@ -22,10 +22,10 @@
 - [ ] **IDT-02**: Admin can create, edit, deactivate and list users within the authenticated tenant.
 - [ ] **IDT-03**: Admin can create roles and assign permissions to users.
 - [ ] **IDT-04**: Admin can grant user-specific permission overrides.
-- [ ] **IDT-05**: User can log in with secure password verification.
-- [ ] **IDT-06**: User session can be refreshed with secure refresh token handling.
+- [x] **IDT-05**: User can log in with secure password verification.
+- [x] **IDT-06**: User session can be refreshed with secure refresh token handling.
 - [ ] **IDT-07**: User can log out and invalidate the active session.
-- [ ] **IDT-08**: User can request and complete a secure password reset.
+- [x] **IDT-08**: User can request and complete a secure password reset.
 - [ ] **IDT-09**: User can change password after authentication.
 - [ ] **IDT-10**: API blocks protected routes when authentication is missing or invalid.
 - [ ] **IDT-11**: API blocks actions when the authenticated user lacks required permission.
@@ -191,10 +191,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDT-02 | Phase 2 | Pending |
 | IDT-03 | Phase 2 | Pending |
 | IDT-04 | Phase 2 | Pending |
-| IDT-05 | Phase 2 | Pending |
-| IDT-06 | Phase 2 | Pending |
+| IDT-05 | Phase 2 | Complete |
+| IDT-06 | Phase 2 | Complete |
 | IDT-07 | Phase 2 | Pending |
-| IDT-08 | Phase 2 | Pending |
+| IDT-08 | Phase 2 | Complete |
 | IDT-09 | Phase 2 | Pending |
 | IDT-10 | Phase 2 | Pending |
 | IDT-11 | Phase 2 | Pending |
