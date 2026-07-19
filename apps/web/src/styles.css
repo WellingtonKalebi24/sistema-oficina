@@ -43,12 +43,14 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid rgba(197, 139, 47, 0.42);
   outline-offset: 2px;
 }
@@ -174,7 +176,8 @@ h2 {
   font-weight: 700;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 42px;
   padding: 0 var(--space-3);
@@ -182,6 +185,10 @@ input {
   border-radius: var(--radius-control);
   background: #ffffff;
   color: var(--color-text);
+}
+
+select {
+  cursor: pointer;
 }
 
 .helper-text {
@@ -194,6 +201,19 @@ input {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.stacked-forms,
+.form-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stacked-forms form {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
 }
 
 button {
@@ -234,6 +254,10 @@ button:disabled {
 
 .button-danger:hover {
   background: #8d252b;
+}
+
+.full-width {
+  width: 100%;
 }
 
 .callout {
@@ -315,6 +339,48 @@ th {
   margin-top: var(--space-4);
 }
 
+.panel-single {
+  margin-top: var(--space-4);
+}
+
+.workspace-grid--auth {
+  grid-template-columns: minmax(300px, 440px) minmax(280px, 1fr);
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.side-panel,
+.content-stack {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.nav-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.nav-item {
+  justify-content: start;
+  width: 100%;
+  border-color: var(--color-line);
+  background: #ffffff;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.nav-item:hover,
+.nav-item--active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
 .state-card {
   display: grid;
   gap: var(--space-3);
@@ -347,7 +413,8 @@ th {
 @media (max-width: 820px) {
   .topbar,
   .workspace-grid,
-  .state-board {
+  .state-board,
+  .admin-layout {
     grid-template-columns: 1fr;
   }
 

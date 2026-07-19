@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App.js";
@@ -11,80 +11,40 @@ const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   globalThis.fetch = originalFetch;
   vi.restoreAllMocks();
 });
 
-describe("JO.IA web foundation app", () => {
-  it("lets the operator submit a foundation check and see persisted API data", async () => {
-    const createdAt = "2026-07-17T23:46:09.037Z";
-
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        jsonResponse({
-          data: [],
-        }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse(
-          {
-            data: {
-              id: "check-1",
-              label: "web-api-db",
-              status: "recorded",
-              createdAt,
-              updatedAt: createdAt,
-            },
-          },
-          201,
-        ),
-      );
-
-    globalThis.fetch = fetchMock;
+describe("JO.IA web app shell", () => {
+  it("routes a bootstrapped workspace to login", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: true } }));
 
     render(<App />);
 
-    expect(await screen.findByText("Nenhum registro ainda")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Etiqueta da verificacao"), {
-      target: { value: "web-api-db" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Registrar" }));
-
-    expect(await screen.findByText("web-api-db")).toBeInTheDocument();
-    expect(screen.getByText("recorded")).toBeInTheDocument();
-    expect(
-      screen.getByText("Verificacao registrada e persistida no PostgreSQL."),
-    ).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/foundation-checks",
-      expect.objectContaining({ method: "POST" }),
-    );
+    expect(screen.getByLabelText("Sincronizando com a API")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Entrar no JO.IA" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Acesso operacional")).toBeInTheDocument();
   });
 
-  it("renders loading, empty, success, error and destructive confirmation states accessibly", async () => {
+  it("shows a compact error state when bootstrap status is unavailable", async () => {
     globalThis.fetch = vi.fn().mockRejectedValueOnce(new Error("offline"));
 
     render(<App />);
 
-    expect(screen.getByLabelText("Carregando registros")).toBeInTheDocument();
     expect(await screen.findByText("Conexao indisponivel")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("A API nao respondeu");
-    expect(
-      screen.getByRole("button", { name: "Exemplo de confirmacao destrutiva" }),
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Estado do sistema")).toHaveTextContent("API indisponivel");
+    expect(screen.getByLabelText("Sessao autenticada")).toHaveTextContent("A API nao respondeu");
   });
 
-  it("presents a compact operational workspace without marketing copy", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonResponse({ data: [] }));
+  it("keeps the first viewport operational and free of prohibited communication language", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: false } }));
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByLabelText("Ambiente operacional")).toBeInTheDocument());
-    expect(screen.getByRole("heading", { name: "Fundacao tecnica" })).toBeInTheDocument();
-    expect(screen.queryByText(/compre agora/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Bootstrap da oficina")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "JO.IA Oficina" })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/whatsapp|sms|notificacao|campanha|mensagem|disparo/i);
+    expect(screen.queryByText(/compre agora|landing/i)).not.toBeInTheDocument();
   });
 });
 
