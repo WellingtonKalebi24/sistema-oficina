@@ -25,7 +25,14 @@ type IdentityPrisma = PrismaClient & {
   auditLog: DeleteManyDelegate & {
     findMany(args: {
       orderBy: { createdAt: "asc" | "desc" };
-    }): Promise<Array<{ payload: unknown }>>;
+    }): Promise<Array<{
+      action: string;
+      entity: string;
+      payload: unknown;
+      recordId: string | null;
+      tenantId: string | null;
+      userId: string | null;
+    }>>;
   };
   userPermissionOverride: DeleteManyDelegate;
   userRole: DeleteManyDelegate;
@@ -51,6 +58,16 @@ type IdentityPrisma = PrismaClient & {
 
 type HttpClient = {
   baseUrl: string;
+};
+
+export type TestEmailSender = {
+  messages: Array<{
+    code: string;
+    purpose: "auth.password_reset";
+    to: string;
+  }>;
+  clear(): void;
+  sendPasswordResetCode(input: { code: string; to: string }): Promise<void>;
 };
 
 export type TenantWithAdminFixture = {
@@ -238,6 +255,41 @@ export async function getAuditPayloads(prisma: PrismaClient): Promise<unknown[]>
   });
 
   return rows.map((row: { payload: unknown }) => row.payload);
+}
+
+export async function getAuditRows(prisma: PrismaClient): Promise<
+  Array<{
+    action: string;
+    entity: string;
+    payload: unknown;
+    recordId: string | null;
+    tenantId: string | null;
+    userId: string | null;
+  }>
+> {
+  const db = prisma as IdentityPrisma;
+
+  return db.auditLog.findMany({
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+}
+
+export function createTestEmailSender(): TestEmailSender {
+  return {
+    messages: [],
+    clear() {
+      this.messages.length = 0;
+    },
+    async sendPasswordResetCode(input) {
+      this.messages.push({
+        code: input.code,
+        purpose: "auth.password_reset",
+        to: input.to,
+      });
+    },
+  };
 }
 
 async function seedPermissionRows(prisma: PrismaClient): Promise<void> {

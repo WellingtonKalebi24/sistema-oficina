@@ -6,7 +6,13 @@ import type { DestinationStream } from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { createTenantWithAdmin, loginAs, resetIdentityTables } from "./testData.js";
+import {
+  createTenantWithAdmin,
+  createTestEmailSender,
+  loginAs,
+  resetIdentityTables,
+  type TestEmailSender,
+} from "./testData.js";
 
 const connectionString =
   process.env.DATABASE_URL ??
@@ -17,6 +23,7 @@ const prisma = new PrismaClient({ adapter });
 
 let server: Server;
 let baseUrl: string;
+let emailSender: TestEmailSender;
 
 const logStream: DestinationStream = {
   write() {
@@ -26,9 +33,11 @@ const logStream: DestinationStream = {
 
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
+  emailSender = createTestEmailSender();
 
   server = createServer(
     createApp({
+      emailSender,
       logStream,
       prisma,
     }),
@@ -48,6 +57,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  emailSender.clear();
   await resetIdentityTables(prisma);
 });
 
@@ -219,5 +229,134 @@ describe("auth sessions", () => {
     expect(body.data.user.permissions).toEqual(expect.arrayContaining(["users.createAdmin"]));
     expect(JSON.stringify(body)).not.toContain("password");
     expect(JSON.stringify(body)).not.toContain("refreshToken");
+  });
+
+  it("requests and completes password reset using a single-use code sent to registered email", async () => {
+    const fixture = await createTenantWithAdmin(prisma);
+    const unknownEmail = "nao-cadastrado@joia.test";
+
+    const unknownResponse = await fetch(`${baseUrl}/auth/password-reset/request`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: unknownEmail,
+      }),
+    });
+
+    expect(unknownResponse.status).toBe(202);
+    expect(emailSender.messages).toHaveLength(0);
+
+    const requestResponse = await fetch(`${baseUrl}/auth/password-reset/request`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: fixture.adminEmail,
+      }),
+    });
+
+    expect(requestResponse.status).toBe(202);
+    expect(emailSender.messages).toHaveLength(1);
+    expect(emailSender.messages[0]).toMatchObject({
+      purpose: "auth.password_reset",
+      to: fixture.adminEmail,
+    });
+
+    const resetCode = emailSender.messages[0]?.code;
+    expect(resetCode).toMatch(/^\d{6}$/);
+
+    const completeResponse = await fetch(`${baseUrl}/auth/password-reset/complete`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        code: resetCode,
+        email: fixture.adminEmail,
+        newPassword: "Senha-nova-456",
+      }),
+    });
+
+    expect(completeResponse.status).toBe(204);
+
+    const reuseResponse = await fetch(`${baseUrl}/auth/password-reset/complete`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        code: resetCode,
+        email: fixture.adminEmail,
+        newPassword: "Senha-outra-789",
+      }),
+    });
+
+    expect(reuseResponse.status).toBe(401);
+
+    const oldLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: fixture.adminEmail,
+        password: fixture.adminPassword,
+      }),
+    });
+    const newLogin = await loginAs({ baseUrl }, fixture.adminEmail, "Senha-nova-456");
+
+    expect(oldLoginResponse.status).toBe(401);
+    expect(newLogin.accessToken).toEqual(expect.any(String));
+  });
+
+  it("changes password only for authenticated users with the current password", async () => {
+    const fixture = await createTenantWithAdmin(prisma);
+    const current = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+
+    const wrongCurrentResponse = await fetch(`${baseUrl}/auth/change-password`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${current.accessToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        currentPassword: "senha-incorreta",
+        newPassword: "Senha-nova-456",
+      }),
+    });
+
+    expect(wrongCurrentResponse.status).toBe(401);
+
+    const changeResponse = await fetch(`${baseUrl}/auth/change-password`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${current.accessToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        currentPassword: fixture.adminPassword,
+        newPassword: "Senha-nova-456",
+      }),
+    });
+
+    expect(changeResponse.status).toBe(204);
+
+    const oldLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: fixture.adminEmail,
+        password: fixture.adminPassword,
+      }),
+    });
+    const newLogin = await loginAs({ baseUrl }, fixture.adminEmail, "Senha-nova-456");
+
+    expect(oldLoginResponse.status).toBe(401);
+    expect(newLogin.accessToken).toEqual(expect.any(String));
   });
 });
