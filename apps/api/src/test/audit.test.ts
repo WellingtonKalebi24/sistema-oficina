@@ -202,4 +202,91 @@ describe("auth audit logs", () => {
     expect(serializedPayloads).not.toMatch(/code/i);
     expect(serializedPayloads).not.toMatch(/hash/i);
   });
+
+  it("records tenant admin events without storing submitted passwords", async () => {
+    const bootstrapPassword = "Senha-admin-audit-123";
+    const createdPassword = "Senha-created-audit-123";
+
+    const bootstrapResponse = await fetch(`${baseUrl}/auth/bootstrap`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        tenant: { name: "Oficina Admin Audit", document: "admin-audit-doc" },
+        companySettings: { tradeName: "Oficina Admin Audit" },
+        admin: {
+          email: "admin-admin-audit@joia.test",
+          name: "Admin Audit",
+          password: bootstrapPassword,
+        },
+      }),
+    });
+    expect(bootstrapResponse.status).toBe(201);
+
+    const login = await loginAs({ baseUrl }, "admin-admin-audit@joia.test", bootstrapPassword);
+    const headers = {
+      authorization: `Bearer ${login.accessToken}`,
+      "content-type": "application/json",
+    };
+
+    const settingsResponse = await fetch(`${baseUrl}/tenant-settings`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        tradeName: "Oficina Admin Audit Atualizada",
+      }),
+    });
+    const createUserResponse = await fetch(`${baseUrl}/users`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        email: "created-admin-audit@joia.test",
+        name: "Created Admin Audit",
+        password: createdPassword,
+      }),
+    });
+    expect(settingsResponse.status).toBe(200);
+    expect(createUserResponse.status).toBe(201);
+
+    const userBody = (await createUserResponse.json()) as { data: { id: string } };
+    const roleResponse = await fetch(`${baseUrl}/roles`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        key: "audit-role",
+        name: "Audit Role",
+        permissionKeys: ["users.read"],
+      }),
+    });
+    const overrideResponse = await fetch(
+      `${baseUrl}/users/${userBody.data.id}/permission-overrides`,
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          overrides: [{ effect: "allow", permissionKey: "users.create" }],
+        }),
+      },
+    );
+
+    expect(roleResponse.status).toBe(201);
+    expect(overrideResponse.status).toBe(200);
+
+    const auditRows = await getAuditRows(prisma);
+    const actions = auditRows.map((row) => row.action);
+    const serializedAudit = JSON.stringify(auditRows);
+
+    expect(actions).toEqual(
+      expect.arrayContaining([
+        "tenant.settings.updated",
+        "users.created",
+        "roles.created",
+        "users.permission_overrides.updated",
+      ]),
+    );
+    expect(serializedAudit).not.toContain(bootstrapPassword);
+    expect(serializedAudit).not.toContain(createdPassword);
+    expect(serializedAudit).not.toMatch(/passwordHash/i);
+  });
 });
