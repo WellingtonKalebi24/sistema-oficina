@@ -71,9 +71,9 @@ describe("Prisma schema baseline", () => {
       expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
     }
 
-    expect(schema).toContain('key        String   @unique');
-    expect(schema).toContain('refreshTokenHash String');
-    expect(schema).toContain('revokedAt        DateTime?');
+    expect(schema).toMatch(/key\s+String\s+@unique/);
+    expect(schema).toMatch(/refreshTokenHash\s+String\s+@map\("refresh_token_hash"\)/);
+    expect(schema).toMatch(/revokedAt\s+DateTime\?\s+@map\("revoked_at"\)/);
   });
 
   it("keeps out-of-scope business and communication entities out of the schema", async () => {

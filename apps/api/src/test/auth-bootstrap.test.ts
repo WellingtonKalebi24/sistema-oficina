@@ -95,6 +95,8 @@ describe("auth bootstrap", () => {
       }),
     });
 
+    expect(response.status).toBe(201);
+
     const body = (await response.json()) as {
       data: {
         tenant: { id: string; name: string };
@@ -103,7 +105,6 @@ describe("auth bootstrap", () => {
       };
     };
 
-    expect(response.status).toBe(201);
     expect(body.data.tenant).toMatchObject({ name: "Oficina Piloto" });
     expect(body.data.companySettings).toMatchObject({
       tenantId: body.data.tenant.id,

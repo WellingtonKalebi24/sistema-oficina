@@ -13,7 +13,43 @@ export const DEFAULT_PERMISSION_KEYS = [
   "audit.read",
 ] as const;
 
-type IdentityPrisma = PrismaClient & Record<string, any>;
+type DeleteManyDelegate = {
+  deleteMany(): Promise<unknown>;
+};
+
+type IdentityPrisma = PrismaClient & {
+  passwordResetToken: DeleteManyDelegate;
+  session: DeleteManyDelegate;
+  auditLog: DeleteManyDelegate & {
+    findMany(args: { orderBy: { createdAt: "asc" | "desc" } }): Promise<Array<{ payload: unknown }>>;
+  };
+  userPermissionOverride: DeleteManyDelegate;
+  userRole: DeleteManyDelegate;
+  rolePermission: DeleteManyDelegate;
+  permission: DeleteManyDelegate & {
+    upsert(args: {
+      where: { key: string };
+      create: { key: string; name: string; description: string };
+      update: { name: string };
+    }): Promise<unknown>;
+  };
+  role: DeleteManyDelegate & {
+    create(args: {
+      data: Record<string, unknown>;
+    }): Promise<{ id: string }>;
+  };
+  user: DeleteManyDelegate & {
+    create(args: {
+      data: Record<string, unknown>;
+    }): Promise<{ id: string }>;
+  };
+  companySetting: DeleteManyDelegate;
+  tenant: DeleteManyDelegate & {
+    create(args: {
+      data: Record<string, unknown>;
+    }): Promise<{ id: string }>;
+  };
+};
 
 type HttpClient = {
   baseUrl: string;
@@ -178,12 +214,16 @@ export async function loginAs(
     body: JSON.stringify({ email, password }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Login failed with status ${response.status}`);
+  }
+
   const body = (await response.json()) as {
     data?: { accessToken: string; refreshToken: string; sessionId: string };
   };
 
-  if (!response.ok || !body.data) {
-    throw new Error(`Login failed with status ${response.status}`);
+  if (!body.data) {
+    throw new Error("Login response did not include session tokens");
   }
 
   return body.data;
