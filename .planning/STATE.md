@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-07-19T11:50:48.991Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-07-19T12:02:44.937Z"
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
-  percent: 56
+  completed_plans: 6
+  percent: 67
 ---
 
 # Project State: JO.IA
@@ -40,6 +40,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 1 plan 01-03 completed: React/Vite web walking skeleton, Docker web service, local setup docs, visual contract and skeleton record.
 - Phase 2 plan 02-01 completed: approved auth/admin dependency installation after SUS package legitimacy checkpoint.
 - Phase 2 plan 02-02 completed: identity, tenant, permission, session, reset-token and audit Prisma schema with RED auth route contracts.
+- Phase 2 plan 02-03 completed: password/token/session services, first-admin bootstrap, login, refresh rotation, current-session logout and current-user API.
 
 ## Current Decisions
 
@@ -68,13 +69,16 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 2 with plan 02-03 for bootstrap, login, browser-managed opaque refresh sessions, current-session logout and current-user API.
+Continue Phase 2 with plan 02-04 for protected backend authorization and permission-sensitive administration.
 
 ## Tests Executed
 
 - 02-02: `npm run db:migrate` passed.
 - 02-02: `npm run test -w apps/api -- prisma-baseline` passed.
 - 02-02: `npm run test -w apps/api -- prisma-baseline auth-bootstrap auth-sessions` is expected RED for 02-03 auth routes, with schema baseline passing and route tests returning 404.
+- 02-03: `npm run db:migrate` passed.
+- 02-03: `npm run test -w apps/api -- auth-bootstrap auth-sessions` passed with 6 auth tests.
+- 02-03: `npm run verify` passed.
 
 ## Known Issues
 
@@ -83,8 +87,8 @@ Continue Phase 2 with plan 02-03 for bootstrap, login, browser-managed opaque re
 
 ## Session
 
-**Last session:** 2026-07-19T11:50:18.564Z
-**Stopped at:** Completed 02-02-PLAN.md
+**Last session:** 2026-07-19T12:02:17.306Z
+**Stopped at:** Completed 02-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -96,6 +100,7 @@ Continue Phase 2 with plan 02-03 for bootstrap, login, browser-managed opaque re
 | Phase 01 P03 | same-session | 3 tasks | Web UI, Docker web, docs, visual contract |
 | Phase 02 P01 | 14min | 2 tasks | 4 files |
 | Phase 02 P02 | 35min | 2 tasks | 10 files |
+| Phase 02 P03 | 12min | 2 tasks | 12 files |
 
 ## Decisions
 
@@ -110,3 +115,6 @@ Continue Phase 2 with plan 02-03 for bootstrap, login, browser-managed opaque re
 - [Phase 02]: Modeled Phase 2 identity data in one Prisma migration so later auth/admin plans can implement routes and services without schema churn. — Keeps later Phase 2 plans focused on auth/admin service behavior instead of repeated schema churn.
 - [Phase 02]: Seeded only stable permission keys and default role metadata; no tenant-specific roles or business entities are created by the seed. — Preserves deterministic seed behavior while avoiding out-of-scope tenant/business data.
 - [Phase 02]: Configured API Vitest file execution serially because integration tests share one PostgreSQL schema and perform table cleanup. — Prevents false failures from concurrent cleanup in shared-database integration tests.
+- [Phase 02]: Implemented refresh sessions as opaque browser-managed tokens submitted in JSON, not cookies, matching the resolved research contract.
+- [Phase 02]: Kept /auth/bootstrap compatibility with the previous RED test contract while also exposing /bootstrap/status and /bootstrap/create-first-admin.
+- [Phase 02]: Root verification now delegates to workspace test scripts so API PostgreSQL integration tests preserve their serial Vitest config.
