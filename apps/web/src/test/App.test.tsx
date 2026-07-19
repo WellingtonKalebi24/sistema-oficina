@@ -18,7 +18,9 @@ afterEach(() => {
 
 describe("JO.IA web app shell", () => {
   it("routes a bootstrapped workspace to login", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: true } }));
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: true } }));
 
     render(<App />);
 
@@ -37,13 +39,17 @@ describe("JO.IA web app shell", () => {
   });
 
   it("keeps the first viewport operational and free of prohibited communication language", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: false } }));
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: { bootstrapped: false } }));
 
     render(<App />);
 
     await waitFor(() => expect(screen.getByLabelText("Bootstrap da oficina")).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "JO.IA Oficina" })).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/whatsapp|sms|notificacao|campanha|mensagem|disparo/i);
+    expect(document.body.textContent).not.toMatch(
+      /whatsapp|sms|notificacao|campanha|mensagem|disparo/i,
+    );
     expect(screen.queryByText(/compre agora|landing/i)).not.toBeInTheDocument();
   });
 });

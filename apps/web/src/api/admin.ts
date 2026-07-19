@@ -61,7 +61,9 @@ export async function getTenantSettings(accessToken: string): Promise<TenantSett
 
 export async function updateTenantSettings(
   accessToken: string,
-  input: Partial<Pick<TenantSettings, "document" | "legalName" | "locale" | "timezone" | "tradeName">>,
+  input: Partial<
+    Pick<TenantSettings, "document" | "legalName" | "locale" | "timezone" | "tradeName">
+  >,
 ): Promise<TenantSettings> {
   return request("/tenant-settings", accessToken, {
     body: input,

@@ -21,31 +21,38 @@ describe("JO.IA authenticated admin UI", () => {
   it("shows bootstrap only when setup is pending and creates the first admin", async () => {
     const fetchMock = createFetchMock([
       route("GET", "/bootstrap/status", { data: { bootstrapped: false } }),
-      route("POST", "/bootstrap/create-first-admin", {
-        data: {
-          admin: {
-            email: "admin@joia.local",
-            id: "admin-1",
-            permissions: allPermissions,
-            tenantId: "tenant-1",
-          },
-          companySettings: {
-            id: "settings-1",
-            tenantId: "tenant-1",
-            tradeName: "Oficina Joia",
-          },
-          tenant: {
-            id: "tenant-1",
-            name: "Oficina Joia",
+      route(
+        "POST",
+        "/bootstrap/create-first-admin",
+        {
+          data: {
+            admin: {
+              email: "admin@joia.local",
+              id: "admin-1",
+              permissions: allPermissions,
+              tenantId: "tenant-1",
+            },
+            companySettings: {
+              id: "settings-1",
+              tenantId: "tenant-1",
+              tradeName: "Oficina Joia",
+            },
+            tenant: {
+              id: "tenant-1",
+              name: "Oficina Joia",
+            },
           },
         },
-      }, 201),
+        201,
+      ),
     ]);
     globalThis.fetch = fetchMock;
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Configurar primeira oficina" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Configurar primeira oficina" }),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nome da oficina"), {
       target: { value: "Oficina Joia" },
     });
@@ -60,7 +67,9 @@ describe("JO.IA authenticated admin UI", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Criar primeiro acesso" }));
 
-    expect(await screen.findByText("Primeiro administrador criado. Entre para continuar.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Primeiro administrador criado. Entre para continuar."),
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "http://localhost:3001/bootstrap/create-first-admin",
       expect.objectContaining({ method: "POST" }),
@@ -89,7 +98,9 @@ describe("JO.IA authenticated admin UI", () => {
     expect(screen.getByRole("navigation", { name: "Administracao" })).toHaveTextContent("Oficina");
     expect(screen.getByRole("navigation", { name: "Administracao" })).toHaveTextContent("Usuarios");
     expect(screen.getByRole("navigation", { name: "Administracao" })).toHaveTextContent("Papeis");
-    expect(screen.getByRole("navigation", { name: "Administracao" })).toHaveTextContent("Permissoes");
+    expect(screen.getByRole("navigation", { name: "Administracao" })).toHaveTextContent(
+      "Permissoes",
+    );
     expect(screen.getByLabelText("Sessao autenticada")).toHaveTextContent("Oficina Joia");
     expect(originalStorage.getItem("joia.auth.session")).toContain("refresh-token-1");
   });
@@ -117,7 +128,9 @@ describe("JO.IA authenticated admin UI", () => {
     expect(within(rolesTable).getByText("Administrador")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Permissoes" }));
-    expect(await screen.findByRole("table", { name: "Catalogo de permissoes" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("table", { name: "Catalogo de permissoes" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Overrides de usuario")).toBeInTheDocument();
 
     const text = document.body.textContent ?? "";
@@ -139,7 +152,9 @@ describe("JO.IA authenticated admin UI", () => {
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Usuarios" }));
 
-    expect(await screen.findByText("Acesso bloqueado pela permissao do servidor.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Acesso bloqueado pela permissao do servidor."),
+    ).toBeInTheDocument();
   });
 
   it("calls reset, change-password and active-session logout endpoints", async () => {
@@ -164,12 +179,18 @@ describe("JO.IA authenticated admin UI", () => {
       target: { value: "admin@joia.local" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Solicitar codigo" }));
-    expect(await screen.findByText("Se o email existir, o codigo foi registrado para recuperacao.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Se o email existir, o codigo foi registrado para recuperacao."),
+    ).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Codigo de recuperacao"), { target: { value: "123456" } });
+    fireEvent.change(screen.getByLabelText("Codigo de recuperacao"), {
+      target: { value: "123456" },
+    });
     fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "nova-senha-123" } });
     fireEvent.click(screen.getByRole("button", { name: "Concluir redefinicao" }));
-    expect(await screen.findByText("Senha redefinida. Entre com a nova senha.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Senha redefinida. Entre com a nova senha."),
+    ).toBeInTheDocument();
 
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Seguranca" }));
@@ -192,7 +213,9 @@ describe("JO.IA authenticated admin UI", () => {
 });
 
 async function login() {
-  fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "admin@joia.local" } });
+  fireEvent.change(await screen.findByLabelText("Email"), {
+    target: { value: "admin@joia.local" },
+  });
   fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "senha-segura-123" } });
   fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
   await screen.findByRole("heading", { name: "Administracao" });

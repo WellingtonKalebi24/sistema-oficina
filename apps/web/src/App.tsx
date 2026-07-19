@@ -126,17 +126,25 @@ function AuthAdminApp() {
 
     setBlocked({});
     await Promise.all([
-      loadResource("settings", () => getTenantSettings(currentSession.accessToken), (settings) =>
-        setAdminData((current) => ({ ...current, settings })),
+      loadResource(
+        "settings",
+        () => getTenantSettings(currentSession.accessToken),
+        (settings) => setAdminData((current) => ({ ...current, settings })),
       ),
-      loadResource("users", () => listUsers(currentSession.accessToken), (users) =>
-        setAdminData((current) => ({ ...current, users })),
+      loadResource(
+        "users",
+        () => listUsers(currentSession.accessToken),
+        (users) => setAdminData((current) => ({ ...current, users })),
       ),
-      loadResource("roles", () => listRoles(currentSession.accessToken), (roles) =>
-        setAdminData((current) => ({ ...current, roles })),
+      loadResource(
+        "roles",
+        () => listRoles(currentSession.accessToken),
+        (roles) => setAdminData((current) => ({ ...current, roles })),
       ),
-      loadResource("permissions", () => listPermissions(currentSession.accessToken), (permissions) =>
-        setAdminData((current) => ({ ...current, permissions })),
+      loadResource(
+        "permissions",
+        () => listPermissions(currentSession.accessToken),
+        (permissions) => setAdminData((current) => ({ ...current, permissions })),
       ),
     ]);
   }
@@ -207,8 +215,14 @@ function AuthAdminApp() {
           <h1>{title}</h1>
         </div>
         <div className="status-strip" aria-label="Sessao autenticada">
-          <span className={bootState === "error" ? "status-dot status-dot--danger" : "status-dot"} />
-          <span>{bootState === "admin" ? adminData.settings?.tradeName ?? session?.user.name : statusMessage}</span>
+          <span
+            className={bootState === "error" ? "status-dot status-dot--danger" : "status-dot"}
+          />
+          <span>
+            {bootState === "admin"
+              ? (adminData.settings?.tradeName ?? session?.user.name)
+              : statusMessage}
+          </span>
         </div>
       </header>
 
@@ -328,15 +342,28 @@ function BootstrapPanel({
         </div>
         <label className="field">
           <span>Nome da oficina</span>
-          <input value={tenantName} onChange={(event) => setTenantName(event.target.value)} required />
+          <input
+            value={tenantName}
+            onChange={(event) => setTenantName(event.target.value)}
+            required
+          />
         </label>
         <label className="field">
           <span>Nome do administrador</span>
-          <input value={adminName} onChange={(event) => setAdminName(event.target.value)} required />
+          <input
+            value={adminName}
+            onChange={(event) => setAdminName(event.target.value)}
+            required
+          />
         </label>
         <label className="field">
           <span>Email do administrador</span>
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
         </label>
         <label className="field">
           <span>Senha inicial</span>
@@ -394,7 +421,12 @@ function LoginPanel({ onLogin }: { onLogin: (email: string, password: string) =>
       </div>
       <label className="field">
         <span>Email</span>
-        <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
       </label>
       <label className="field">
         <span>Senha</span>
@@ -439,7 +471,11 @@ function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) 
           <p className="eyebrow">Senha</p>
           <h2>Recuperacao de acesso</h2>
         </div>
-        <button type="button" className="button-secondary" onClick={() => setOpen((current) => !current)}>
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={() => setOpen((current) => !current)}
+        >
           Recuperar senha
         </button>
       </div>
@@ -448,14 +484,24 @@ function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) 
           <form onSubmit={handleRequest}>
             <label className="field">
               <span>Email cadastrado</span>
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
             </label>
             <button type="submit">Solicitar codigo</button>
           </form>
           <form onSubmit={handleComplete}>
             <label className="field">
               <span>Codigo de recuperacao</span>
-              <input value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" required />
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                required
+              />
             </label>
             <label className="field">
               <span>Nova senha</span>
@@ -487,7 +533,12 @@ function AdminShell(props: {
     name: string;
     permissionKeys: string[];
   }) => Promise<void>;
-  onCreateUser: (input: { email: string; name: string; password: string; roleIds?: string[] }) => Promise<void>;
+  onCreateUser: (input: {
+    email: string;
+    name: string;
+    password: string;
+    roleIds?: string[];
+  }) => Promise<void>;
   onLogout: () => Promise<void>;
   onRefresh: () => Promise<void>;
   onSelectView: (view: View) => void;
@@ -516,7 +567,9 @@ function AdminShell(props: {
               <button
                 key={item.view}
                 type="button"
-                className={props.activeView === item.view ? "nav-item nav-item--active" : "nav-item"}
+                className={
+                  props.activeView === item.view ? "nav-item nav-item--active" : "nav-item"
+                }
                 onClick={() => props.onSelectView(item.view)}
               >
                 {item.label}
@@ -524,7 +577,9 @@ function AdminShell(props: {
             ))}
             <button
               type="button"
-              className={props.activeView === "seguranca" ? "nav-item nav-item--active" : "nav-item"}
+              className={
+                props.activeView === "seguranca" ? "nav-item nav-item--active" : "nav-item"
+              }
               onClick={() => props.onSelectView("seguranca")}
             >
               Seguranca
@@ -533,7 +588,11 @@ function AdminShell(props: {
           <button type="button" className="button-secondary full-width" onClick={props.onRefresh}>
             Atualizar
           </button>
-          <button type="button" className="button-danger full-width" onClick={() => void props.onLogout()}>
+          <button
+            type="button"
+            className="button-danger full-width"
+            onClick={() => void props.onLogout()}
+          >
             Sair
           </button>
         </aside>
@@ -645,7 +704,12 @@ function UsersPanel({
   users,
 }: {
   blocked: string | undefined;
-  onCreateUser: (input: { email: string; name: string; password: string; roleIds?: string[] }) => Promise<void>;
+  onCreateUser: (input: {
+    email: string;
+    name: string;
+    password: string;
+    roleIds?: string[];
+  }) => Promise<void>;
   roles: Role[];
   users: AdminUser[];
 }) {
@@ -685,7 +749,11 @@ function UsersPanel({
         </label>
         <label className="field">
           <span>Senha temporaria</span>
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
         </label>
         <label className="field">
           <span>Papel inicial</span>
@@ -889,7 +957,9 @@ function PermissionsPanel({
         onSubmit={(event) => {
           event.preventDefault();
           if (userId && permissionKey) {
-            void onUpdateOverrides(userId, [{ effect, permissionKey, reason: "Ajuste administrativo" }]);
+            void onUpdateOverrides(userId, [
+              { effect, permissionKey, reason: "Ajuste administrativo" },
+            ]);
           }
         }}
       >
@@ -924,7 +994,10 @@ function PermissionsPanel({
         </label>
         <label className="field">
           <span>Efeito</span>
-          <select value={effect} onChange={(event) => setEffect(event.target.value as "allow" | "deny")}>
+          <select
+            value={effect}
+            onChange={(event) => setEffect(event.target.value as "allow" | "deny")}
+          >
             <option value="allow">Permitir</option>
             <option value="deny">Bloquear</option>
           </select>
@@ -955,7 +1028,9 @@ function SecurityPanel({
           void onChangePassword(currentPassword, newPassword)
             .then(() => setMessage("Senha alterada para esta conta."))
             .catch((error: unknown) =>
-              setMessage(error instanceof Error ? error.message : "Nao foi possivel alterar a senha."),
+              setMessage(
+                error instanceof Error ? error.message : "Nao foi possivel alterar a senha.",
+              ),
             );
         }}
       >
@@ -976,11 +1051,18 @@ function SecurityPanel({
         </label>
         <label className="field">
           <span>Nova senha autenticada</span>
-          <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+          />
         </label>
         <button type="submit">Alterar senha</button>
         {message ? (
-          <p className={message.startsWith("Senha") ? "callout" : "callout callout--danger"} role="status">
+          <p
+            className={message.startsWith("Senha") ? "callout" : "callout callout--danger"}
+            role="status"
+          >
             {message}
           </p>
         ) : null}
