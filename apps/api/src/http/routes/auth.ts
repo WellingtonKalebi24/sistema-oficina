@@ -1,20 +1,17 @@
 import rateLimit from "express-rate-limit";
-import { errors as joseErrors } from "jose";
 import { Router } from "express";
 import { z } from "zod";
 
-import {
-  createSession,
-  getActiveSessionById,
-  revokeSession,
-  rotateSessionRefreshToken,
-  type ActiveSessionRecord,
-} from "../../auth/sessions.js";
-import { signAccessToken, verifyAccessToken, type AccessTokenConfig } from "../../auth/tokens.js";
-import { verifyPassword } from "../../auth/passwords.js";
+import { completePasswordReset, requestPasswordReset } from "../../auth/passwordReset.js";
+import { hashPassword, verifyPassword } from "../../auth/passwords.js";
+import { createSession, revokeSession, rotateSessionRefreshToken } from "../../auth/sessions.js";
+import { signAccessToken, type AccessTokenConfig } from "../../auth/tokens.js";
+import { writeAuditLog } from "../../audit/auditService.js";
 import type { ApiEnv } from "../../config/env.js";
 import type { PrismaDatabase } from "../../db/prisma.js";
+import type { EmailSender } from "../../mail/emailSender.js";
 import { asyncHandler, unauthorized } from "../errors.js";
+import { resolveAuthContext } from "../middleware/requireAuth.js";
 
 const loginSchema = z.object({
   email: z.email().transform((value) => value.toLowerCase()),
@@ -25,7 +22,26 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(20).max(200),
 });
 
-export function createAuthRouter(prisma: PrismaDatabase, env: ApiEnv): Router {
+const resetRequestSchema = z.object({
+  email: z.email().transform((value) => value.toLowerCase()),
+});
+
+const resetCompleteSchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
+  email: z.email().transform((value) => value.toLowerCase()),
+  newPassword: z.string().min(8).max(200),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8).max(200),
+});
+
+export function createAuthRouter(
+  prisma: PrismaDatabase,
+  env: ApiEnv,
+  emailSender: EmailSender,
+): Router {
   const router = Router();
   const accessTokenConfig = toAccessTokenConfig(env);
   const authLimiter = rateLimit({
@@ -151,16 +167,115 @@ export function createAuthRouter(prisma: PrismaDatabase, env: ApiEnv): Router {
 
       await revokeSession(prisma, {
         reason: "logout",
-        sessionId: auth.session.id,
-        userId: auth.session.userId,
+        sessionId: auth.sessionId,
+        userId: auth.userId,
       });
       await writeAuthAudit(prisma, {
         action: "auth.logout",
         ipAddress: req.ip,
-        recordId: auth.session.id,
-        tenantId: auth.session.tenantId,
+        recordId: auth.sessionId,
+        tenantId: auth.tenantId,
         userAgent: req.get("user-agent"),
-        userId: auth.session.userId,
+        userId: auth.userId,
+      });
+
+      res.status(204).send();
+    }),
+  );
+
+  router.post(
+    "/auth/password-reset/request",
+    authLimiter,
+    asyncHandler(async (req, res) => {
+      const parsed = resetRequestSchema.safeParse(req.body);
+
+      if (parsed.success) {
+        await requestPasswordReset(prisma, {
+          email: parsed.data.email,
+          emailSender,
+          ipAddress: req.ip,
+          resetTtlMinutes: env.passwordResetTtlMinutes,
+          userAgent: req.get("user-agent"),
+        });
+      }
+
+      res.status(202).json({
+        data: {
+          status: "accepted",
+        },
+      });
+    }),
+  );
+
+  router.post(
+    "/auth/password-reset/complete",
+    authLimiter,
+    asyncHandler(async (req, res) => {
+      const parsed = resetCompleteSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        throw unauthorized();
+      }
+
+      const completed = await completePasswordReset(prisma, {
+        code: parsed.data.code,
+        email: parsed.data.email,
+        ipAddress: req.ip,
+        newPassword: parsed.data.newPassword,
+        userAgent: req.get("user-agent"),
+      });
+
+      if (!completed) {
+        throw unauthorized();
+      }
+
+      res.status(204).send();
+    }),
+  );
+
+  router.post(
+    "/auth/change-password",
+    asyncHandler(async (req, res) => {
+      const auth = await resolveAuthContext(prisma, accessTokenConfig, req.get("authorization"));
+      const parsed = changePasswordSchema.safeParse(req.body);
+
+      if (!auth || !parsed.success) {
+        throw unauthorized();
+      }
+
+      const user = await prisma.user.findFirst({
+        where: {
+          id: auth.userId,
+          status: "active",
+          tenantId: auth.tenantId,
+        },
+      });
+
+      if (!user || !(await verifyPassword(user.passwordHash, parsed.data.currentPassword))) {
+        throw unauthorized();
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          data: {
+            passwordHash: await hashPassword(parsed.data.newPassword),
+          },
+          where: {
+            id: user.id,
+          },
+        });
+        await writeAuditLog(tx as PrismaDatabase, {
+          action: "auth.password.changed",
+          entity: "user",
+          ipAddress: req.ip,
+          metadata: {
+            sessionId: auth.sessionId,
+          },
+          recordId: user.id,
+          tenantId: user.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: user.id,
+        });
       });
 
       res.status(204).send();
@@ -176,14 +291,16 @@ export function createAuthRouter(prisma: PrismaDatabase, env: ApiEnv): Router {
         throw unauthorized();
       }
 
+      const permissions = await getEffectivePermissionKeys(prisma, auth.userId);
+
       res.json({
         data: {
           session: {
             expiresAt: auth.session.expiresAt.toISOString(),
-            id: auth.session.id,
+            id: auth.sessionId,
           },
-          tenantId: auth.session.tenantId,
-          user: serializeUser(auth.session.user, auth.permissions),
+          tenantId: auth.tenantId,
+          user: serializeUser(auth.session.user, permissions),
         },
       });
     }),
@@ -224,42 +341,6 @@ async function authenticateUser(
   }
 
   return null;
-}
-
-async function resolveAuthContext(
-  prisma: PrismaDatabase,
-  config: AccessTokenConfig,
-  authorization: string | undefined,
-): Promise<{ permissions: string[]; session: ActiveSessionRecord } | null> {
-  const token = readBearerToken(authorization);
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const claims = await verifyAccessToken(config, token);
-    const session = await getActiveSessionById(prisma, {
-      sessionId: claims.sessionId,
-      tenantId: claims.tenantId,
-      userId: claims.userId,
-    });
-
-    if (!session) {
-      return null;
-    }
-
-    return {
-      permissions: await getEffectivePermissionKeys(prisma, session.userId),
-      session,
-    };
-  } catch (error) {
-    if (error instanceof joseErrors.JOSEError || error instanceof Error) {
-      return null;
-    }
-
-    throw error;
-  }
 }
 
 async function getEffectivePermissionKeys(
@@ -326,19 +407,17 @@ async function writeAuthAudit(
     userId: string;
   },
 ): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      action: input.action,
-      entity: "session",
-      ipAddress: input.ipAddress ?? null,
-      payload: {
-        sessionId: input.recordId,
-      },
-      recordId: input.recordId,
-      tenantId: input.tenantId,
-      userAgent: input.userAgent ?? null,
-      userId: input.userId,
+  await writeAuditLog(prisma, {
+    action: input.action,
+    entity: "session",
+    ipAddress: input.ipAddress,
+    metadata: {
+      sessionId: input.recordId,
     },
+    recordId: input.recordId,
+    tenantId: input.tenantId,
+    userAgent: input.userAgent,
+    userId: input.userId,
   });
 }
 
@@ -354,20 +433,6 @@ function serializeUser(
     status: user.status,
     tenantId: user.tenantId,
   };
-}
-
-function readBearerToken(authorization: string | undefined): string | null {
-  if (!authorization) {
-    return null;
-  }
-
-  const [scheme, token] = authorization.split(" ");
-
-  if (scheme !== "Bearer" || !token) {
-    return null;
-  }
-
-  return token;
 }
 
 function toAccessTokenConfig(env: ApiEnv): AccessTokenConfig {

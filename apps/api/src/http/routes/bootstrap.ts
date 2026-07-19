@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { hashPassword } from "../../auth/passwords.js";
+import { writeAuditLog } from "../../audit/auditService.js";
 import type { PrismaDatabase } from "../../db/prisma.js";
 import { asyncHandler, badRequest, HttpError } from "../errors.js";
 
@@ -176,21 +177,19 @@ async function createFirstAdmin(
       },
     });
 
-    await tx.auditLog.create({
-      data: {
+    await writeAuditLog(tx as PrismaDatabase, {
+      action: "auth.bootstrap.created",
+      entity: "tenant",
+      ipAddress: metadata.ipAddress,
+      metadata: {
         action: "auth.bootstrap.created",
-        entity: "tenant",
-        ipAddress: metadata.ipAddress ?? null,
-        payload: {
-          action: "auth.bootstrap.created",
-          adminEmail: admin.email,
-          tenantName: tenant.name,
-        },
-        recordId: tenant.id,
-        tenantId: tenant.id,
-        userAgent: metadata.userAgent ?? null,
-        userId: admin.id,
+        adminEmail: admin.email,
+        tenantName: tenant.name,
       },
+      recordId: tenant.id,
+      tenantId: tenant.id,
+      userAgent: metadata.userAgent,
+      userId: admin.id,
     });
 
     return {

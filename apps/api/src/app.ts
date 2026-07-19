@@ -12,9 +12,11 @@ import { createBootstrapRouter } from "./http/routes/bootstrap.js";
 import { createFoundationChecksRouter } from "./http/routes/foundationChecks.js";
 import { createHealthRouter } from "./http/routes/health.js";
 import { createLogger } from "./logging/logger.js";
+import { createEmailSender, type EmailSender } from "./mail/emailSender.js";
 
 export type CreateAppOptions = {
   enableTestRoutes?: boolean;
+  emailSender?: EmailSender;
   logger?: Logger;
   logStream?: DestinationStream;
   prisma?: PrismaDatabase;
@@ -24,6 +26,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   const env = readApiEnv();
   const logger = options.logger ?? createLogger(options.logStream);
   const prisma = options.prisma ?? getPrismaClient(env.databaseUrl);
+  const emailSender = options.emailSender ?? createEmailSender(env);
   const app = express();
 
   app.disable("x-powered-by");
@@ -42,7 +45,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
 
   app.use(createHealthRouter(prisma));
   app.use(createBootstrapRouter(prisma));
-  app.use(createAuthRouter(prisma, env));
+  app.use(createAuthRouter(prisma, env, emailSender));
   app.use(createFoundationChecksRouter(prisma));
 
   if (options.enableTestRoutes) {

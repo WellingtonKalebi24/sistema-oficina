@@ -197,9 +197,10 @@ describe("auth audit logs", () => {
       expect(serializedAudit).not.toContain(secret);
     }
 
-    expect(serializedAudit).not.toMatch(/password/i);
-    expect(serializedAudit).not.toMatch(/token/i);
-    expect(serializedAudit).not.toMatch(/code/i);
-    expect(serializedAudit).not.toMatch(/hash/i);
+    const serializedPayloads = JSON.stringify(auditRows.map((row) => row.payload));
+    expect(serializedPayloads).not.toMatch(/password/i);
+    expect(serializedPayloads).not.toMatch(/token/i);
+    expect(serializedPayloads).not.toMatch(/code/i);
+    expect(serializedPayloads).not.toMatch(/hash/i);
   });
 });
