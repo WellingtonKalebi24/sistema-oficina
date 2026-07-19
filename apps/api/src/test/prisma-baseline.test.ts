@@ -16,6 +16,37 @@ type FoundationCheckDelegate = {
   }): Promise<Array<{ label: string; status: string }>>;
 };
 
+const requiredIdentityModels = [
+  "Tenant",
+  "CompanySetting",
+  "User",
+  "Role",
+  "Permission",
+  "RolePermission",
+  "UserRole",
+  "UserPermissionOverride",
+  "Session",
+  "PasswordResetToken",
+  "AuditLog",
+] as const;
+
+const forbiddenBusinessOrCommunicationModels = [
+  "Customer",
+  "Vehicle",
+  "Product",
+  "Quote",
+  "WorkOrder",
+  "Payment",
+  "Notification",
+  "NotificationTemplate",
+  "NotificationPreference",
+  "MessageQueue",
+  "WhatsAppIntegration",
+  "EmailIntegration",
+  "SmsIntegration",
+  "CustomerCommunication",
+] as const;
+
 const connectionString =
   process.env.DATABASE_URL ??
   "postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public";
@@ -29,15 +60,28 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("Prisma foundation baseline", () => {
-  it("keeps the schema scoped to neutral foundation diagnostics", async () => {
+describe("Prisma schema baseline", () => {
+  it("contains the Phase 2 identity, tenant, session, permission and audit contract", async () => {
     const schema = await readFile(schemaPath, "utf8");
 
     expect(schema).toContain('provider = "postgresql"');
     expect(schema).toMatch(/model\s+FoundationCheck\b/);
-    expect(schema).not.toMatch(
-      /model\s+(Tenant|User|Customer|Vehicle|Product|Quote|WorkOrder|Payment|Notification|MessageQueue|WhatsAppIntegration|EmailIntegration)\b/,
-    );
+
+    for (const model of requiredIdentityModels) {
+      expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
+    }
+
+    expect(schema).toContain('key        String   @unique');
+    expect(schema).toContain('refreshTokenHash String');
+    expect(schema).toContain('revokedAt        DateTime?');
+  });
+
+  it("keeps out-of-scope business and communication entities out of the schema", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+
+    for (const model of forbiddenBusinessOrCommunicationModels) {
+      expect(schema).not.toMatch(new RegExp(`model\\s+${model}\\b`, "i"));
+    }
   });
 
   it("seeds one deterministic foundation row and is safe to rerun", async () => {
