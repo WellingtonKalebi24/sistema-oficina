@@ -157,4 +157,37 @@ describe("auth sessions", () => {
     expect(revokedRefreshResponse.status).toBe(401);
     expect(otherRefreshResponse.status).toBe(200);
   });
+
+  it("returns sanitized current-user data only for an active bearer session", async () => {
+    const fixture = await createTenantWithAdmin(prisma);
+    const current = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword, "current-device");
+
+    const missingAuthResponse = await fetch(`${baseUrl}/auth/me`);
+    const currentUserResponse = await fetch(`${baseUrl}/auth/me`, {
+      headers: {
+        authorization: `Bearer ${current.accessToken}`,
+      },
+    });
+    const body = (await currentUserResponse.json()) as {
+      data: {
+        session: { id: string };
+        tenantId: string;
+        user: { email: string; permissions: string[]; tenantId: string };
+      };
+    };
+
+    expect(missingAuthResponse.status).toBe(401);
+    expect(currentUserResponse.status).toBe(200);
+    expect(body.data).toMatchObject({
+      session: { id: current.sessionId },
+      tenantId: fixture.tenantId,
+      user: {
+        email: fixture.adminEmail,
+        tenantId: fixture.tenantId,
+      },
+    });
+    expect(body.data.user.permissions).toEqual(expect.arrayContaining(["users.createAdmin"]));
+    expect(JSON.stringify(body)).not.toContain("password");
+    expect(JSON.stringify(body)).not.toContain("refreshToken");
+  });
 });

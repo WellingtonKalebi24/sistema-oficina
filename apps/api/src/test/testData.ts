@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { hashPassword } from "../auth/passwords.js";
+
 export const DEFAULT_PERMISSION_KEYS = [
   "tenant.settings.read",
   "tenant.settings.update",
@@ -136,12 +138,13 @@ export async function createTenantWithAdmin(
   });
 
   const email = overrides.email ?? `admin-${suffix}@joia.test`;
+  const password = "senha-admin-123";
   const admin = await db.user.create({
     data: {
       tenantId: tenant.id,
       name: "Administrador JO.IA",
       email,
-      passwordHash: overrides.passwordHash ?? "test-password-hash",
+      passwordHash: overrides.passwordHash ?? (await hashPassword(password)),
       status: "active",
       roles: {
         create: {
@@ -155,7 +158,7 @@ export async function createTenantWithAdmin(
     tenantId: tenant.id,
     adminId: admin.id,
     adminEmail: email,
-    adminPassword: "senha-admin-123",
+    adminPassword: password,
     adminRoleId: role.id,
   };
 }
@@ -176,12 +179,13 @@ export async function createUserWithRole(
     },
   });
   const email = `user-${suffix}@joia.test`;
+  const password = "senha-user-123";
   const user = await db.user.create({
     data: {
       tenantId,
       name: "Operador JO.IA",
       email,
-      passwordHash: "test-password-hash",
+      passwordHash: await hashPassword(password),
       status: "active",
       roles: {
         create: {
@@ -195,7 +199,7 @@ export async function createUserWithRole(
     userId: user.id,
     roleId: role.id,
     email,
-    password: "senha-user-123",
+    password,
   };
 }
 

@@ -7,6 +7,8 @@ import type { DestinationStream, Logger } from "pino";
 import { readApiEnv } from "./config/env.js";
 import { getPrismaClient, type PrismaDatabase } from "./db/prisma.js";
 import { createErrorHandler } from "./http/errors.js";
+import { createAuthRouter } from "./http/routes/auth.js";
+import { createBootstrapRouter } from "./http/routes/bootstrap.js";
 import { createFoundationChecksRouter } from "./http/routes/foundationChecks.js";
 import { createHealthRouter } from "./http/routes/health.js";
 import { createLogger } from "./logging/logger.js";
@@ -39,6 +41,8 @@ export function createApp(options: CreateAppOptions = {}): Express {
   );
 
   app.use(createHealthRouter(prisma));
+  app.use(createBootstrapRouter(prisma));
+  app.use(createAuthRouter(prisma, env));
   app.use(createFoundationChecksRouter(prisma));
 
   if (options.enableTestRoutes) {

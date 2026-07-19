@@ -27,10 +27,10 @@ export type ActiveSessionRecord = {
 export async function createSession(
   prisma: PrismaDatabase,
   input: {
-    ipAddress?: string;
+    ipAddress: string | undefined;
     refreshTokenTtlDays: number;
     tenantId: string;
-    userAgent?: string;
+    userAgent: string | undefined;
     userId: string;
   },
 ): Promise<SessionTokenPair> {
@@ -59,38 +59,49 @@ export async function rotateSessionRefreshToken(
     refreshTokenTtlDays: number;
   },
 ): Promise<{ refreshToken: string; session: ActiveSessionRecord } | null> {
-  const now = new Date();
-  const existing = await prisma.session.findUnique({
-    include: {
-      user: true,
-    },
-    where: {
-      refreshTokenHash: hashRefreshToken(input.refreshToken),
-    },
+  const nextRefreshToken = createRefreshToken();
+  const session = await prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const existing = await tx.session.findUnique({
+      include: {
+        user: true,
+      },
+      where: {
+        refreshTokenHash: hashRefreshToken(input.refreshToken),
+      },
+    });
+
+    if (
+      !existing ||
+      existing.revokedAt ||
+      existing.expiresAt <= now ||
+      existing.user.status !== "active"
+    ) {
+      return null;
+    }
+
+    return tx.session.update({
+      data: {
+        expiresAt: daysFromNow(input.refreshTokenTtlDays),
+        lastUsedAt: now,
+        refreshTokenHash: hashRefreshToken(nextRefreshToken),
+      },
+      include: {
+        user: true,
+      },
+      where: {
+        id: existing.id,
+      },
+    });
   });
 
-  if (!existing || existing.revokedAt || existing.expiresAt <= now || existing.user.status !== "active") {
+  if (!session) {
     return null;
   }
 
-  const nextRefreshToken = createRefreshToken();
-  const rotated = await prisma.session.update({
-    data: {
-      expiresAt: daysFromNow(input.refreshTokenTtlDays),
-      lastUsedAt: now,
-      refreshTokenHash: hashRefreshToken(nextRefreshToken),
-    },
-    include: {
-      user: true,
-    },
-    where: {
-      id: existing.id,
-    },
-  });
-
   return {
     refreshToken: nextRefreshToken,
-    session: rotated,
+    session,
   };
 }
 
