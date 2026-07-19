@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
+import { ALL_PERMISSIONS, PERMISSION_DETAILS } from "../apps/api/src/permissions/permissions.js";
+
 type FoundationCheckWriter = {
   foundationCheck: {
     upsert(args: {
@@ -26,56 +28,11 @@ export const FOUNDATION_SEED = {
 } as const;
 
 export const IDENTITY_PERMISSION_SEED = [
-  {
-    key: "tenant.settings.read",
-    name: "Ler configuracoes da oficina",
-    description: "Permite consultar configuracoes do tenant autenticado.",
-  },
-  {
-    key: "tenant.settings.update",
-    name: "Atualizar configuracoes da oficina",
-    description: "Permite alterar configuracoes administrativas do tenant autenticado.",
-  },
-  {
-    key: "users.read",
-    name: "Listar usuarios",
-    description: "Permite consultar usuarios do tenant autenticado.",
-  },
-  {
-    key: "users.create",
-    name: "Criar usuarios",
-    description: "Permite criar usuarios comuns no tenant autenticado.",
-  },
-  {
-    key: "users.update",
-    name: "Atualizar usuarios",
-    description: "Permite editar dados e papeis de usuarios do tenant autenticado.",
-  },
-  {
-    key: "users.deactivate",
-    name: "Desativar usuarios",
-    description: "Permite desativar usuarios do tenant autenticado.",
-  },
-  {
-    key: "users.createAdmin",
-    name: "Criar administradores",
-    description: "Permite criar ou conceder permissoes administrativas.",
-  },
-  {
-    key: "roles.manage",
-    name: "Gerenciar papeis",
-    description: "Permite criar e ajustar papeis do tenant autenticado.",
-  },
-  {
-    key: "permissions.manage",
-    name: "Gerenciar permissoes",
-    description: "Permite conceder permissoes e overrides especificos por usuario.",
-  },
-  {
-    key: "audit.read",
-    name: "Ler auditoria",
-    description: "Permite consultar eventos de auditoria do tenant autenticado.",
-  },
+  ...ALL_PERMISSIONS.map((permissionKey) => ({
+    description: PERMISSION_DETAILS[permissionKey].description,
+    key: permissionKey,
+    name: PERMISSION_DETAILS[permissionKey].name,
+  })),
 ] as const;
 
 export const DEFAULT_ROLE_TEMPLATES = [

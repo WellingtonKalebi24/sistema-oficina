@@ -4,20 +4,8 @@ import { z } from "zod";
 import { hashPassword } from "../../auth/passwords.js";
 import { writeAuditLog } from "../../audit/auditService.js";
 import type { PrismaDatabase } from "../../db/prisma.js";
+import { ALL_PERMISSIONS, PERMISSION_DETAILS } from "../../permissions/permissions.js";
 import { asyncHandler, badRequest, HttpError } from "../errors.js";
-
-const DEFAULT_PERMISSION_KEYS = [
-  "tenant.settings.read",
-  "tenant.settings.update",
-  "users.read",
-  "users.create",
-  "users.update",
-  "users.deactivate",
-  "users.createAdmin",
-  "roles.manage",
-  "permissions.manage",
-  "audit.read",
-] as const;
 
 const bootstrapSchema = z.object({
   admin: z.object({
@@ -111,15 +99,16 @@ async function createFirstAdmin(
       throw new HttpError(409, "Bootstrap has already been completed.");
     }
 
-    for (const permissionKey of DEFAULT_PERMISSION_KEYS) {
+    for (const permissionKey of ALL_PERMISSIONS) {
       await tx.permission.upsert({
         create: {
-          description: `Permissao ${permissionKey}`,
+          description: PERMISSION_DETAILS[permissionKey].description,
           key: permissionKey,
-          name: permissionKey,
+          name: PERMISSION_DETAILS[permissionKey].name,
         },
         update: {
-          name: permissionKey,
+          description: PERMISSION_DETAILS[permissionKey].description,
+          name: PERMISSION_DETAILS[permissionKey].name,
         },
         where: {
           key: permissionKey,
@@ -151,7 +140,7 @@ async function createFirstAdmin(
         key: "admin",
         name: "Administrador",
         permissions: {
-          create: DEFAULT_PERMISSION_KEYS.map((permissionKey) => ({
+          create: ALL_PERMISSIONS.map((permissionKey) => ({
             permission: {
               connect: {
                 key: permissionKey,
@@ -196,7 +185,7 @@ async function createFirstAdmin(
       admin: {
         email: admin.email,
         id: admin.id,
-        permissions: [...DEFAULT_PERMISSION_KEYS],
+        permissions: [...ALL_PERMISSIONS],
         tenantId: admin.tenantId,
       },
       companySettings: {

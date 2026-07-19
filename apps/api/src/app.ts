@@ -7,10 +7,14 @@ import type { DestinationStream, Logger } from "pino";
 import { readApiEnv } from "./config/env.js";
 import { getPrismaClient, type PrismaDatabase } from "./db/prisma.js";
 import { createErrorHandler } from "./http/errors.js";
+import { requireAuth } from "./http/middleware/requireAuth.js";
 import { createAuthRouter } from "./http/routes/auth.js";
 import { createBootstrapRouter } from "./http/routes/bootstrap.js";
 import { createFoundationChecksRouter } from "./http/routes/foundationChecks.js";
 import { createHealthRouter } from "./http/routes/health.js";
+import { createRolesRouter } from "./http/routes/roles.js";
+import { createTenantSettingsRouter } from "./http/routes/tenantSettings.js";
+import { createUsersRouter } from "./http/routes/users.js";
 import { createLogger } from "./logging/logger.js";
 import { createEmailSender, type EmailSender } from "./mail/emailSender.js";
 
@@ -53,6 +57,17 @@ export function createApp(options: CreateAppOptions = {}): Express {
       throw new Error("forced failure with secret DATABASE_URL");
     });
   }
+
+  app.use(
+    requireAuth(prisma, {
+      audience: env.jwtAudience,
+      issuer: env.jwtIssuer,
+      secret: env.jwtAccessSecret,
+    }),
+  );
+  app.use(createTenantSettingsRouter(prisma));
+  app.use(createUsersRouter(prisma));
+  app.use(createRolesRouter(prisma));
 
   app.use(createErrorHandler(logger));
 

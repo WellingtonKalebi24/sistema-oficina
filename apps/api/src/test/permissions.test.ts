@@ -168,7 +168,11 @@ describe("tenant admin permissions", () => {
     expect(assignRoleResponse.status).toBe(200);
     expect(allowOverrideResponse.status).toBe(200);
 
-    const userSession = await loginAs({ baseUrl }, "mecanico@permissoes.test", "Senha-mecanico-123");
+    const userSession = await loginAs(
+      { baseUrl },
+      "mecanico@permissoes.test",
+      "Senha-mecanico-123",
+    );
     const meResponse = await fetch(`${baseUrl}/auth/me`, {
       headers: {
         authorization: `Bearer ${userSession.accessToken}`,

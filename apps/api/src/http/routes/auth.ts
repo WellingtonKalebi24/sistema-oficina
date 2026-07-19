@@ -10,6 +10,7 @@ import { writeAuditLog } from "../../audit/auditService.js";
 import type { ApiEnv } from "../../config/env.js";
 import type { PrismaDatabase } from "../../db/prisma.js";
 import type { EmailSender } from "../../mail/emailSender.js";
+import { resolveEffectivePermissions } from "../../permissions/permissionService.js";
 import { asyncHandler, unauthorized } from "../errors.js";
 import { resolveAuthContext } from "../middleware/requireAuth.js";
 
@@ -347,53 +348,9 @@ async function getEffectivePermissionKeys(
   prisma: PrismaDatabase,
   userId: string,
 ): Promise<string[]> {
-  const user = await prisma.user.findUnique({
-    include: {
-      permissionOverrides: {
-        include: {
-          permission: true,
-        },
-      },
-      roles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    where: {
-      id: userId,
-    },
-  });
+  const effective = await resolveEffectivePermissions(prisma, userId);
 
-  if (!user) {
-    return [];
-  }
-
-  const permissions = new Set<string>();
-
-  for (const userRole of user.roles) {
-    for (const rolePermission of userRole.role.permissions) {
-      permissions.add(rolePermission.permission.key);
-    }
-  }
-
-  for (const override of user.permissionOverrides) {
-    if (override.effect === "deny") {
-      permissions.delete(override.permission.key);
-    } else if (override.effect === "allow") {
-      permissions.add(override.permission.key);
-    }
-  }
-
-  return [...permissions].sort();
+  return effective.permissions;
 }
 
 async function writeAuthAudit(

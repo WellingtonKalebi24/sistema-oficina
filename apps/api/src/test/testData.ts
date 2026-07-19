@@ -1,19 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { hashPassword } from "../auth/passwords.js";
+import { ALL_PERMISSIONS } from "../permissions/permissions.js";
 
-export const DEFAULT_PERMISSION_KEYS = [
-  "tenant.settings.read",
-  "tenant.settings.update",
-  "users.read",
-  "users.create",
-  "users.update",
-  "users.deactivate",
-  "users.createAdmin",
-  "roles.manage",
-  "permissions.manage",
-  "audit.read",
-] as const;
+export const DEFAULT_PERMISSION_KEYS = ALL_PERMISSIONS;
 
 type DeleteManyDelegate = {
   deleteMany(): Promise<unknown>;
