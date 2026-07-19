@@ -15,6 +15,14 @@ export function badRequest(message: string): HttpError {
   return new HttpError(400, message);
 }
 
+export function unauthorized(message = "Authentication failed."): HttpError {
+  return new HttpError(401, message);
+}
+
+export function forbidden(message = "Permission denied."): HttpError {
+  return new HttpError(403, message);
+}
+
 export function asyncHandler(
   handler: (req: Request, res: Response, next: NextFunction) => Promise<void>,
 ) {
