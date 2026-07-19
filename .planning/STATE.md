@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-07-19T12:15:12.909Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-07-19T12:30:34.105Z"
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State: JO.IA
@@ -89,8 +89,8 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 
 ## Session
 
-**Last session:** 2026-07-19T12:14:51.401Z
-**Stopped at:** Completed 02-04-PLAN.md
+**Last session:** 2026-07-19T12:30:34.047Z
+**Stopped at:** Completed 02-05-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -104,6 +104,7 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 | Phase 02 P02 | 35min | 2 tasks | 10 files |
 | Phase 02 P03 | 12min | 2 tasks | 12 files |
 | Phase 02 P04 | 9min | 2 tasks | 13 files |
+| Phase 02 P05 | 12min | 2 tasks | 16 files |
 
 ## Decisions
 
@@ -124,3 +125,6 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 - [Phase 02]: Kept EmailSender narrowly scoped to authentication password recovery; no customer notification, communication module, queue or delivery/read tracking was introduced. — Preserves the project communication prohibition while allowing the locked auth recovery exception.
 - [Phase 02]: Centralized auth audit redaction in writeAuditLog by dropping metadata keys shaped like passwords, tokens, reset codes, hashes or secrets before persistence. — Makes D-13 audit secrecy enforceable from auth routes and future protected routes.
 - [Phase 02]: Added a local narrow Nodemailer declaration instead of installing another package during execution, avoiding an unplanned package-legitimacy gate. — Typecheck needed declarations, but adding an unplanned package would exceed 02-04 scope.
+- [Phase 02]: Plan 05 centralized permission keys in apps/api/src/permissions/permissions.ts for seed, bootstrap, auth serialization and admin route validation. — Prevents permission key drift across backend enforcement and fixtures.
+- [Phase 02]: Plan 05 mounted protected admin APIs after existing public health/bootstrap/auth/foundation/test routes. — Preserves existing diagnostics while enforcing backend authorization on admin routes.
+- [Phase 02]: Plan 05 requires users.createAdmin for admin-level role permission grants and allow overrides. — Implements D-03 and prevents privilege escalation by users who can create only regular users.
