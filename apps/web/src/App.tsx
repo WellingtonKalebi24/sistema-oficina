@@ -390,15 +390,23 @@ function AuthWorkspace({
   onLogin: (email: string, password: string) => Promise<void>;
   setStatusMessage: (message: string) => void;
 }) {
+  const [showRecovery, setShowRecovery] = useState(false);
+
   return (
-    <section className="workspace-grid workspace-grid--auth" aria-label="Acesso operacional">
-      <LoginPanel onLogin={onLogin} />
-      <ResetPanel setStatusMessage={setStatusMessage} />
+    <section className="auth-flow" aria-label="Acesso operacional">
+      <LoginPanel onLogin={onLogin} onRequestAccess={() => setShowRecovery(true)} />
+      {showRecovery ? <ResetPanel setStatusMessage={setStatusMessage} /> : null}
     </section>
   );
 }
 
-function LoginPanel({ onLogin }: { onLogin: (email: string, password: string) => Promise<void> }) {
+function LoginPanel({
+  onLogin,
+  onRequestAccess,
+}: {
+  onLogin: (email: string, password: string) => Promise<void>;
+  onRequestAccess: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -440,12 +448,14 @@ function LoginPanel({ onLogin }: { onLogin: (email: string, password: string) =>
       <button type="submit" disabled={saving}>
         {saving ? "Entrando..." : "Entrar"}
       </button>
+      <button type="button" className="link-button" onClick={onRequestAccess}>
+        Recuperar acesso
+      </button>
     </form>
   );
 }
 
 function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) => void }) {
-  const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -471,53 +481,43 @@ function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) 
           <p className="eyebrow">Senha</p>
           <h2>Recuperacao de acesso</h2>
         </div>
-        <button
-          type="button"
-          className="button-secondary"
-          onClick={() => setOpen((current) => !current)}
-        >
-          Recuperar senha
-        </button>
       </div>
-      {open ? (
-        <div className="stacked-forms">
-          <form onSubmit={handleRequest}>
-            <label className="field">
-              <span>Email cadastrado</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-            <button type="submit">Solicitar codigo</button>
-          </form>
-          <form onSubmit={handleComplete}>
-            <label className="field">
-              <span>Codigo de recuperacao</span>
-              <input
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                inputMode="numeric"
-                required
-              />
-            </label>
-            <label className="field">
-              <span>Nova senha</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                required
-              />
-            </label>
-            <button type="submit">Concluir redefinicao</button>
-          </form>
-        </div>
-      ) : (
-        <p className="helper-text">Use apenas para contas ja cadastradas na oficina.</p>
-      )}
+      <p className="helper-text">Use apenas para contas ja cadastradas na oficina.</p>
+      <div className="stacked-forms">
+        <form onSubmit={handleRequest}>
+          <label className="field">
+            <span>Email cadastrado</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
+          <button type="submit">Solicitar codigo</button>
+        </form>
+        <form onSubmit={handleComplete}>
+          <label className="field">
+            <span>Codigo de recuperacao</span>
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              inputMode="numeric"
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Nova senha</span>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+            />
+          </label>
+          <button type="submit">Concluir redefinicao</button>
+        </form>
+      </div>
     </section>
   );
 }

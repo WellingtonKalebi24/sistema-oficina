@@ -347,6 +347,31 @@ th {
   grid-template-columns: minmax(300px, 440px) minmax(280px, 1fr);
 }
 
+.auth-flow {
+  display: grid;
+  gap: var(--space-3);
+  width: min(440px, 100%);
+  margin-top: var(--space-4);
+}
+
+.link-button {
+  justify-self: start;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
+  background: transparent;
+  color: var(--color-primary-strong);
+}
+
 .admin-layout {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);

@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
 stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-07-19T12:47:49.603Z"
+last_updated: "2026-07-20T13:51:18.761Z"
 progress:
   total_phases: 12
   completed_phases: 2
@@ -16,7 +16,7 @@ progress:
 
 # Project State: JO.IA
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-20
 **Status:** Ready to execute
 **Current phase:** Phase 2 - Autenticação, Tenant e Permissões
 
@@ -71,6 +71,12 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260720-f2r | Mover recuperacao de acesso para link abaixo do login | 2026-07-20 | c5848e8 | [260720-f2r-mover-recuperacao-de-acesso-para-link-ab](./quick/260720-f2r-mover-recuperacao-de-acesso-para-link-ab/) |
+
 ## Tests Executed
 
 - 02-02: `npm run db:migrate` passed.
@@ -81,6 +87,7 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 - 02-03: `npm run verify` passed.
 - 02-04: `npm run test -w apps/api -- auth-sessions audit && npm run typecheck -w apps/api` passed.
 - 02-04: `npm run verify` passed.
+- quick 260720-f2r: `npm run test -w apps/web -- auth-ui`, `npm run typecheck -w apps/web`, `npm run lint -w apps/web` and targeted `format:check` passed.
 
 ## Known Issues
 

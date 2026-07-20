@@ -174,7 +174,9 @@ describe("JO.IA authenticated admin UI", () => {
 
     render(<App />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Recuperar senha" }));
+    expect(screen.queryByLabelText("Recuperacao de senha")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Recuperar acesso" }));
+    expect(await screen.findByLabelText("Recuperacao de senha")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Email cadastrado"), {
       target: { value: "admin@joia.local" },
     });
