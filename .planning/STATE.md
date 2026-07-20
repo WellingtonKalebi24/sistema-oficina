@@ -75,7 +75,7 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 260720-f2r | Mover recuperacao de acesso para link abaixo do login | 2026-07-20 | c5848e8 | [260720-f2r-mover-recuperacao-de-acesso-para-link-ab](./quick/260720-f2r-mover-recuperacao-de-acesso-para-link-ab/) |
+| 260720-f2r | Mover recuperacao de acesso para link abaixo do login | 2026-07-20 | df375cb | [260720-f2r-mover-recuperacao-de-acesso-para-link-ab](./quick/260720-f2r-mover-recuperacao-de-acesso-para-link-ab/) |
 
 ## Tests Executed
 
