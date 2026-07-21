@@ -4,7 +4,11 @@ import { writeAuditLog } from "../audit/auditService.js";
 import type { PrismaDatabase } from "../db/prisma.js";
 import { badRequest, HttpError } from "../http/errors.js";
 import { requireTenantCustomer } from "../tenancy/tenantScope.js";
-import type { CreateCustomerInput, CustomerFilters, UpdateCustomerInput } from "./customerSchemas.js";
+import type {
+  CreateCustomerInput,
+  CustomerFilters,
+  UpdateCustomerInput,
+} from "./customerSchemas.js";
 
 type ActorContext = {
   ipAddress?: string | undefined;
@@ -34,9 +38,7 @@ export async function listCustomers(
             OR: [
               { name: { contains: search, mode: "insensitive" } },
               ...(phoneSearch ? [{ phoneNormalized: { contains: phoneSearch } }] : []),
-              ...(normalizedSearch
-                ? [{ documentNormalized: { contains: normalizedSearch } }]
-                : []),
+              ...(normalizedSearch ? [{ documentNormalized: { contains: normalizedSearch } }] : []),
             ],
           }
         : {}),
@@ -113,7 +115,12 @@ export async function updateCustomer(
   await requireTenantCustomer(prisma, actor.tenantId, customerId);
 
   if (Object.hasOwn(input, "documentNormalized")) {
-    await ensureUniqueCustomerDocument(prisma, actor.tenantId, input.documentNormalized ?? null, customerId);
+    await ensureUniqueCustomerDocument(
+      prisma,
+      actor.tenantId,
+      input.documentNormalized ?? null,
+      customerId,
+    );
   }
 
   const updateData: Prisma.CustomerUncheckedUpdateInput = {};

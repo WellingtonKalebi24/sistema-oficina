@@ -82,12 +82,16 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
         throw badRequest("Invalid vehicle data.");
       }
 
-      const vehicle = await createVehicle(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, parsed.data);
+      const vehicle = await createVehicle(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        parsed.data,
+      );
 
       res.status(201).json({
         data: serializeVehicle(vehicle),
@@ -107,12 +111,17 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
       }
 
       const vehicleId = readPathId(req.params.vehicleId);
-      const vehicle = await updateVehicle(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, vehicleId, parsed.data);
+      const vehicle = await updateVehicle(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        vehicleId,
+        parsed.data,
+      );
 
       res.json({
         data: serializeVehicle(vehicle),
@@ -127,12 +136,16 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
       const auth = (req as AuthenticatedRequest).auth;
       const vehicleId = readPathId(req.params.vehicleId);
 
-      await softDeleteVehicle(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, vehicleId);
+      await softDeleteVehicle(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        vehicleId,
+      );
 
       res.status(204).send();
     }),

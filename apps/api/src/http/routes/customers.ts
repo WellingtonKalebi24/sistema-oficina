@@ -83,12 +83,16 @@ export function createCustomersRouter(prisma: PrismaDatabase): Router {
         throw badRequest("Invalid customer data.");
       }
 
-      const customer = await createCustomer(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, parsed.data);
+      const customer = await createCustomer(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        parsed.data,
+      );
 
       res.status(201).json({
         data: serializeCustomer(customer),
@@ -108,12 +112,17 @@ export function createCustomersRouter(prisma: PrismaDatabase): Router {
       }
 
       const customerId = readPathId(req.params.customerId);
-      const customer = await updateCustomer(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, customerId, parsed.data);
+      const customer = await updateCustomer(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        customerId,
+        parsed.data,
+      );
 
       res.json({
         data: serializeCustomer(customer),
@@ -128,12 +137,16 @@ export function createCustomersRouter(prisma: PrismaDatabase): Router {
       const auth = (req as AuthenticatedRequest).auth;
       const customerId = readPathId(req.params.customerId);
 
-      await softDeleteCustomer(prisma, {
-        ipAddress: req.ip,
-        tenantId: auth.tenantId,
-        userAgent: req.get("user-agent"),
-        userId: auth.userId,
-      }, customerId);
+      await softDeleteCustomer(
+        prisma,
+        {
+          ipAddress: req.ip,
+          tenantId: auth.tenantId,
+          userAgent: req.get("user-agent"),
+          userId: auth.userId,
+        },
+        customerId,
+      );
 
       res.status(204).send();
     }),
