@@ -111,6 +111,16 @@ Use the Phase 2 web flow:
 
 The frontend may hide menu entries based on effective permissions, but backend authorization remains authoritative. A backend `403` appears in the UI as `Acesso bloqueado pela permissao do servidor.`
 
+Use the Phase 3 customer and vehicle flow after login:
+
+1. Confirm the authenticated menu shows `Clientes` for users with `customers.read` and `Veiculos` for users with `vehicles.read`.
+2. Open `Clientes`, create a customer with name, optional phone and optional CPF/CNPJ. CNPJ may contain letters; active duplicate documents are rejected by the backend, while shared phone numbers remain allowed.
+3. Search customers by name, phone or document and confirm the active table updates.
+4. Edit the customer, open its basic history rows, then use the destructive confirmation to soft-delete only when intended.
+5. Open `Veiculos`, select the current customer, create a vehicle with plate and optional chassis/VIN, brand, model, year, color and mileage.
+6. Search vehicles by plate or related customer, edit the current customer link, inspect history/current link context and confirm active duplicate plate or chassis/VIN errors are displayed.
+7. Verify there are no customer communication controls in these screens; the system does not send customer messages or register delivery/read state.
+
 Useful local API checks:
 
 ```powershell
@@ -140,6 +150,21 @@ docker compose up --build -d db api web
 docker compose ps
 curl.exe http://localhost:3001/health
 curl.exe http://localhost:3001/bootstrap/status
+curl.exe -I http://localhost:5173
+```
+
+Phase 3 final validation:
+
+```powershell
+$env:DATABASE_URL="postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public"
+npm run db:migrate
+npm run test -w apps/api -- customer-vehicles
+npm run test -w apps/web -- customer-vehicle-ui App
+npm run verify
+npm run docker:config
+docker compose up --build -d db api web
+docker compose ps
+curl.exe http://localhost:3001/health
 curl.exe -I http://localhost:5173
 ```
 
