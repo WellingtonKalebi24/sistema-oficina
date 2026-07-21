@@ -30,9 +30,13 @@ const requiredIdentityModels = [
   "AuditLog",
 ] as const;
 
-const forbiddenBusinessOrCommunicationModels = [
+const requiredCustomerVehicleModels = [
   "Customer",
   "Vehicle",
+  "CustomerVehicleHistoryEvent",
+] as const;
+
+const forbiddenBusinessOrCommunicationModels = [
   "Product",
   "Quote",
   "WorkOrder",
@@ -74,6 +78,20 @@ describe("Prisma schema baseline", () => {
     expect(schema).toMatch(/key\s+String\s+@unique/);
     expect(schema).toMatch(/refreshTokenHash\s+String\s+@map\("refresh_token_hash"\)/);
     expect(schema).toMatch(/revokedAt\s+DateTime\?\s+@map\("revoked_at"\)/);
+  });
+
+  it("contains the Phase 3 customer and vehicle data contract", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+
+    for (const model of requiredCustomerVehicleModels) {
+      expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
+    }
+
+    expect(schema).toMatch(/documentNormalized\s+String\?\s+@map\("document_normalized"\)/);
+    expect(schema).toMatch(/plateNormalized\s+String\?\s+@map\("plate_normalized"\)/);
+    expect(schema).toMatch(/vinNormalized\s+String\?\s+@map\("vin_normalized"\)/);
+    expect(schema).toMatch(/deletedAt\s+DateTime\?\s+@map\("deleted_at"\)/);
+    expect(schema).toMatch(/deletedByUserId\s+String\?\s+@map\("deleted_by_user_id"\)/);
   });
 
   it("keeps out-of-scope business and communication entities out of the schema", async () => {
