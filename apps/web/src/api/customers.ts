@@ -51,10 +51,7 @@ export async function listCustomers(
   return request(`/customers${query.size ? `?${query.toString()}` : ""}`, accessToken);
 }
 
-export async function createCustomer(
-  accessToken: string,
-  input: CustomerInput,
-): Promise<Customer> {
+export async function createCustomer(accessToken: string, input: CustomerInput): Promise<Customer> {
   return request("/customers", accessToken, {
     body: compactCustomerInput(input),
     method: "POST",

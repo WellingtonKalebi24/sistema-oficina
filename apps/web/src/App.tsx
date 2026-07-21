@@ -59,7 +59,8 @@ import { Input } from "./components/ui/input.js";
 import { Label } from "./components/ui/label.js";
 import { formatDateTime } from "./design/formatters.js";
 
-type View = "clientes" | "oficina" | "papeis" | "permissoes" | "seguranca" | "usuarios" | "veiculos";
+type View =
+  "clientes" | "oficina" | "papeis" | "permissoes" | "seguranca" | "usuarios" | "veiculos";
 type BootState = "loading" | "bootstrap" | "login" | "admin" | "error";
 
 type AdminData = {
@@ -387,7 +388,9 @@ function AuthAdminApp() {
             const customer = await updateCustomer(session.accessToken, customerId, input);
             setAdminData((current) => ({
               ...current,
-              customers: current.customers.map((item) => (item.id === customer.id ? customer : item)),
+              customers: current.customers.map((item) =>
+                item.id === customer.id ? customer : item,
+              ),
             }));
             setStatusMessage("Cliente atualizado pelo backend.");
           }}
@@ -1702,9 +1705,7 @@ function VehiclesPanel({
             <input
               inputMode="numeric"
               value={form.year}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, year: event.target.value }))
-              }
+              onChange={(event) => setForm((current) => ({ ...current, year: event.target.value }))}
             />
           </label>
           <label className="field">
@@ -1748,9 +1749,7 @@ function VehiclesPanel({
             {error}
           </p>
         ) : null}
-        <p className="helper-text">
-          Placa e chassi ativos duplicados sao bloqueados pelo backend.
-        </p>
+        <p className="helper-text">Placa e chassi ativos duplicados sao bloqueados pelo backend.</p>
       </form>
       <section className="panel">
         <div className="panel-heading">
@@ -1796,7 +1795,9 @@ function VehiclesPanel({
                   <tr key={vehicle.id}>
                     <td>{vehicle.plate}</td>
                     <td>{vehicle.customer?.name ?? "Sem cliente"}</td>
-                    <td>{[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" ")}</td>
+                    <td>
+                      {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" ")}
+                    </td>
                     <td>{vehicle.vin ?? "Sem chassi"}</td>
                     <td>
                       <div className="table-actions">
