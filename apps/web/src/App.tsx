@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BrowserRouter, useNavigate } from "react-router";
+import { BrowserRouter, useLocation, useNavigate } from "react-router";
 
 import {
   type AdminUser,
@@ -33,6 +33,10 @@ import {
   storeSession,
   type StoredSession,
 } from "./auth/session.js";
+import { Button } from "./components/ui/button.js";
+import { Card, CardContent, CardHeader } from "./components/ui/card.js";
+import { Input } from "./components/ui/input.js";
+import { Label } from "./components/ui/label.js";
 import { formatDateTime } from "./design/formatters.js";
 
 type View = "oficina" | "usuarios" | "papeis" | "permissoes" | "seguranca";
@@ -63,6 +67,7 @@ export function App() {
 }
 
 function AuthAdminApp() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [bootState, setBootState] = useState<BootState>("loading");
   const [session, setSession] = useState<StoredSession | null>(() => readStoredSession());
@@ -70,6 +75,7 @@ function AuthAdminApp() {
   const [adminData, setAdminData] = useState<AdminData>(initialAdminData);
   const [blocked, setBlocked] = useState<BlockedState>({});
   const [statusMessage, setStatusMessage] = useState("Sincronizando estado de acesso.");
+  const isForgotPasswordRoute = location.pathname === "/forgot-password";
 
   useEffect(() => {
     let active = true;
@@ -77,6 +83,7 @@ function AuthAdminApp() {
     async function boot() {
       try {
         const status = await getBootstrapStatus();
+        const startsOnForgotPasswordRoute = window.location.pathname === "/forgot-password";
 
         if (!active) {
           return;
@@ -99,8 +106,14 @@ function AuthAdminApp() {
           await loadAdminData(stored);
         } else {
           setBootState("login");
-          setStatusMessage("Entre com uma conta ativa da oficina.");
-          navigate("/login", { replace: true });
+          setStatusMessage(
+            startsOnForgotPasswordRoute
+              ? "Recupere o acesso usando o email cadastrado."
+              : "Entre com uma conta ativa da oficina.",
+          );
+          if (!startsOnForgotPasswordRoute) {
+            navigate("/login", { replace: true });
+          }
         }
       } catch {
         if (!active) {
@@ -232,7 +245,13 @@ function AuthAdminApp() {
         <BootstrapPanel onDone={() => setBootState("login")} setStatusMessage={setStatusMessage} />
       ) : null}
       {bootState === "login" ? (
-        <AuthWorkspace onLogin={handleLogin} setStatusMessage={setStatusMessage} />
+        <AuthWorkspace
+          mode={isForgotPasswordRoute ? "forgot-password" : "login"}
+          onLogin={handleLogin}
+          onNavigateToForgotPassword={() => navigate("/forgot-password")}
+          onNavigateToLogin={() => navigate("/login")}
+          setStatusMessage={setStatusMessage}
+        />
       ) : null}
       {bootState === "admin" && session ? (
         <AdminShell
@@ -384,18 +403,25 @@ function BootstrapPanel({
 }
 
 function AuthWorkspace({
+  mode,
   onLogin,
+  onNavigateToForgotPassword,
+  onNavigateToLogin,
   setStatusMessage,
 }: {
+  mode: "forgot-password" | "login";
   onLogin: (email: string, password: string) => Promise<void>;
+  onNavigateToForgotPassword: () => void;
+  onNavigateToLogin: () => void;
   setStatusMessage: (message: string) => void;
 }) {
-  const [showRecovery, setShowRecovery] = useState(false);
-
   return (
     <section className="auth-flow" aria-label="Acesso operacional">
-      <LoginPanel onLogin={onLogin} onRequestAccess={() => setShowRecovery(true)} />
-      {showRecovery ? <ResetPanel setStatusMessage={setStatusMessage} /> : null}
+      {mode === "forgot-password" ? (
+        <ForgotPasswordPage onBackToLogin={onNavigateToLogin} setStatusMessage={setStatusMessage} />
+      ) : (
+        <LoginPanel onLogin={onLogin} onRequestAccess={onNavigateToForgotPassword} />
+      )}
     </section>
   );
 }
@@ -419,51 +445,71 @@ function LoginPanel({
   }
 
   return (
-    <form className="panel action-panel" onSubmit={handleSubmit}>
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">Acesso</p>
-          <h2>Entrar no JO.IA</h2>
-        </div>
-        <span className="pill">Sessao</span>
-      </div>
-      <label className="field">
-        <span>Email</span>
-        <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-      </label>
-      <label className="field">
-        <span>Senha</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
-      </label>
-      <button type="submit" disabled={saving}>
-        {saving ? "Entrando..." : "Entrar"}
-      </button>
-      <button type="button" className="link-button" onClick={onRequestAccess}>
-        Recuperar acesso
-      </button>
-    </form>
+    <Card aria-label="Login" className="action-panel auth-card">
+      <form onSubmit={handleSubmit}>
+        <CardHeader>
+          <div>
+            <p className="eyebrow">Acesso</p>
+            <h2>Entrar no JO.IA</h2>
+          </div>
+          <span className="pill">Sessao</span>
+        </CardHeader>
+        <CardContent>
+          <Label className="field">
+            <span>Email</span>
+            <Input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </Label>
+          <Label className="field">
+            <span>Senha</span>
+            <Input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </Label>
+          <Button
+            type="button"
+            variant="link"
+            className="forgot-password-link"
+            onClick={onRequestAccess}
+          >
+            Esqueceu a senha?
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Entrando..." : "Entrar"}
+          </Button>
+        </CardContent>
+      </form>
+    </Card>
   );
 }
 
-function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) => void }) {
-  const [email, setEmail] = useState("");
+const DEFAULT_RECOVERY_EMAIL = "wellingtonrdp16@gmail.com";
+
+function ForgotPasswordPage({
+  onBackToLogin,
+  setStatusMessage,
+}: {
+  onBackToLogin: () => void;
+  setStatusMessage: (message: string) => void;
+}) {
+  const [email, setEmail] = useState(DEFAULT_RECOVERY_EMAIL);
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   async function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await requestPasswordReset(email);
-    setStatusMessage("Se o email existir, o codigo foi registrado para recuperacao.");
+    const nextMessage = `Codigo enviado para o email cadastrado: ${email}.`;
+    setMessage(nextMessage);
+    setStatusMessage(nextMessage);
   }
 
   async function handleComplete(event: FormEvent<HTMLFormElement>) {
@@ -475,50 +521,62 @@ function ResetPanel({ setStatusMessage }: { setStatusMessage: (message: string) 
   }
 
   return (
-    <section className="panel" aria-label="Recuperacao de senha">
-      <div className="panel-heading">
+    <Card aria-label="Formulario esqueceu a senha" className="auth-card">
+      <CardHeader>
         <div>
           <p className="eyebrow">Senha</p>
-          <h2>Recuperacao de acesso</h2>
+          <h2>Esqueceu a senha</h2>
         </div>
-      </div>
-      <p className="helper-text">Use apenas para contas ja cadastradas na oficina.</p>
-      <div className="stacked-forms">
-        <form onSubmit={handleRequest}>
-          <label className="field">
-            <span>Email cadastrado</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </label>
-          <button type="submit">Solicitar codigo</button>
-        </form>
-        <form onSubmit={handleComplete}>
-          <label className="field">
-            <span>Codigo de recuperacao</span>
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              inputMode="numeric"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Nova senha</span>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              required
-            />
-          </label>
-          <button type="submit">Concluir redefinicao</button>
-        </form>
-      </div>
-    </section>
+        <Button type="button" variant="ghost" onClick={onBackToLogin}>
+          Voltar
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <p className="helper-text">
+          Informe o email cadastrado. O codigo de recuperacao sera enviado para esse endereco.
+        </p>
+        <div className="stacked-forms">
+          <form onSubmit={handleRequest}>
+            <Label className="field">
+              <span>Email cadastrado</span>
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </Label>
+            <Button type="submit">Solicitar codigo</Button>
+          </form>
+          {message ? (
+            <p className="callout" role="status">
+              {message}
+            </p>
+          ) : null}
+          <form onSubmit={handleComplete}>
+            <Label className="field">
+              <span>Codigo de recuperacao</span>
+              <Input
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                required
+              />
+            </Label>
+            <Label className="field">
+              <span>Nova senha</span>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+            </Label>
+            <Button type="submit">Concluir redefinicao</Button>
+          </form>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

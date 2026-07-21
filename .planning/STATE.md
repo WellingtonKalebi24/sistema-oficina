@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: Phase 2 - Autenticação, Tenant e Permissões
 status: executing
 stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-07-20T13:51:18.761Z"
+last_updated: "2026-07-21T00:05:53.876Z"
 progress:
   total_phases: 12
   completed_phases: 2
@@ -69,13 +69,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
+Start Phase 3 for customer and vehicle management behind the authenticated tenant shell.
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260720-f2r | Mover recuperacao de acesso para link abaixo do login | 2026-07-20 | df375cb | [260720-f2r-mover-recuperacao-de-acesso-para-link-ab](./quick/260720-f2r-mover-recuperacao-de-acesso-para-link-ab/) |
+| 260720-taw | Criar pagina esqueceu senha e aplicar componentes shadcn ui no acesso | 2026-07-21 | pending | [260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co](./quick/260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co/) |
 
 ## Tests Executed
 
@@ -88,6 +89,7 @@ Continue Phase 2 with plan 02-05 for permission resolver, tenant scope helpers, 
 - 02-04: `npm run test -w apps/api -- auth-sessions audit && npm run typecheck -w apps/api` passed.
 - 02-04: `npm run verify` passed.
 - quick 260720-f2r: `npm run test -w apps/web -- auth-ui`, `npm run typecheck -w apps/web`, `npm run lint -w apps/web` and targeted `format:check` passed.
+- quick 260720-taw: `npm run test -w apps/web -- auth-ui`, `npm run typecheck -w apps/web`, `npm run lint -w apps/web`, targeted `format:check` and login smoke with `wellingtonrdp16@gmail.com` passed.
 
 ## Known Issues
 

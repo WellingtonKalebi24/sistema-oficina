@@ -174,16 +174,20 @@ describe("JO.IA authenticated admin UI", () => {
 
     render(<App />);
 
-    expect(screen.queryByLabelText("Recuperacao de senha")).not.toBeInTheDocument();
-    fireEvent.click(await screen.findByRole("button", { name: "Recuperar acesso" }));
-    expect(await screen.findByLabelText("Recuperacao de senha")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Formulario esqueceu a senha")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Esqueceu a senha?" }));
+    expect(await screen.findByRole("heading", { name: "Esqueceu a senha" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Formulario esqueceu a senha")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email cadastrado")).toHaveValue("wellingtonrdp16@gmail.com");
     fireEvent.change(screen.getByLabelText("Email cadastrado"), {
-      target: { value: "admin@joia.local" },
+      target: { value: "wellingtonrdp16@gmail.com" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Solicitar codigo" }));
     expect(
-      await screen.findByText("Se o email existir, o codigo foi registrado para recuperacao."),
-    ).toBeInTheDocument();
+      await screen.findAllByText(
+        "Codigo enviado para o email cadastrado: wellingtonrdp16@gmail.com.",
+      ),
+    ).toHaveLength(2);
 
     fireEvent.change(screen.getByLabelText("Codigo de recuperacao"), {
       target: { value: "123456" },
@@ -194,6 +198,7 @@ describe("JO.IA authenticated admin UI", () => {
       await screen.findByText("Senha redefinida. Entre com a nova senha."),
     ).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Voltar" }));
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Seguranca" }));
     fireEvent.change(screen.getByLabelText("Senha atual"), { target: { value: "nova-senha-123" } });
