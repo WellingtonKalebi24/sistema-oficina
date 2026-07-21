@@ -10,7 +10,7 @@
 |---|-------|------|--------------|---------|
 | 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
-| 3 | Clientes e Veículos | 2/3 | In Progress|  |
+| 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
 | 4 | Serviços, Produtos, Compras e Estoque | Controlar catálogos, fornecedores, compras, saldos e reservas | STK-01..STK-14 | yes |
 | 5 | Agenda e Recepção | Cobrir agendamento, check-in, checklist e anexos | REC-01..REC-08 | yes |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
@@ -135,7 +135,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** CAV-01, CAV-02, CAV-03, CAV-04, CAV-05, CAV-06, CAV-07, CAV-08, CAV-09
 **UI hint:** yes
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -148,7 +148,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03-PLAN.md — Authenticated customer/vehicle UI, setup notes and final Phase 3 verification.
+- [x] 03-03-PLAN.md — Authenticated customer/vehicle UI, setup notes and final Phase 3 verification. (completed 2026-07-21)
 
 **Scope**
 

@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 3 - Clientes e Veículos
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-07-21T00:41:32.274Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-07-21T00:58:10.919Z"
 progress:
   total_phases: 12
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 25
 ---
 
 # Project State: JO.IA
@@ -102,8 +102,8 @@ Start Phase 3 plan 03-03 for authenticated customer/vehicle UI, setup notes and 
 
 ## Session
 
-**Last session:** 2026-07-21T00:41:31.748Z
-**Stopped at:** Completed 03-02-PLAN.md
+**Last session:** 2026-07-21T00:58:10.336Z
+**Stopped at:** Completed 03-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -121,6 +121,7 @@ Start Phase 3 plan 03-03 for authenticated customer/vehicle UI, setup notes and 
 | Phase 02 P06 | 14min | 3 tasks | 9 files |
 | Phase 03 P01 | 8min | 2 tasks | 8 files |
 | Phase 03 P02 | 10min | 2 tasks | 6 files |
+| Phase 03 P03 | 73min | 3 tasks | 6 files |
 
 ## Decisions
 
@@ -153,3 +154,5 @@ Start Phase 3 plan 03-03 for authenticated customer/vehicle UI, setup notes and 
 - [Phase 03]: Plan 02 accepts 14-position alphanumeric CNPJ through backend normalization and light validation.
 - [Phase 03]: Plan 02 uses Vehicle.customerId as the current customer link and records vehicle.linked history events for current-link creation or changes.
 - [Phase 03]: Plan 02 keeps customer/vehicle audit metadata concise with changed fields and related IDs, not raw notes, full phone/document values or VIN bodies.
+- [Phase 03]: Plan 03 kept customer and vehicle records in React memory only; browser localStorage remains limited to auth session data.
+- [Phase 03]: Plan 03 loads customer/vehicle resources only when effective permissions include customers.read or vehicles.read while backend 403 remains authoritative.
