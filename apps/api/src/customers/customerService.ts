@@ -3,7 +3,7 @@ import { Prisma, type Customer } from "@prisma/client";
 import { writeAuditLog } from "../audit/auditService.js";
 import type { PrismaDatabase } from "../db/prisma.js";
 import { badRequest, HttpError } from "../http/errors.js";
-import { notFound, requireTenantCustomer } from "../tenancy/tenantScope.js";
+import { requireTenantCustomer } from "../tenancy/tenantScope.js";
 import type { CreateCustomerInput, CustomerFilters, UpdateCustomerInput } from "./customerSchemas.js";
 
 type ActorContext = {
