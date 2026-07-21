@@ -135,6 +135,20 @@ Plans:
 **Mode:** mvp
 **Requirements:** CAV-01, CAV-02, CAV-03, CAV-04, CAV-05, CAV-06, CAV-07, CAV-08, CAV-09
 **UI hint:** yes
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Customer/vehicle schema, permissions, tenant helpers and RED backend contracts.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Protected tenant-scoped customer/vehicle API routes, services, audit, history and isolation.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — Authenticated customer/vehicle UI, setup notes and final Phase 3 verification.
 
 **Scope**
 
