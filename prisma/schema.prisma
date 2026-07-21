@@ -17,18 +17,21 @@ model FoundationCheck {
 }
 
 model Tenant {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  document  String?   @unique
-  status    String    @default("active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  document  String?  @unique
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  settings  CompanySetting?
-  users     User[]
-  roles     Role[]
-  sessions  Session[]
-  auditLogs AuditLog[]
+  settings                     CompanySetting?
+  users                        User[]
+  roles                        Role[]
+  sessions                     Session[]
+  auditLogs                    AuditLog[]
+  customers                    Customer[]
+  vehicles                     Vehicle[]
+  customerVehicleHistoryEvents CustomerVehicleHistoryEvent[]
 
   @@index([status])
   @@map("tenants")
@@ -63,12 +66,15 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  roles               UserRole[]
-  permissionOverrides UserPermissionOverride[]
-  sessions            Session[]
-  passwordResetTokens PasswordResetToken[]
-  auditLogs           AuditLog[]
+  tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles                        UserRole[]
+  permissionOverrides          UserPermissionOverride[]
+  sessions                     Session[]
+  passwordResetTokens          PasswordResetToken[]
+  auditLogs                    AuditLog[]
+  deletedCustomers             Customer[]                    @relation("CustomerDeletedByUser")
+  deletedVehicles              Vehicle[]                     @relation("VehicleDeletedByUser")
+  customerVehicleHistoryEvents CustomerVehicleHistoryEvent[] @relation("CustomerVehicleHistoryCreatedByUser")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -215,4 +221,86 @@ model AuditLog {
   @@index([action])
   @@index([entity, recordId])
   @@map("audit_logs")
+}
+
+model Customer {
+  id                 String    @id @default(cuid())
+  tenantId           String    @map("tenant_id")
+  name               String
+  document           String?
+  documentNormalized String?   @map("document_normalized")
+  documentType       String?   @map("document_type")
+  phone              String?
+  phoneNormalized    String?   @map("phone_normalized")
+  email              String?
+  notes              String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+  deletedByUserId    String?   @map("deleted_by_user_id")
+
+  tenant        Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deletedByUser User?                         @relation("CustomerDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  vehicles      Vehicle[]
+  historyEvents CustomerVehicleHistoryEvent[]
+
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, name])
+  @@index([tenantId, documentNormalized])
+  @@index([tenantId, phoneNormalized])
+  @@map("customers")
+}
+
+model Vehicle {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  customerId      String    @map("customer_id")
+  plate           String?
+  plateNormalized String?   @map("plate_normalized")
+  vin             String?
+  vinNormalized   String?   @map("vin_normalized")
+  brand           String?
+  model           String?
+  year            Int?
+  color           String?
+  mileage         Int?
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  deletedByUserId String?   @map("deleted_by_user_id")
+
+  tenant        Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer                      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  deletedByUser User?                         @relation("VehicleDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  historyEvents CustomerVehicleHistoryEvent[]
+
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, customerId])
+  @@index([tenantId, plateNormalized])
+  @@index([tenantId, vinNormalized])
+  @@map("vehicles")
+}
+
+model CustomerVehicleHistoryEvent {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  customerId      String?  @map("customer_id")
+  vehicleId       String?  @map("vehicle_id")
+  type            String
+  summary         String
+  metadata        Json?
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  vehicle       Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  createdByUser User?     @relation("CustomerVehicleHistoryCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([vehicleId, createdAt])
+  @@index([type])
+  @@map("customer_vehicle_history_events")
 }

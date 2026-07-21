@@ -1,5 +1,9 @@
 export const PERMISSIONS = {
   auditRead: "audit.read",
+  customersCreate: "customers.create",
+  customersDelete: "customers.delete",
+  customersRead: "customers.read",
+  customersUpdate: "customers.update",
   permissionsManage: "permissions.manage",
   rolesManage: "roles.manage",
   tenantSettingsRead: "tenant.settings.read",
@@ -9,6 +13,10 @@ export const PERMISSIONS = {
   usersDeactivate: "users.deactivate",
   usersRead: "users.read",
   usersUpdate: "users.update",
+  vehiclesCreate: "vehicles.create",
+  vehiclesDelete: "vehicles.delete",
+  vehiclesRead: "vehicles.read",
+  vehiclesUpdate: "vehicles.update",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -21,6 +29,14 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.usersUpdate,
   PERMISSIONS.usersDeactivate,
   PERMISSIONS.usersCreateAdmin,
+  PERMISSIONS.customersRead,
+  PERMISSIONS.customersCreate,
+  PERMISSIONS.customersUpdate,
+  PERMISSIONS.customersDelete,
+  PERMISSIONS.vehiclesRead,
+  PERMISSIONS.vehiclesCreate,
+  PERMISSIONS.vehiclesUpdate,
+  PERMISSIONS.vehiclesDelete,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -41,6 +57,38 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.tenantSettingsUpdate]: {
     description: "Permite alterar configuracoes administrativas do tenant autenticado.",
     name: "Atualizar configuracoes da oficina",
+  },
+  [PERMISSIONS.customersRead]: {
+    description: "Permite consultar clientes, buscas e historico basico no tenant autenticado.",
+    name: "Listar clientes",
+  },
+  [PERMISSIONS.customersCreate]: {
+    description: "Permite criar clientes no tenant autenticado.",
+    name: "Criar clientes",
+  },
+  [PERMISSIONS.customersUpdate]: {
+    description: "Permite editar clientes e seus vinculos operacionais no tenant autenticado.",
+    name: "Atualizar clientes",
+  },
+  [PERMISSIONS.customersDelete]: {
+    description: "Permite excluir logicamente clientes no tenant autenticado.",
+    name: "Excluir clientes",
+  },
+  [PERMISSIONS.vehiclesRead]: {
+    description: "Permite consultar veiculos, buscas e historico basico no tenant autenticado.",
+    name: "Listar veiculos",
+  },
+  [PERMISSIONS.vehiclesCreate]: {
+    description: "Permite criar veiculos e vincula-los a clientes do tenant autenticado.",
+    name: "Criar veiculos",
+  },
+  [PERMISSIONS.vehiclesUpdate]: {
+    description: "Permite editar veiculos e trocar seu cliente atual no tenant autenticado.",
+    name: "Atualizar veiculos",
+  },
+  [PERMISSIONS.vehiclesDelete]: {
+    description: "Permite excluir logicamente veiculos no tenant autenticado.",
+    name: "Excluir veiculos",
   },
   [PERMISSIONS.usersRead]: {
     description: "Permite consultar usuarios do tenant autenticado.",

@@ -3,7 +3,11 @@ import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-import { ALL_PERMISSIONS, PERMISSION_DETAILS } from "../apps/api/src/permissions/permissions.js";
+import {
+  ALL_PERMISSIONS,
+  PERMISSION_DETAILS,
+  PERMISSIONS,
+} from "../apps/api/src/permissions/permissions.js";
 
 type FoundationCheckWriter = {
   foundationCheck: {
@@ -44,7 +48,16 @@ export const DEFAULT_ROLE_TEMPLATES = [
   {
     key: "operator",
     name: "Operador",
-    permissionKeys: ["tenant.settings.read", "users.read"],
+    permissionKeys: [
+      PERMISSIONS.tenantSettingsRead,
+      PERMISSIONS.usersRead,
+      PERMISSIONS.customersRead,
+      PERMISSIONS.customersCreate,
+      PERMISSIONS.customersUpdate,
+      PERMISSIONS.vehiclesRead,
+      PERMISSIONS.vehiclesCreate,
+      PERMISSIONS.vehiclesUpdate,
+    ],
   },
 ] as const;
 

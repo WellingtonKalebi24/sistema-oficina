@@ -10,6 +10,24 @@ type DeleteManyDelegate = {
 };
 
 type IdentityPrisma = PrismaClient & {
+  customerVehicleHistoryEvent: DeleteManyDelegate;
+  vehicle: DeleteManyDelegate & {
+    create(args: { data: Record<string, unknown> }): Promise<{
+      customerId: string;
+      id: string;
+      plateNormalized: string | null;
+      tenantId: string;
+      vinNormalized: string | null;
+    }>;
+  };
+  customer: DeleteManyDelegate & {
+    create(args: { data: Record<string, unknown> }): Promise<{
+      documentNormalized: string | null;
+      id: string;
+      name: string;
+      tenantId: string;
+    }>;
+  };
   passwordResetToken: DeleteManyDelegate;
   session: DeleteManyDelegate;
   auditLog: DeleteManyDelegate & {
@@ -75,9 +93,27 @@ export type UserWithRoleFixture = {
   password: string;
 };
 
+export type CustomerFixture = {
+  customerId: string;
+  documentNormalized: string | null;
+  name: string;
+  tenantId: string;
+};
+
+export type VehicleFixture = {
+  customerId: string;
+  plateNormalized: string | null;
+  tenantId: string;
+  vehicleId: string;
+  vinNormalized: string | null;
+};
+
 export async function resetIdentityTables(prisma: PrismaClient): Promise<void> {
   const db = prisma as IdentityPrisma;
 
+  await db.customerVehicleHistoryEvent.deleteMany();
+  await db.vehicle.deleteMany();
+  await db.customer.deleteMany();
   await db.passwordResetToken.deleteMany();
   await db.session.deleteMany();
   await db.auditLog.deleteMany();
@@ -203,6 +239,85 @@ export async function createUserWithRole(
     roleId: role.id,
     email,
     password,
+  };
+}
+
+export async function createCustomerFixture(
+  prisma: PrismaClient,
+  tenantId: string,
+  overrides: Partial<{
+    document: string;
+    documentNormalized: string;
+    documentType: string;
+    email: string;
+    name: string;
+    phone: string;
+    phoneNormalized: string;
+  }> = {},
+): Promise<CustomerFixture> {
+  const db = prisma as IdentityPrisma;
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  const documentNormalized = overrides.documentNormalized ?? `CPF${suffix}`.slice(0, 14);
+  const name = overrides.name ?? `Cliente ${suffix}`;
+  const customer = await db.customer.create({
+    data: {
+      document: overrides.document ?? documentNormalized,
+      documentNormalized,
+      documentType: overrides.documentType ?? "cpf",
+      email: overrides.email ?? `cliente-${suffix}@joia.test`,
+      name,
+      phone: overrides.phone ?? "(11) 98888-7777",
+      phoneNormalized: overrides.phoneNormalized ?? "11988887777",
+      tenantId,
+    },
+  });
+
+  return {
+    customerId: customer.id,
+    documentNormalized: customer.documentNormalized,
+    name: customer.name,
+    tenantId: customer.tenantId,
+  };
+}
+
+export async function createVehicleFixture(
+  prisma: PrismaClient,
+  tenantId: string,
+  customerId: string,
+  overrides: Partial<{
+    brand: string;
+    model: string;
+    plate: string;
+    plateNormalized: string;
+    vin: string;
+    vinNormalized: string;
+    year: number;
+  }> = {},
+): Promise<VehicleFixture> {
+  const db = prisma as IdentityPrisma;
+  const suffix = crypto.randomUUID().replace(/-/g, "").toUpperCase();
+  const plateNormalized = overrides.plateNormalized ?? `TST${suffix.slice(0, 4)}`;
+  const vinNormalized = overrides.vinNormalized ?? null;
+  const vehicle = await db.vehicle.create({
+    data: {
+      brand: overrides.brand ?? "Fiat",
+      customerId,
+      model: overrides.model ?? "Uno",
+      plate: overrides.plate ?? plateNormalized,
+      plateNormalized,
+      tenantId,
+      vin: overrides.vin ?? vinNormalized,
+      vinNormalized,
+      year: overrides.year ?? 2020,
+    },
+  });
+
+  return {
+    customerId: vehicle.customerId,
+    plateNormalized: vehicle.plateNormalized,
+    tenantId: vehicle.tenantId,
+    vehicleId: vehicle.id,
+    vinNormalized: vehicle.vinNormalized,
   };
 }
 

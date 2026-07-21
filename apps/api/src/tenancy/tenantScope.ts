@@ -93,3 +93,86 @@ export async function getRolePermissionKeys(
     role.permissions.map((rolePermission) => rolePermission.permission.key),
   );
 }
+
+export async function requireTenantCustomer(
+  prisma: PrismaDatabase,
+  tenantId: string,
+  customerId: string,
+): Promise<{
+  deletedAt: Date | null;
+  id: string;
+  name: string;
+  tenantId: string;
+}> {
+  const customer = await prisma.customer.findFirst({
+    where: {
+      deletedAt: null,
+      id: customerId,
+      tenantId,
+    },
+  });
+
+  if (!customer) {
+    throw notFound();
+  }
+
+  return customer;
+}
+
+export async function requireTenantVehicle(
+  prisma: PrismaDatabase,
+  tenantId: string,
+  vehicleId: string,
+): Promise<{
+  customerId: string;
+  deletedAt: Date | null;
+  id: string;
+  tenantId: string;
+}> {
+  const vehicle = await prisma.vehicle.findFirst({
+    where: {
+      deletedAt: null,
+      id: vehicleId,
+      tenantId,
+    },
+  });
+
+  if (!vehicle) {
+    throw notFound();
+  }
+
+  return vehicle;
+}
+
+export async function requireTenantCustomerVehicleLink(
+  prisma: PrismaDatabase,
+  tenantId: string,
+  input: { customerId: string; vehicleId: string },
+): Promise<void> {
+  const [customer, vehicle] = await Promise.all([
+    prisma.customer.findFirst({
+      select: {
+        id: true,
+      },
+      where: {
+        deletedAt: null,
+        id: input.customerId,
+        tenantId,
+      },
+    }),
+    prisma.vehicle.findFirst({
+      select: {
+        id: true,
+      },
+      where: {
+        deletedAt: null,
+        id: input.vehicleId,
+        tenantId,
+      },
+    }),
+  ]);
+
+  if (!customer || !vehicle) {
+    throw badRequest("Customer and vehicle IDs must belong to the authenticated tenant.");
+  }
+}
