@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 3 - Clientes e Veículos
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-07-21T00:28:02.769Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-07-21T00:41:32.274Z"
 progress:
   total_phases: 12
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State: JO.IA
@@ -42,6 +42,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 2 plan 02-02 completed: identity, tenant, permission, session, reset-token and audit Prisma schema with RED auth route contracts.
 - Phase 2 plan 02-03 completed: password/token/session services, first-admin bootstrap, login, refresh rotation, current-session logout and current-user API.
 - Phase 3 plan 03-01 completed: customer/vehicle schema, permission keys, tenant helpers and RED backend contracts.
+- Phase 3 plan 03-02 completed: protected tenant-scoped customer/vehicle API routes, services, audit, history and isolation.
 
 ## Current Decisions
 
@@ -70,7 +71,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Start Phase 3 plan 03-02 for protected tenant-scoped customer and vehicle API routes, services, audit, history and isolation.
+Start Phase 3 plan 03-03 for authenticated customer/vehicle UI, setup notes and final Phase 3 verification.
 
 ### Quick Tasks Completed
 
@@ -101,8 +102,8 @@ Start Phase 3 plan 03-02 for protected tenant-scoped customer and vehicle API ro
 
 ## Session
 
-**Last session:** 2026-07-21T00:28:02.723Z
-**Stopped at:** Completed 03-01-PLAN.md
+**Last session:** 2026-07-21T00:41:31.748Z
+**Stopped at:** Completed 03-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -119,6 +120,7 @@ Start Phase 3 plan 03-02 for protected tenant-scoped customer and vehicle API ro
 | Phase 02 P05 | 12min | 2 tasks | 16 files |
 | Phase 02 P06 | 14min | 3 tasks | 9 files |
 | Phase 03 P01 | 8min | 2 tasks | 8 files |
+| Phase 03 P02 | 10min | 2 tasks | 6 files |
 
 ## Decisions
 
@@ -147,3 +149,7 @@ Start Phase 3 plan 03-02 for protected tenant-scoped customer and vehicle API ro
 - [Phase 03]: Plan 01 uses PostgreSQL partial unique indexes for active-only customer document, vehicle plate and vehicle VIN uniqueness; Prisma @@unique is not used for soft-delete predicates.
 - [Phase 03]: Plan 01 keeps customer phone duplicate behavior non-unique while indexing phone_normalized for search.
 - [Phase 03]: Plan 01 leaves /customers and /vehicles API behavior RED for 03-02 and does not mark CAV requirements complete from the foundation-only plan.
+- [Phase 03]: Plan 02 kept phone duplicates allowed while enforcing active customer document, vehicle plate and vehicle VIN duplicate checks in backend services and database constraints.
+- [Phase 03]: Plan 02 accepts 14-position alphanumeric CNPJ through backend normalization and light validation.
+- [Phase 03]: Plan 02 uses Vehicle.customerId as the current customer link and records vehicle.linked history events for current-link creation or changes.
+- [Phase 03]: Plan 02 keeps customer/vehicle audit metadata concise with changed fields and related IDs, not raw notes, full phone/document values or VIN bodies.

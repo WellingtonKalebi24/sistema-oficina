@@ -34,15 +34,15 @@
 
 ### Customers And Vehicles
 
-- [ ] **CAV-01**: User can create, edit, list and soft-delete customers within the tenant.
-- [ ] **CAV-02**: User can create, edit, list and soft-delete vehicles within the tenant.
-- [ ] **CAV-03**: User can link one or more vehicles to a customer.
-- [ ] **CAV-04**: User can search customers by name, phone and document.
-- [ ] **CAV-05**: User can search vehicles by plate and related customer.
-- [ ] **CAV-06**: System prevents duplicate customer or vehicle records according to configured unique fields.
-- [ ] **CAV-07**: User can view basic customer and vehicle history.
-- [ ] **CAV-08**: Customer and vehicle changes are audited.
-- [ ] **CAV-09**: Customer and vehicle data cannot cross tenant boundaries.
+- [x] **CAV-01**: User can create, edit, list and soft-delete customers within the tenant.
+- [x] **CAV-02**: User can create, edit, list and soft-delete vehicles within the tenant.
+- [x] **CAV-03**: User can link one or more vehicles to a customer.
+- [x] **CAV-04**: User can search customers by name, phone and document.
+- [x] **CAV-05**: User can search vehicles by plate and related customer.
+- [x] **CAV-06**: System prevents duplicate customer or vehicle records according to configured unique fields.
+- [x] **CAV-07**: User can view basic customer and vehicle history.
+- [x] **CAV-08**: Customer and vehicle changes are audited.
+- [x] **CAV-09**: Customer and vehicle data cannot cross tenant boundaries.
 
 ### Catalog And Stock
 
@@ -200,15 +200,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDT-11 | Phase 2 | Complete |
 | IDT-12 | Phase 2 | Complete |
 | IDT-13 | Phase 2 | Complete |
-| CAV-01 | Phase 3 | Pending |
-| CAV-02 | Phase 3 | Pending |
-| CAV-03 | Phase 3 | Pending |
-| CAV-04 | Phase 3 | Pending |
-| CAV-05 | Phase 3 | Pending |
-| CAV-06 | Phase 3 | Pending |
-| CAV-07 | Phase 3 | Pending |
-| CAV-08 | Phase 3 | Pending |
-| CAV-09 | Phase 3 | Pending |
+| CAV-01 | Phase 3 | Complete |
+| CAV-02 | Phase 3 | Complete |
+| CAV-03 | Phase 3 | Complete |
+| CAV-04 | Phase 3 | Complete |
+| CAV-05 | Phase 3 | Complete |
+| CAV-06 | Phase 3 | Complete |
+| CAV-07 | Phase 3 | Complete |
+| CAV-08 | Phase 3 | Complete |
+| CAV-09 | Phase 3 | Complete |
 | STK-01 | Phase 4 | Pending |
 | STK-02 | Phase 4 | Pending |
 | STK-03 | Phase 4 | Pending |
