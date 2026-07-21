@@ -17,6 +17,16 @@ import {
   updateTenantSettings,
 } from "./api/admin.js";
 import {
+  type Customer,
+  type CustomerHistoryEvent,
+  type CustomerInput,
+  createCustomer,
+  deleteCustomer,
+  listCustomerHistory,
+  listCustomers,
+  updateCustomer,
+} from "./api/customers.js";
+import {
   ApiError,
   changePassword,
   completePasswordReset,
@@ -26,6 +36,16 @@ import {
   logout,
   requestPasswordReset,
 } from "./api/auth.js";
+import {
+  type Vehicle,
+  type VehicleHistoryEvent,
+  type VehicleInput,
+  createVehicle,
+  deleteVehicle,
+  listVehicleHistory,
+  listVehicles,
+  updateVehicle,
+} from "./api/vehicles.js";
 import {
   clearStoredSession,
   hasPermission,
@@ -39,23 +59,33 @@ import { Input } from "./components/ui/input.js";
 import { Label } from "./components/ui/label.js";
 import { formatDateTime } from "./design/formatters.js";
 
-type View = "oficina" | "usuarios" | "papeis" | "permissoes" | "seguranca";
+type View = "clientes" | "oficina" | "papeis" | "permissoes" | "seguranca" | "usuarios" | "veiculos";
 type BootState = "loading" | "bootstrap" | "login" | "admin" | "error";
 
 type AdminData = {
+  customerHistory: CustomerHistoryEvent[];
+  customers: Customer[];
   permissions: Permission[];
   roles: Role[];
   settings: TenantSettings | null;
   users: AdminUser[];
+  vehicleHistory: VehicleHistoryEvent[];
+  vehicles: Vehicle[];
 };
 
-type BlockedState = Partial<Record<"settings" | "users" | "roles" | "permissions", string>>;
+type BlockedState = Partial<
+  Record<"customers" | "permissions" | "roles" | "settings" | "users" | "vehicles", string>
+>;
 
 const initialAdminData: AdminData = {
+  customerHistory: [],
+  customers: [],
   permissions: [],
   roles: [],
   settings: null,
   users: [],
+  vehicleHistory: [],
+  vehicles: [],
 };
 
 export function App() {
@@ -138,7 +168,7 @@ function AuthAdminApp() {
     }
 
     setBlocked({});
-    await Promise.all([
+    const loads: Array<Promise<void>> = [
       loadResource(
         "settings",
         () => getTenantSettings(currentSession.accessToken),
@@ -159,7 +189,29 @@ function AuthAdminApp() {
         () => listPermissions(currentSession.accessToken),
         (permissions) => setAdminData((current) => ({ ...current, permissions })),
       ),
-    ]);
+    ];
+
+    if (hasPermission(currentSession, "customers.read")) {
+      loads.push(
+        loadResource(
+          "customers",
+          () => listCustomers(currentSession.accessToken),
+          (customers) => setAdminData((current) => ({ ...current, customers })),
+        ),
+      );
+    }
+
+    if (hasPermission(currentSession, "vehicles.read")) {
+      loads.push(
+        loadResource(
+          "vehicles",
+          () => listVehicles(currentSession.accessToken),
+          (vehicles) => setAdminData((current) => ({ ...current, vehicles })),
+        ),
+      );
+    }
+
+    await Promise.all(loads);
   }
 
   async function loadResource<T>(
@@ -267,14 +319,78 @@ function AuthAdminApp() {
             setAdminData((current) => ({ ...current, roles: [...current.roles, role] }));
             setStatusMessage("Papel registrado para este tenant.");
           }}
+          onCreateCustomer={async (input) => {
+            const customer = await createCustomer(session.accessToken, input);
+            setAdminData((current) => ({
+              ...current,
+              customers: [...current.customers, customer].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            }));
+            setStatusMessage("Cliente registrado no tenant autenticado.");
+          }}
           onCreateUser={async (input) => {
             const user = await createUser(session.accessToken, input);
             setAdminData((current) => ({ ...current, users: [...current.users, user] }));
             setStatusMessage("Usuario criado no tenant autenticado.");
           }}
+          onCreateVehicle={async (input) => {
+            const vehicle = await createVehicle(session.accessToken, input);
+            setAdminData((current) => ({
+              ...current,
+              vehicles: [...current.vehicles, vehicle].sort((left, right) =>
+                left.plateNormalized.localeCompare(right.plateNormalized),
+              ),
+            }));
+            setStatusMessage("Veiculo registrado e vinculado ao cliente atual.");
+          }}
+          onDeleteCustomer={async (customer) => {
+            await deleteCustomer(session.accessToken, customer.id);
+            setAdminData((current) => ({
+              ...current,
+              customers: current.customers.filter((item) => item.id !== customer.id),
+            }));
+            setStatusMessage("Cliente excluido logicamente da lista ativa.");
+          }}
+          onDeleteVehicle={async (vehicle) => {
+            await deleteVehicle(session.accessToken, vehicle.id);
+            setAdminData((current) => ({
+              ...current,
+              vehicles: current.vehicles.filter((item) => item.id !== vehicle.id),
+            }));
+            setStatusMessage("Veiculo excluido logicamente da lista ativa.");
+          }}
+          onLoadCustomerHistory={async (customerId) => {
+            const customerHistory = await listCustomerHistory(session.accessToken, customerId);
+            setAdminData((current) => ({ ...current, customerHistory }));
+            setStatusMessage("Historico basico do cliente sincronizado.");
+          }}
+          onLoadVehicleHistory={async (vehicleId) => {
+            const vehicleHistory = await listVehicleHistory(session.accessToken, vehicleId);
+            setAdminData((current) => ({ ...current, vehicleHistory }));
+            setStatusMessage("Historico basico do veiculo sincronizado.");
+          }}
           onLogout={handleLogout}
           onRefresh={() => loadAdminData(session)}
+          onSearchCustomers={async (search) => {
+            const customers = await listCustomers(session.accessToken, { search });
+            setAdminData((current) => ({ ...current, customers }));
+            setStatusMessage("Busca de clientes sincronizada com a API.");
+          }}
+          onSearchVehicles={async (search) => {
+            const vehicles = await listVehicles(session.accessToken, { search });
+            setAdminData((current) => ({ ...current, vehicles }));
+            setStatusMessage("Busca de veiculos sincronizada com a API.");
+          }}
           onSelectView={selectView}
+          onUpdateCustomer={async (customerId, input) => {
+            const customer = await updateCustomer(session.accessToken, customerId, input);
+            setAdminData((current) => ({
+              ...current,
+              customers: current.customers.map((item) => (item.id === customer.id ? customer : item)),
+            }));
+            setStatusMessage("Cliente atualizado pelo backend.");
+          }}
           onUpdateOverrides={async (userId, overrides) => {
             const user = await replacePermissionOverrides(session.accessToken, userId, overrides);
             setAdminData((current) => ({
@@ -287,6 +403,14 @@ function AuthAdminApp() {
             const settings = await updateTenantSettings(session.accessToken, input);
             setAdminData((current) => ({ ...current, settings }));
             setStatusMessage("Configuracoes da oficina atualizadas.");
+          }}
+          onUpdateVehicle={async (vehicleId, input) => {
+            const vehicle = await updateVehicle(session.accessToken, vehicleId, input);
+            setAdminData((current) => ({
+              ...current,
+              vehicles: current.vehicles.map((item) => (item.id === vehicle.id ? vehicle : item)),
+            }));
+            setStatusMessage("Veiculo atualizado pelo backend.");
           }}
           session={session}
           statusMessage={statusMessage}
@@ -585,6 +709,7 @@ function AdminShell(props: {
   adminData: AdminData;
   blocked: BlockedState;
   onChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  onCreateCustomer: (input: CustomerInput) => Promise<void>;
   onCreateRole: (input: {
     description?: string;
     key: string;
@@ -597,11 +722,20 @@ function AdminShell(props: {
     password: string;
     roleIds?: string[];
   }) => Promise<void>;
+  onCreateVehicle: (input: VehicleInput) => Promise<void>;
+  onDeleteCustomer: (customer: Customer) => Promise<void>;
+  onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
+  onLoadCustomerHistory: (customerId: string) => Promise<void>;
+  onLoadVehicleHistory: (vehicleId: string) => Promise<void>;
   onLogout: () => Promise<void>;
   onRefresh: () => Promise<void>;
+  onSearchCustomers: (search: string) => Promise<void>;
+  onSearchVehicles: (search: string) => Promise<void>;
   onSelectView: (view: View) => void;
+  onUpdateCustomer: (customerId: string, input: CustomerInput) => Promise<void>;
   onUpdateOverrides: (userId: string, overrides: PermissionOverride[]) => Promise<void>;
   onUpdateSettings: (input: Partial<TenantSettings>) => Promise<void>;
+  onUpdateVehicle: (vehicleId: string, input: VehicleInput) => Promise<void>;
   session: StoredSession;
   statusMessage: string;
 }) {
@@ -612,6 +746,8 @@ function AdminShell(props: {
         { label: "Usuarios", permission: "users.read", view: "usuarios" as const },
         { label: "Papeis", permission: "roles.manage", view: "papeis" as const },
         { label: "Permissoes", permission: "permissions.manage", view: "permissoes" as const },
+        { label: "Clientes", permission: "customers.read", view: "clientes" as const },
+        { label: "Veiculos", permission: "vehicles.read", view: "veiculos" as const },
       ].filter((item) => hasPermission(props.session, item.permission)),
     [props.session],
   );
@@ -687,6 +823,31 @@ function AdminShell(props: {
               onUpdateOverrides={props.onUpdateOverrides}
               permissions={props.adminData.permissions}
               users={props.adminData.users}
+            />
+          ) : null}
+          {props.activeView === "clientes" ? (
+            <CustomersPanel
+              blocked={props.blocked.customers}
+              customers={props.adminData.customers}
+              history={props.adminData.customerHistory}
+              onCreateCustomer={props.onCreateCustomer}
+              onDeleteCustomer={props.onDeleteCustomer}
+              onLoadHistory={props.onLoadCustomerHistory}
+              onSearch={props.onSearchCustomers}
+              onUpdateCustomer={props.onUpdateCustomer}
+            />
+          ) : null}
+          {props.activeView === "veiculos" ? (
+            <VehiclesPanel
+              blocked={props.blocked.vehicles}
+              customers={props.adminData.customers}
+              history={props.adminData.vehicleHistory}
+              onCreateVehicle={props.onCreateVehicle}
+              onDeleteVehicle={props.onDeleteVehicle}
+              onLoadHistory={props.onLoadVehicleHistory}
+              onSearch={props.onSearchVehicles}
+              onUpdateVehicle={props.onUpdateVehicle}
+              vehicles={props.adminData.vehicles}
             />
           ) : null}
           {props.activeView === "seguranca" ? (
@@ -1128,6 +1289,597 @@ function SecurityPanel({
       <StatusPanel
         message={`Usuario ${session.user.email}. Sessao ${session.sessionId}. Criada para tenant ${session.tenantId}.`}
       />
+    </section>
+  );
+}
+
+function CustomersPanel({
+  blocked,
+  customers,
+  history,
+  onCreateCustomer,
+  onDeleteCustomer,
+  onLoadHistory,
+  onSearch,
+  onUpdateCustomer,
+}: {
+  blocked: string | undefined;
+  customers: Customer[];
+  history: CustomerHistoryEvent[];
+  onCreateCustomer: (input: CustomerInput) => Promise<void>;
+  onDeleteCustomer: (customer: Customer) => Promise<void>;
+  onLoadHistory: (customerId: string) => Promise<void>;
+  onSearch: (search: string) => Promise<void>;
+  onUpdateCustomer: (customerId: string, input: CustomerInput) => Promise<void>;
+}) {
+  const emptyForm = { document: "", email: "", name: "", notes: "", phone: "" };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [pendingDelete, setPendingDelete] = useState<Customer | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  if (blocked) {
+    return <BlockedPanel message={blocked} />;
+  }
+
+  function edit(customer: Customer) {
+    setEditingId(customer.id);
+    setForm({
+      document: customer.document ?? "",
+      email: customer.email ?? "",
+      name: customer.name,
+      notes: customer.notes ?? "",
+      phone: customer.phone ?? "",
+    });
+    setError("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    try {
+      if (editingId) {
+        await onUpdateCustomer(editingId, form);
+      } else {
+        await onCreateCustomer(form);
+      }
+
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o cliente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="workspace-grid customer-vehicle-grid" aria-label="Clientes">
+      <form className="panel action-panel" aria-label="Cadastro de cliente" onSubmit={submit}>
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Clientes</p>
+            <h2>{editingId ? "Editar cliente" : "Novo cliente"}</h2>
+          </div>
+          <span className="pill">Telefone pode repetir</span>
+        </div>
+        <label className="field">
+          <span>Nome do cliente</span>
+          <input
+            value={form.name}
+            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+            required
+          />
+        </label>
+        <label className="field">
+          <span>Documento CPF/CNPJ</span>
+          <input
+            value={form.document}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, document: event.target.value }))
+            }
+            placeholder="CPF, CNPJ numerico ou CNPJ alfanumerico"
+          />
+        </label>
+        <label className="field">
+          <span>Telefone</span>
+          <input
+            value={form.phone}
+            onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Email operacional</span>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Observacoes internas</span>
+          <input
+            value={form.notes}
+            onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+          />
+        </label>
+        <div className="button-row">
+          <button type="submit" disabled={saving}>
+            {saving ? "Salvando..." : "Salvar cliente"}
+          </button>
+          {editingId ? (
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => {
+                setEditingId(null);
+                setForm(emptyForm);
+                setError("");
+              }}
+            >
+              Cancelar edicao
+            </button>
+          ) : null}
+        </div>
+        {error ? (
+          <p className="callout callout--danger" role="status">
+            {error}
+          </p>
+        ) : null}
+        <p className="helper-text">
+          Documento ativo duplicado e rejeitado pelo backend; telefone repetido permanece permitido.
+        </p>
+      </form>
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Busca</p>
+            <h2>Clientes ativos</h2>
+          </div>
+          <span className="pill">{customers.length} itens</span>
+        </div>
+        <form
+          className="inline-filter"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSearch(search);
+          }}
+        >
+          <label className="field">
+            <span>Buscar cliente</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Nome, telefone ou documento"
+            />
+          </label>
+          <button type="submit">Buscar clientes</button>
+        </form>
+        {customers.length === 0 ? (
+          <div className="empty-state">Nenhum cliente ativo encontrado.</div>
+        ) : (
+          <div className="table-wrap">
+            <table aria-label="Clientes ativos">
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Telefone</th>
+                  <th scope="col">Atualizado</th>
+                  <th scope="col">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.map((customer) => (
+                  <tr key={customer.id}>
+                    <td>{customer.name}</td>
+                    <td>{customer.document ?? "Sem documento"}</td>
+                    <td>{customer.phone ?? "Sem telefone"}</td>
+                    <td>{formatUpdatedAt(customer.updatedAt)}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="button-secondary"
+                          onClick={() => edit(customer)}
+                        >
+                          Editar {customer.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="button-secondary"
+                          onClick={() => void onLoadHistory(customer.id)}
+                        >
+                          Historico de {customer.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() => setPendingDelete(customer)}
+                        >
+                          Excluir {customer.name}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {pendingDelete ? (
+          <div className="confirm-strip" role="alert">
+            <span>Confirmar exclusao logica de {pendingDelete.name}?</span>
+            <button
+              type="button"
+              className="button-danger"
+              onClick={() => {
+                const customer = pendingDelete;
+                setPendingDelete(null);
+                void onDeleteCustomer(customer);
+              }}
+            >
+              Confirmar exclusao de {pendingDelete.name}
+            </button>
+          </div>
+        ) : null}
+        <HistoryList history={history} label="Historico do cliente" />
+      </section>
+    </section>
+  );
+}
+
+function VehiclesPanel({
+  blocked,
+  customers,
+  history,
+  onCreateVehicle,
+  onDeleteVehicle,
+  onLoadHistory,
+  onSearch,
+  onUpdateVehicle,
+  vehicles,
+}: {
+  blocked: string | undefined;
+  customers: Customer[];
+  history: VehicleHistoryEvent[];
+  onCreateVehicle: (input: VehicleInput) => Promise<void>;
+  onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
+  onLoadHistory: (vehicleId: string) => Promise<void>;
+  onSearch: (search: string) => Promise<void>;
+  onUpdateVehicle: (vehicleId: string, input: VehicleInput) => Promise<void>;
+  vehicles: Vehicle[];
+}) {
+  const emptyForm = {
+    brand: "",
+    color: "",
+    customerId: customers[0]?.id ?? "",
+    mileage: "",
+    model: "",
+    notes: "",
+    plate: "",
+    vin: "",
+    year: "",
+  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [pendingDelete, setPendingDelete] = useState<Vehicle | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const firstCustomerId = customers[0]?.id;
+
+    if (!form.customerId && firstCustomerId) {
+      setForm((current) => ({ ...current, customerId: firstCustomerId }));
+    }
+  }, [customers, form.customerId]);
+
+  if (blocked) {
+    return <BlockedPanel message={blocked} />;
+  }
+
+  function edit(vehicle: Vehicle) {
+    setEditingId(vehicle.id);
+    setForm({
+      brand: vehicle.brand ?? "",
+      color: vehicle.color ?? "",
+      customerId: vehicle.customerId,
+      mileage: vehicle.mileage?.toString() ?? "",
+      model: vehicle.model ?? "",
+      notes: vehicle.notes ?? "",
+      plate: vehicle.plate,
+      vin: vehicle.vin ?? "",
+      year: vehicle.year?.toString() ?? "",
+    });
+    setError("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    const input: VehicleInput = {
+      brand: form.brand,
+      color: form.color,
+      customerId: form.customerId,
+      mileage: form.mileage ? Number(form.mileage) : null,
+      model: form.model,
+      notes: form.notes,
+      plate: form.plate,
+      vin: form.vin,
+      year: form.year ? Number(form.year) : null,
+    };
+
+    try {
+      if (editingId) {
+        await onUpdateVehicle(editingId, input);
+      } else {
+        await onCreateVehicle(input);
+      }
+
+      setEditingId(null);
+      setForm({ ...emptyForm, customerId: customers[0]?.id ?? "" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o veiculo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="workspace-grid customer-vehicle-grid" aria-label="Veiculos">
+      <form className="panel action-panel" aria-label="Cadastro de veiculo" onSubmit={submit}>
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Veiculos</p>
+            <h2>{editingId ? "Editar veiculo" : "Novo veiculo"}</h2>
+          </div>
+          <span className="pill">Vinculo atual</span>
+        </div>
+        <label className="field">
+          <span>Cliente atual</span>
+          <select
+            value={form.customerId}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, customerId: event.target.value }))
+            }
+            required
+          >
+            <option value="">Selecione</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Placa</span>
+          <input
+            value={form.plate}
+            onChange={(event) => setForm((current) => ({ ...current, plate: event.target.value }))}
+            required
+          />
+        </label>
+        <label className="field">
+          <span>Marca</span>
+          <input
+            value={form.brand}
+            onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Modelo</span>
+          <input
+            value={form.model}
+            onChange={(event) => setForm((current) => ({ ...current, model: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Cor</span>
+          <input
+            value={form.color}
+            onChange={(event) => setForm((current) => ({ ...current, color: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Chassi/VIN</span>
+          <input
+            value={form.vin}
+            onChange={(event) => setForm((current) => ({ ...current, vin: event.target.value }))}
+          />
+        </label>
+        <div className="form-grid form-grid--split">
+          <label className="field">
+            <span>Ano</span>
+            <input
+              inputMode="numeric"
+              value={form.year}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, year: event.target.value }))
+              }
+            />
+          </label>
+          <label className="field">
+            <span>Quilometragem</span>
+            <input
+              inputMode="numeric"
+              value={form.mileage}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, mileage: event.target.value }))
+              }
+            />
+          </label>
+        </div>
+        <label className="field">
+          <span>Observacoes internas</span>
+          <input
+            value={form.notes}
+            onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+          />
+        </label>
+        <div className="button-row">
+          <button type="submit" disabled={saving || customers.length === 0}>
+            {saving ? "Salvando..." : "Salvar veiculo"}
+          </button>
+          {editingId ? (
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => {
+                setEditingId(null);
+                setForm({ ...emptyForm, customerId: customers[0]?.id ?? "" });
+                setError("");
+              }}
+            >
+              Cancelar edicao
+            </button>
+          ) : null}
+        </div>
+        {error ? (
+          <p className="callout callout--danger" role="status">
+            {error}
+          </p>
+        ) : null}
+        <p className="helper-text">
+          Placa e chassi ativos duplicados sao bloqueados pelo backend.
+        </p>
+      </form>
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Busca</p>
+            <h2>Veiculos ativos</h2>
+          </div>
+          <span className="pill">{vehicles.length} itens</span>
+        </div>
+        <form
+          className="inline-filter"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSearch(search);
+          }}
+        >
+          <label className="field">
+            <span>Buscar veiculo</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Placa, chassi ou cliente"
+            />
+          </label>
+          <button type="submit">Buscar veiculos</button>
+        </form>
+        {vehicles.length === 0 ? (
+          <div className="empty-state">Nenhum veiculo ativo encontrado.</div>
+        ) : (
+          <div className="table-wrap">
+            <table aria-label="Veiculos ativos">
+              <thead>
+                <tr>
+                  <th scope="col">Placa</th>
+                  <th scope="col">Cliente atual</th>
+                  <th scope="col">Veiculo</th>
+                  <th scope="col">Chassi</th>
+                  <th scope="col">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>{vehicle.plate}</td>
+                    <td>{vehicle.customer?.name ?? "Sem cliente"}</td>
+                    <td>{[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" ")}</td>
+                    <td>{vehicle.vin ?? "Sem chassi"}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="button-secondary"
+                          onClick={() => edit(vehicle)}
+                        >
+                          Editar {vehicle.plate}
+                        </button>
+                        <button
+                          type="button"
+                          className="button-secondary"
+                          onClick={() => void onLoadHistory(vehicle.id)}
+                        >
+                          Historico de {vehicle.plate}
+                        </button>
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() => setPendingDelete(vehicle)}
+                        >
+                          Excluir {vehicle.plate}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {pendingDelete ? (
+          <div className="confirm-strip" role="alert">
+            <span>Confirmar exclusao logica de {pendingDelete.plate}?</span>
+            <button
+              type="button"
+              className="button-danger"
+              onClick={() => {
+                const vehicle = pendingDelete;
+                setPendingDelete(null);
+                void onDeleteVehicle(vehicle);
+              }}
+            >
+              Confirmar exclusao de {pendingDelete.plate}
+            </button>
+          </div>
+        ) : null}
+        <HistoryList history={history} label="Historico do veiculo" />
+      </section>
+    </section>
+  );
+}
+
+function HistoryList({
+  history,
+  label,
+}: {
+  history: Array<{ createdAt: string; id: string; summary: string; type: string }>;
+  label: string;
+}) {
+  return (
+    <section className="history-panel" aria-label={label}>
+      <div className="panel-heading panel-heading--compact">
+        <div>
+          <p className="eyebrow">Historico</p>
+          <h2>{label}</h2>
+        </div>
+        <span className="pill">{history.length} linhas</span>
+      </div>
+      {history.length === 0 ? (
+        <div className="empty-state empty-state--compact">Selecione uma linha para consultar.</div>
+      ) : (
+        <div className="history-list">
+          {history.map((item) => (
+            <div key={item.id} className="history-row">
+              <span>{formatUpdatedAt(item.createdAt)}</span>
+              <strong>{item.summary}</strong>
+              <span>{item.type}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

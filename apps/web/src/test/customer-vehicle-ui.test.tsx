@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App.js";
@@ -55,7 +55,7 @@ describe("JO.IA customer and vehicle UI", () => {
       route("POST", "/customers", { data: newCustomer }, 201),
       route("PATCH", "/customers/customer-1", { data: editedCustomer }),
       route("GET", "/customers/customer-1/history", { data: customerHistory }),
-      route("DELETE", "/customers/customer-2", null, 204),
+      route("DELETE", "/customers/customer-3", null, 204),
       route("POST", "/customers", { error: { message: "Customer document already exists." } }, 409),
     ]);
     globalThis.fetch = fetchMock;
@@ -90,10 +90,10 @@ describe("JO.IA customer and vehicle UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "Historico de Maria Oliveira Oficina" }));
     expect(await screen.findByText("Cliente criado.")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Excluir Joao Silva" }));
-    expect(screen.getByText("Confirmar exclusao logica de Joao Silva?")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusao de Joao Silva" }));
-    await waitFor(() => expect(screen.queryByText("Joao Silva")).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Excluir Ana CNPJ Alfa" }));
+    expect(screen.getByText("Confirmar exclusao logica de Ana CNPJ Alfa?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusao de Ana CNPJ Alfa" }));
+    await waitFor(() => expect(screen.queryByText("Ana CNPJ Alfa")).not.toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText("Nome do cliente"), {
       target: { value: "Documento Duplicado" },
@@ -122,7 +122,7 @@ describe("JO.IA customer and vehicle UI", () => {
       route("POST", "/vehicles", { data: newVehicle }, 201),
       route("PATCH", "/vehicles/vehicle-1", { data: editedVehicle }),
       route("GET", "/vehicles/vehicle-1/history", { data: vehicleHistory }),
-      route("DELETE", "/vehicles/vehicle-2", null, 204),
+      route("DELETE", "/vehicles/vehicle-3", null, 204),
       route("POST", "/vehicles", { error: { message: "Vehicle plate already exists." } }, 409),
     ]);
     globalThis.fetch = fetchMock;
@@ -152,15 +152,15 @@ describe("JO.IA customer and vehicle UI", () => {
     });
     fireEvent.change(screen.getByLabelText("Cor"), { target: { value: "Prata" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar veiculo" }));
-    expect(await screen.findByText("Joao Silva")).toBeInTheDocument();
+    expect(await screen.findAllByText("Joao Silva")).not.toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Historico de ABC1D23" }));
     expect(await screen.findByText("Veiculo vinculado ao cliente atual.")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Excluir DEF2E45" }));
-    expect(screen.getByText("Confirmar exclusao logica de DEF2E45?")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusao de DEF2E45" }));
-    await waitFor(() => expect(screen.queryByText("DEF2E45")).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Excluir XYZ9A88" }));
+    expect(screen.getByText("Confirmar exclusao logica de XYZ9A88?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusao de XYZ9A88" }));
+    await waitFor(() => expect(screen.queryByText("XYZ9A88")).not.toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText("Placa"), { target: { value: "ABC1D23" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar veiculo" }));
@@ -218,7 +218,15 @@ function createFetchMock(routes: MockRoute[]) {
     const method = init?.method ?? "GET";
     const parsedUrl = new URL(url);
     const path = `${parsedUrl.pathname}${parsedUrl.search}`;
-    const found = routes.find((item) => item.method === method && item.path === path);
+    const matchingIndexes = routes
+      .map((item, index) => ({ index, item }))
+      .filter(({ item }) => item.method === method && item.path === path)
+      .map(({ index }) => index);
+    const foundIndex = matchingIndexes[0] ?? -1;
+    const found =
+      foundIndex >= 0 && matchingIndexes.length > 1
+        ? routes.splice(foundIndex, 1)[0]
+        : routes[foundIndex];
 
     if (!found) {
       throw new Error(`Unexpected fetch ${method} ${path}`);
