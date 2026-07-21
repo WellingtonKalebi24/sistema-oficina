@@ -10,7 +10,7 @@
 |---|-------|------|--------------|---------|
 | 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
-| 3 | Clientes e Veículos | Gerenciar clientes, veículos e histórico básico | CAV-01..CAV-09 | yes |
+| 3 | Clientes e Veículos | 1/3 | In Progress|  |
 | 4 | Serviços, Produtos, Compras e Estoque | Controlar catálogos, fornecedores, compras, saldos e reservas | STK-01..STK-14 | yes |
 | 5 | Agenda e Recepção | Cobrir agendamento, check-in, checklist e anexos | REC-01..REC-08 | yes |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
@@ -135,12 +135,12 @@ Plans:
 **Mode:** mvp
 **Requirements:** CAV-01, CAV-02, CAV-03, CAV-04, CAV-05, CAV-06, CAV-07, CAV-08, CAV-09
 **UI hint:** yes
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Customer/vehicle schema, permissions, tenant helpers and RED backend contracts.
+- [x] 03-01-PLAN.md — Customer/vehicle schema, permissions, tenant helpers and RED backend contracts.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 2 - Autenticação, Tenant e Permissões
+current_phase: Phase 3 - Clientes e Veículos
 status: executing
-stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-07-21T00:05:53.876Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-07-21T00:28:02.769Z"
 progress:
   total_phases: 12
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
-  percent: 17
+  total_plans: 12
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State: JO.IA
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-21
 **Status:** Ready to execute
-**Current phase:** Phase 2 - Autenticação, Tenant e Permissões
+**Current phase:** Phase 3 - Clientes e Veículos
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 **Core value:** Uma oficina consegue executar e auditar todo o ciclo de atendimento de um veículo, da entrada ao pagamento, com isolamento seguro por tenant e sem depender de comunicações automáticas com o cliente.
-**Current focus:** Executar autenticação, tenant, permissões, sessões, recuperação de senha e auditoria com isolamento seguro.
+**Current focus:** Executar clientes e veículos com isolamento seguro por tenant, contratos RED e fundação de dados auditável.
 
 ## Completed
 
@@ -41,6 +41,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 2 plan 02-01 completed: approved auth/admin dependency installation after SUS package legitimacy checkpoint.
 - Phase 2 plan 02-02 completed: identity, tenant, permission, session, reset-token and audit Prisma schema with RED auth route contracts.
 - Phase 2 plan 02-03 completed: password/token/session services, first-admin bootstrap, login, refresh rotation, current-session logout and current-user API.
+- Phase 3 plan 03-01 completed: customer/vehicle schema, permission keys, tenant helpers and RED backend contracts.
 
 ## Current Decisions
 
@@ -69,7 +70,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Start Phase 3 for customer and vehicle management behind the authenticated tenant shell.
+Start Phase 3 plan 03-02 for protected tenant-scoped customer and vehicle API routes, services, audit, history and isolation.
 
 ### Quick Tasks Completed
 
@@ -90,16 +91,18 @@ Start Phase 3 for customer and vehicle management behind the authenticated tenan
 - 02-04: `npm run verify` passed.
 - quick 260720-f2r: `npm run test -w apps/web -- auth-ui`, `npm run typecheck -w apps/web`, `npm run lint -w apps/web` and targeted `format:check` passed.
 - quick 260720-taw: `npm run test -w apps/web -- auth-ui`, `npm run typecheck -w apps/web`, `npm run lint -w apps/web`, targeted `format:check` and login smoke with `wellingtonrdp16@gmail.com` passed.
+- 03-01: `npm run db:migrate` passed and applied `20260720000000_add_customers_vehicles`, then later reported already in sync.
+- 03-01: `npm run test -w apps/api -- prisma-baseline customer-vehicles` is expected RED for 03-02 customer/vehicle routes; `prisma-baseline` passed and five customer/vehicle tests failed on 404.
+- 03-01: `npm run typecheck -w apps/api`, `npm run lint -w apps/api` and `npm run format:check` passed.
 
 ## Known Issues
 
-- No application code exists yet.
-- Phase 1 must establish executable validation before feature work starts.
+- Customer/vehicle API route and service behavior is intentionally RED for 03-02: `/customers` and `/vehicles` currently return 404.
 
 ## Session
 
-**Last session:** 2026-07-19T12:47:49.229Z
-**Stopped at:** Completed 02-06-PLAN.md
+**Last session:** 2026-07-21T00:28:02.723Z
+**Stopped at:** Completed 03-01-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -115,6 +118,7 @@ Start Phase 3 for customer and vehicle management behind the authenticated tenan
 | Phase 02 P04 | 9min | 2 tasks | 13 files |
 | Phase 02 P05 | 12min | 2 tasks | 16 files |
 | Phase 02 P06 | 14min | 3 tasks | 9 files |
+| Phase 03 P01 | 8min | 2 tasks | 8 files |
 
 ## Decisions
 
@@ -140,3 +144,6 @@ Start Phase 3 for customer and vehicle management behind the authenticated tenan
 - [Phase 02]: Plan 05 requires users.createAdmin for admin-level role permission grants and allow overrides. — Implements D-03 and prevents privilege escalation by users who can create only regular users.
 - [Phase 02]: Used react-router for the authenticated web shell while keeping backend authorization authoritative and displaying API 403 as a server-permission blocked state.
 - [Phase 02]: Browser session storage is limited to access token, opaque refresh token, session id, tenant id, user profile and effective permissions.
+- [Phase 03]: Plan 01 uses PostgreSQL partial unique indexes for active-only customer document, vehicle plate and vehicle VIN uniqueness; Prisma @@unique is not used for soft-delete predicates.
+- [Phase 03]: Plan 01 keeps customer phone duplicate behavior non-unique while indexing phone_normalized for search.
+- [Phase 03]: Plan 01 leaves /customers and /vehicles API behavior RED for 03-02 and does not mark CAV requirements complete from the foundation-only plan.
