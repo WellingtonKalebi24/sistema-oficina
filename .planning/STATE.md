@@ -76,7 +76,7 @@ Start Phase 3 for customer and vehicle management behind the authenticated tenan
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260720-f2r | Mover recuperacao de acesso para link abaixo do login | 2026-07-20 | df375cb | [260720-f2r-mover-recuperacao-de-acesso-para-link-ab](./quick/260720-f2r-mover-recuperacao-de-acesso-para-link-ab/) |
-| 260720-taw | Criar pagina esqueceu senha e aplicar componentes shadcn ui no acesso | 2026-07-21 | pending | [260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co](./quick/260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co/) |
+| 260720-taw | Criar pagina esqueceu senha e aplicar componentes shadcn ui no acesso | 2026-07-21 | 0737a54 | [260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co](./quick/260720-taw-criar-pagina-esqueceu-senha-e-aplicar-co/) |
 
 ## Tests Executed
 
