@@ -5,12 +5,12 @@ milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
 status: executing
 stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-07-22T14:39:54.080Z"
+last_updated: "2026-07-22T15:15:19.710Z"
 progress:
   total_phases: 12
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 16
+  completed_plans: 13
   percent: 25
 ---
 
@@ -104,7 +104,7 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 
 ## Session
 
-**Last session:** 2026-07-22T14:39:54.033Z
+**Last session:** 2026-07-22T15:14:52.151Z
 **Stopped at:** Phase 4 UI-SPEC approved
 **Resume file:** .planning/phases/04-servi-os-produtos-compras-e-estoque/04-UI-SPEC.md
 
@@ -124,6 +124,7 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 | Phase 03 P01 | 8min | 2 tasks | 8 files |
 | Phase 03 P02 | 10min | 2 tasks | 6 files |
 | Phase 03 P03 | 73min | 3 tasks | 6 files |
+| Phase 04 P01 | 9min | 2 tasks | 10 files |
 
 ## Decisions
 
@@ -158,3 +159,5 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 - [Phase 03]: Plan 02 keeps customer/vehicle audit metadata concise with changed fields and related IDs, not raw notes, full phone/document values or VIN bodies.
 - [Phase 03]: Plan 03 kept customer and vehicle records in React memory only; browser localStorage remains limited to auth session data.
 - [Phase 03]: Plan 03 loads customer/vehicle resources only when effective permissions include customers.read or vehicles.read while backend 403 remains authoritative.
+- [Phase 04]: Plan 01 uses /stock/services, /stock/categories, /stock/products and /stock/suppliers for the tenant-scoped stock catalog API.
+- [Phase 04]: Plan 01 initializes ProductStock during product creation and calculates lowStock only when a positive minimum is configured and availability is below it.

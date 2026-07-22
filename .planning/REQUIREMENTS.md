@@ -46,20 +46,20 @@
 
 ### Catalog And Stock
 
-- [ ] **STK-01**: User can create, edit, list and deactivate service catalog entries.
-- [ ] **STK-02**: User can create product categories and products.
-- [ ] **STK-03**: User can create and manage suppliers.
+- [x] **STK-01**: User can create, edit, list and deactivate service catalog entries.
+- [x] **STK-02**: User can create product categories and products.
+- [x] **STK-03**: User can create and manage suppliers.
 - [ ] **STK-04**: User can register purchases and purchase items.
 - [ ] **STK-05**: Purchase entry increases product stock through a transactional stock movement.
 - [ ] **STK-06**: Authorized user can register stock exits with origin tracking.
 - [ ] **STK-07**: Authorized user can register stock adjustments with reason and audit.
-- [ ] **STK-08**: User can configure minimum stock for products.
-- [ ] **STK-09**: System calculates low-stock visual alerts from current stock data.
+- [x] **STK-08**: User can configure minimum stock for products.
+- [x] **STK-09**: System calculates low-stock visual alerts from current stock data.
 - [ ] **STK-10**: User can reserve parts for a quote or work order without corrupting physical balance.
 - [ ] **STK-11**: User can cancel a reservation and restore availability.
 - [ ] **STK-12**: User can inspect stock movement history with source operation.
 - [ ] **STK-13**: Concurrent stock operations do not produce negative or incorrect balances.
-- [ ] **STK-14**: Catalog, supplier and stock data cannot cross tenant boundaries.
+- [x] **STK-14**: Catalog, supplier and stock data cannot cross tenant boundaries.
 
 ### Scheduling And Reception
 
@@ -209,20 +209,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAV-07 | Phase 3 | Complete |
 | CAV-08 | Phase 3 | Complete |
 | CAV-09 | Phase 3 | Complete |
-| STK-01 | Phase 4 | Pending |
-| STK-02 | Phase 4 | Pending |
-| STK-03 | Phase 4 | Pending |
+| STK-01 | Phase 4 | Complete |
+| STK-02 | Phase 4 | Complete |
+| STK-03 | Phase 4 | Complete |
 | STK-04 | Phase 4 | Pending |
 | STK-05 | Phase 4 | Pending |
 | STK-06 | Phase 4 | Pending |
 | STK-07 | Phase 4 | Pending |
-| STK-08 | Phase 4 | Pending |
-| STK-09 | Phase 4 | Pending |
+| STK-08 | Phase 4 | Complete |
+| STK-09 | Phase 4 | Complete |
 | STK-10 | Phase 4 | Pending |
 | STK-11 | Phase 4 | Pending |
 | STK-12 | Phase 4 | Pending |
 | STK-13 | Phase 4 | Pending |
-| STK-14 | Phase 4 | Pending |
+| STK-14 | Phase 4 | Complete |
 | REC-01 | Phase 5 | Pending |
 | REC-02 | Phase 5 | Pending |
 | REC-03 | Phase 5 | Pending |
