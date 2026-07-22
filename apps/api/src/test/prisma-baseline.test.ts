@@ -36,8 +36,15 @@ const requiredCustomerVehicleModels = [
   "CustomerVehicleHistoryEvent",
 ] as const;
 
-const forbiddenBusinessOrCommunicationModels = [
+const requiredStockCatalogModels = [
+  "ServiceCatalogEntry",
+  "ProductCategory",
   "Product",
+  "ProductStock",
+  "Supplier",
+] as const;
+
+const forbiddenBusinessOrCommunicationModels = [
   "Quote",
   "WorkOrder",
   "Payment",
@@ -92,6 +99,23 @@ describe("Prisma schema baseline", () => {
     expect(schema).toMatch(/vinNormalized\s+String\?\s+@map\("vin_normalized"\)/);
     expect(schema).toMatch(/deletedAt\s+DateTime\?\s+@map\("deleted_at"\)/);
     expect(schema).toMatch(/deletedByUserId\s+String\?\s+@map\("deleted_by_user_id"\)/);
+  });
+
+  it("contains the Phase 4 service, product, supplier and current stock catalog contract", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+
+    for (const model of requiredStockCatalogModels) {
+      expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
+    }
+
+    expect(schema).toMatch(/minimumStock\s+Int\s+@default\(0\)\s+@map\("minimum_stock"\)/);
+    expect(schema).toMatch(
+      /physicalQuantity\s+Int\s+@default\(0\)\s+@map\("physical_quantity"\)/,
+    );
+    expect(schema).toMatch(
+      /reservedQuantity\s+Int\s+@default\(0\)\s+@map\("reserved_quantity"\)/,
+    );
+    expect(schema).toMatch(/deactivatedAt\s+DateTime\?\s+@map\("deactivated_at"\)/);
   });
 
   it("keeps out-of-scope business and communication entities out of the schema", async () => {
