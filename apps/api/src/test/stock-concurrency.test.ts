@@ -133,6 +133,32 @@ describe("stock concurrency contract", () => {
       reservedQuantity: 0,
     });
   });
+
+  it("D-04/D-05/D-10/STK-13 serializes concurrent reservations so available stock cannot be over-reserved", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Concorrencia Reservas",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+    const product = await createStockedProduct(headers, 5);
+
+    const [firstReservation, secondReservation, thirdReservation] = await Promise.all([
+      createReservation(headers, product.id, 2),
+      createReservation(headers, product.id, 2),
+      createReservation(headers, product.id, 2),
+    ]);
+
+    expect([firstReservation.status, secondReservation.status, thirdReservation.status].sort()).toEqual([
+      201, 201, 409,
+    ]);
+
+    const productAfter = await readProduct(session.accessToken, product.id);
+    expect(productAfter).toMatchObject({
+      availableQuantity: 1,
+      physicalQuantity: 5,
+      reservedQuantity: 4,
+    });
+  });
 });
 
 function bearerHeaders(accessToken: string): Record<string, string> {
@@ -256,6 +282,23 @@ async function createAdjustment(
       quantityDelta,
       reason: `Conferencia ${crypto.randomUUID()}`,
       sourceKind: "inventory_count",
+    }),
+  });
+}
+
+async function createReservation(
+  headers: Record<string, string>,
+  productId: string,
+  quantity: number,
+): Promise<Response> {
+  return fetch(`${baseUrl}/stock/reservations`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      productId,
+      quantity,
+      sourceKind: "quote",
+      sourceReference: `ORC ${crypto.randomUUID()}`,
     }),
   });
 }

@@ -91,6 +91,20 @@ type MovementBody = {
   type: string;
 };
 
+type ReservationBody = {
+  cancelledAt: string | null;
+  createdAt: string;
+  id: string;
+  productId: string;
+  quantity: number;
+  sourceId: string | null;
+  sourceKind: string;
+  sourceLabel: string | null;
+  sourceReference: string | null;
+  status: string;
+  tenantId: string;
+};
+
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
 
@@ -617,6 +631,207 @@ describe("stock catalog API contract", () => {
     expect(foreignProductPurchase.status).toBe(404);
     expect(foreignProductExit.status).toBe(404);
     expect(foreignProductAdjustment.status).toBe(404);
+  });
+
+  it("D-04/D-05/D-10 reserves and cancels parts without changing physical stock", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Reservas",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+    const category = await createCategory(headers, { name: "Reserva filtros" });
+    const product = await createProduct(headers, {
+      categoryId: category.id,
+      minimumStock: 3,
+      name: "Sensor ABS",
+    });
+    const supplier = await createSupplier(headers, { name: "Fornecedor Reserva" });
+
+    await createPurchase(headers, {
+      items: [{ productId: product.id, quantity: 6, unitCost: "80.00" }],
+      purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+      supplierId: supplier.id,
+    });
+
+    const reservationResponse = await fetch(`${baseUrl}/stock/reservations`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        productId: product.id,
+        quantity: 4,
+        sourceId: null,
+        sourceKind: "quote",
+        sourceLabel: "Orcamento manual",
+        sourceReference: "ORC-2026-001",
+      }),
+    });
+
+    expect(reservationResponse.status).toBe(201);
+
+    const reservation = (await reservationResponse.json()) as ApiData<ReservationBody>;
+    expect(reservation.data).toMatchObject({
+      cancelledAt: null,
+      productId: product.id,
+      quantity: 4,
+      sourceId: null,
+      sourceKind: "quote",
+      sourceLabel: "Orcamento manual",
+      sourceReference: "ORC-2026-001",
+      status: "active",
+      tenantId: fixture.tenantId,
+    });
+
+    const productAfterReserveResponse = await fetch(`${baseUrl}/stock/products/${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const activeListResponse = await fetch(`${baseUrl}/stock/reservations?status=active`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const movementsAfterReserveResponse = await fetch(
+      `${baseUrl}/stock/movements?productId=${product.id}`,
+      {
+        headers: bearerHeaders(session.accessToken),
+      },
+    );
+
+    expect(productAfterReserveResponse.status).toBe(200);
+    expect(activeListResponse.status).toBe(200);
+    expect(movementsAfterReserveResponse.status).toBe(200);
+
+    const productAfterReserve = (await productAfterReserveResponse.json()) as ApiData<ProductBody>;
+    const activeReservations = (await activeListResponse.json()) as ApiData<ReservationBody[]>;
+    const movementsAfterReserve =
+      (await movementsAfterReserveResponse.json()) as ApiData<MovementBody[]>;
+
+    expect(productAfterReserve.data).toMatchObject({
+      availableQuantity: 2,
+      lowStock: true,
+      physicalQuantity: 6,
+      reservedQuantity: 4,
+    });
+    expect(activeReservations.data.map((item) => item.id)).toContain(reservation.data.id);
+    expect(movementsAfterReserve.data[0]).toMatchObject({
+      balanceAfterAvailable: 2,
+      balanceAfterPhysical: 6,
+      balanceAfterReserved: 4,
+      productId: product.id,
+      quantityDelta: 0,
+      sourceKind: "quote",
+      sourceLabel: "Orcamento manual",
+      type: "reservation",
+    });
+
+    const cancelResponse = await fetch(
+      `${baseUrl}/stock/reservations/${reservation.data.id}/cancel`,
+      {
+        method: "POST",
+        headers,
+      },
+    );
+    const doubleCancelResponse = await fetch(
+      `${baseUrl}/stock/reservations/${reservation.data.id}/cancel`,
+      {
+        method: "POST",
+        headers,
+      },
+    );
+
+    expect(cancelResponse.status).toBe(200);
+    expect(doubleCancelResponse.status).toBe(409);
+
+    const cancelledReservation = (await cancelResponse.json()) as ApiData<ReservationBody>;
+    const productAfterCancelResponse = await fetch(`${baseUrl}/stock/products/${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const cancelledListResponse = await fetch(`${baseUrl}/stock/reservations?status=cancelled`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+
+    expect(cancelledReservation.data.status).toBe("cancelled");
+    expect(cancelledReservation.data.cancelledAt).toEqual(expect.any(String));
+
+    const productAfterCancel = (await productAfterCancelResponse.json()) as ApiData<ProductBody>;
+    const cancelledReservations =
+      (await cancelledListResponse.json()) as ApiData<ReservationBody[]>;
+
+    expect(productAfterCancel.data).toMatchObject({
+      availableQuantity: 6,
+      lowStock: false,
+      physicalQuantity: 6,
+      reservedQuantity: 0,
+    });
+    expect(cancelledReservations.data.map((item) => item.id)).toContain(reservation.data.id);
+  });
+
+  it("D-04/D-05/D-10 rejects reservation create and cancel operations across tenants", async () => {
+    const tenantA = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Reservas A",
+    });
+    const tenantB = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Reservas B",
+    });
+    const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
+    const sessionB = await loginAs({ baseUrl }, tenantB.adminEmail, tenantB.adminPassword);
+    const headersA = authHeaders(sessionA.accessToken);
+    const headersB = authHeaders(sessionB.accessToken);
+    const categoryA = await createCategory(headersA, { name: "Reserva tenant A" });
+    const categoryB = await createCategory(headersB, { name: "Reserva tenant B" });
+    const productA = await createProduct(headersA, {
+      categoryId: categoryA.id,
+      name: "Produto reserva A",
+    });
+    const productB = await createProduct(headersB, {
+      categoryId: categoryB.id,
+      name: "Produto reserva B",
+    });
+    const supplierB = await createSupplier(headersB, { name: "Fornecedor reserva B" });
+
+    await createPurchase(headersB, {
+      items: [{ productId: productB.id, quantity: 3, unitCost: "10.00" }],
+      purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+      supplierId: supplierB.id,
+    });
+
+    const reservationBResponse = await fetch(`${baseUrl}/stock/reservations`, {
+      method: "POST",
+      headers: headersB,
+      body: JSON.stringify({
+        productId: productB.id,
+        quantity: 1,
+        sourceKind: "work_order",
+        sourceReference: "OS-tenant-B",
+      }),
+    });
+    expect(reservationBResponse.status).toBe(201);
+
+    const reservationB = (await reservationBResponse.json()) as ApiData<ReservationBody>;
+    const foreignProductReservation = await fetch(`${baseUrl}/stock/reservations`, {
+      method: "POST",
+      headers: headersA,
+      body: JSON.stringify({
+        productId: productB.id,
+        quantity: 1,
+        sourceKind: "quote",
+      }),
+    });
+    const foreignCancel = await fetch(
+      `${baseUrl}/stock/reservations/${reservationB.data.id}/cancel`,
+      {
+        method: "POST",
+        headers: headersA,
+      },
+    );
+    const tenantAReservationsResponse = await fetch(`${baseUrl}/stock/reservations`, {
+      headers: bearerHeaders(sessionA.accessToken),
+    });
+
+    expect(productA.tenantId).toBe(tenantA.tenantId);
+    expect(foreignProductReservation.status).toBe(404);
+    expect(foreignCancel.status).toBe(404);
+
+    const tenantAReservations =
+      (await tenantAReservationsResponse.json()) as ApiData<ReservationBody[]>;
+    expect(tenantAReservations.data.map((item) => item.id)).not.toContain(reservationB.data.id);
   });
 });
 
