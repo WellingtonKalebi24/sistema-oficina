@@ -14,6 +14,7 @@ import { createCustomersRouter } from "./http/routes/customers.js";
 import { createFoundationChecksRouter } from "./http/routes/foundationChecks.js";
 import { createHealthRouter } from "./http/routes/health.js";
 import { createRolesRouter } from "./http/routes/roles.js";
+import { createStockCatalogRouter } from "./http/routes/stockCatalog.js";
 import { createTenantSettingsRouter } from "./http/routes/tenantSettings.js";
 import { createUsersRouter } from "./http/routes/users.js";
 import { createVehiclesRouter } from "./http/routes/vehicles.js";
@@ -69,6 +70,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   );
   app.use(createCustomersRouter(prisma));
   app.use(createVehiclesRouter(prisma));
+  app.use(createStockCatalogRouter(prisma));
   app.use(createTenantSettingsRouter(prisma));
   app.use(createUsersRouter(prisma));
   app.use(createRolesRouter(prisma));

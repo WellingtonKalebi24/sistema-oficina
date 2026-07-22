@@ -6,6 +6,9 @@ export const PERMISSIONS = {
   customersUpdate: "customers.update",
   permissionsManage: "permissions.manage",
   rolesManage: "roles.manage",
+  stockCatalogRead: "stock.catalog.read",
+  stockCatalogWrite: "stock.catalog.write",
+  stockSuppliersWrite: "stock.suppliers.write",
   tenantSettingsRead: "tenant.settings.read",
   tenantSettingsUpdate: "tenant.settings.update",
   usersCreate: "users.create",
@@ -37,6 +40,9 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.vehiclesCreate,
   PERMISSIONS.vehiclesUpdate,
   PERMISSIONS.vehiclesDelete,
+  PERMISSIONS.stockCatalogRead,
+  PERMISSIONS.stockCatalogWrite,
+  PERMISSIONS.stockSuppliersWrite,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -109,6 +115,18 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.usersCreateAdmin]: {
     description: "Permite criar ou conceder permissoes administrativas.",
     name: "Criar administradores",
+  },
+  [PERMISSIONS.stockCatalogRead]: {
+    description: "Permite consultar servicos, categorias, produtos, fornecedores e saldos do tenant autenticado.",
+    name: "Ler catalogo de estoque",
+  },
+  [PERMISSIONS.stockCatalogWrite]: {
+    description: "Permite criar, editar e desativar servicos, categorias e produtos no tenant autenticado.",
+    name: "Gerenciar catalogo de estoque",
+  },
+  [PERMISSIONS.stockSuppliersWrite]: {
+    description: "Permite criar, editar e desativar fornecedores no tenant autenticado.",
+    name: "Gerenciar fornecedores",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",
