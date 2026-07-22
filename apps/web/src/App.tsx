@@ -143,13 +143,7 @@ type AdminData = {
 
 type BlockedState = Partial<
   Record<
-    | "customers"
-    | "permissions"
-    | "roles"
-    | "settings"
-    | "stock"
-    | "users"
-    | "vehicles",
+    "customers" | "permissions" | "roles" | "settings" | "stock" | "users" | "vehicles",
     string
   >
 >;
@@ -606,7 +600,10 @@ function AuthAdminApp() {
               await refreshStockData(currentSession);
               return created;
             });
-            setAdminData((current) => ({ ...current, purchases: [purchase, ...current.purchases] }));
+            setAdminData((current) => ({
+              ...current,
+              purchases: [purchase, ...current.purchases],
+            }));
             setStatusMessage("Compra registrada e estoque atualizado pelo backend.");
           }}
           onCreateStockReservation={async (input) => {
@@ -617,7 +614,9 @@ function AuthAdminApp() {
             });
             setAdminData((current) => ({
               ...current,
-              stockReservations: current.stockReservations.some((item) => item.id === reservation.id)
+              stockReservations: current.stockReservations.some(
+                (item) => item.id === reservation.id,
+              )
                 ? current.stockReservations.map((item) =>
                     item.id === reservation.id ? reservation : item,
                   )
@@ -1199,11 +1198,7 @@ function AdminShell(props: {
     }
   }
 
-  function renderNavButton(item: {
-    icon: IconDefinition;
-    label: string;
-    view: View;
-  }) {
+  function renderNavButton(item: { icon: IconDefinition; label: string; view: View }) {
     return (
       <button
         key={item.view}
@@ -1264,9 +1259,7 @@ function AdminShell(props: {
                 <div
                   id="cadastros-menu"
                   className={
-                    isCadastrosOpen
-                      ? "nav-group-items nav-group-items--open"
-                      : "nav-group-items"
+                    isCadastrosOpen ? "nav-group-items nav-group-items--open" : "nav-group-items"
                   }
                 >
                   {cadastroItems.map(renderNavButton)}
@@ -1456,13 +1449,7 @@ function SettingsPanel({
 }
 
 type StockTab =
-  | "alertas"
-  | "compras"
-  | "fornecedores"
-  | "movimentos"
-  | "produtos"
-  | "reservas"
-  | "servicos";
+  "alertas" | "compras" | "fornecedores" | "movimentos" | "produtos" | "reservas" | "servicos";
 
 function StockPanel({
   blocked,
@@ -1610,7 +1597,9 @@ function StockPanel({
     try {
       await action();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel sincronizar o estoque.");
+      setError(
+        caught instanceof Error ? caught.message : "Nao foi possivel sincronizar o estoque.",
+      );
     } finally {
       setSaving(false);
     }
@@ -1695,7 +1684,11 @@ function StockPanel({
             </button>
           </form>
           <section className="panel">
-            <PanelTitle eyebrow="Tabela" title="Servicos ativos" countLabel={`${services.length} itens`} />
+            <PanelTitle
+              eyebrow="Tabela"
+              title="Servicos ativos"
+              countLabel={`${services.length} itens`}
+            />
             <TableWrap empty={services.length === 0}>
               <table aria-label="Servicos ativos">
                 <thead>
@@ -1870,7 +1863,11 @@ function StockPanel({
             </div>
           </form>
           <section className="panel">
-            <PanelTitle eyebrow="Tabela" title="Produtos ativos" countLabel={`${products.length} itens`} />
+            <PanelTitle
+              eyebrow="Tabela"
+              title="Produtos ativos"
+              countLabel={`${products.length} itens`}
+            />
             <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
               <label className="field">
                 <span>Buscar produto</span>
@@ -2140,7 +2137,11 @@ function StockPanel({
             </button>
           </form>
           <section className="panel">
-            <PanelTitle eyebrow="Tabela" title="Compras registradas" countLabel={`${purchases.length} itens`} />
+            <PanelTitle
+              eyebrow="Tabela"
+              title="Compras registradas"
+              countLabel={`${purchases.length} itens`}
+            />
             <TableWrap empty={purchases.length === 0}>
               <table aria-label="Compras registradas">
                 <thead>
@@ -2157,7 +2158,10 @@ function StockPanel({
                   {purchases.map((purchase) => (
                     <tr key={purchase.id}>
                       <td>{purchase.documentNumber ?? purchase.id}</td>
-                      <td>{suppliers.find((supplier) => supplier.id === purchase.supplierId)?.name ?? "Fornecedor"}</td>
+                      <td>
+                        {suppliers.find((supplier) => supplier.id === purchase.supplierId)?.name ??
+                          "Fornecedor"}
+                      </td>
                       <td>{formatUpdatedAt(purchase.purchasedAt)}</td>
                       <td>{purchase.itemCount}</td>
                       <td>{formatCurrency(Number(purchase.totalAmount))}</td>
@@ -2310,7 +2314,11 @@ function StockPanel({
             </button>
           </form>
           <section className="panel">
-            <PanelTitle eyebrow="Tabela" title="Reservas" countLabel={`${reservations.length} itens`} />
+            <PanelTitle
+              eyebrow="Tabela"
+              title="Reservas"
+              countLabel={`${reservations.length} itens`}
+            />
             <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
               <label className="field">
                 <span>Buscar reserva</span>
@@ -2335,7 +2343,11 @@ function StockPanel({
                     <tr key={reservation.id}>
                       <td>{productName(reservation.productId)}</td>
                       <td>{reservation.quantity}</td>
-                      <td>{reservation.sourceLabel ?? reservation.sourceReference ?? reservation.sourceKind}</td>
+                      <td>
+                        {reservation.sourceLabel ??
+                          reservation.sourceReference ??
+                          reservation.sourceKind}
+                      </td>
                       <td>{reservation.status === "active" ? "Ativa" : "Cancelada"}</td>
                       <td>{formatUpdatedAt(reservation.updatedAt)}</td>
                       <td>
@@ -2373,7 +2385,11 @@ function StockPanel({
 
       {activeTab === "alertas" ? (
         <section className="panel" aria-label="Alertas de estoque">
-          <PanelTitle eyebrow="Alertas" title="Estoque baixo" countLabel={`${lowStockProducts.length} itens`} />
+          <PanelTitle
+            eyebrow="Alertas"
+            title="Estoque baixo"
+            countLabel={`${lowStockProducts.length} itens`}
+          />
           {lowStockProducts.length === 0 ? (
             <div className="empty-state">Nenhum item de estoque encontrado</div>
           ) : (
@@ -2483,7 +2499,10 @@ function TableWrap({ children, empty }: { children: ReactNode; empty: boolean })
     return (
       <div className="empty-state">
         <strong>Nenhum item de estoque encontrado</strong>
-        <span>Cadastre produtos, fornecedores ou compras para iniciar o controle transacional do estoque.</span>
+        <span>
+          Cadastre produtos, fornecedores ou compras para iniciar o controle transacional do
+          estoque.
+        </span>
       </div>
     );
   }
@@ -2510,10 +2529,20 @@ function ConfirmStrip({
   );
 }
 
-function MovementTable({ movements, products }: { movements: StockMovement[]; products: Product[] }) {
+function MovementTable({
+  movements,
+  products,
+}: {
+  movements: StockMovement[];
+  products: Product[];
+}) {
   return (
     <section className="panel">
-      <PanelTitle eyebrow="Historico" title="Movimentos" countLabel={`${movements.length} linhas`} />
+      <PanelTitle
+        eyebrow="Historico"
+        title="Movimentos"
+        countLabel={`${movements.length} linhas`}
+      />
       <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
         <label className="field">
           <span>Buscar movimento</span>
@@ -2538,14 +2567,16 @@ function MovementTable({ movements, products }: { movements: StockMovement[]; pr
             {movements.map((movement) => (
               <tr key={movement.id}>
                 <td>{formatUpdatedAt(movement.createdAt)}</td>
-                <td>{products.find((product) => product.id === movement.productId)?.name ?? "Produto"}</td>
+                <td>
+                  {products.find((product) => product.id === movement.productId)?.name ?? "Produto"}
+                </td>
                 <td>{movement.type}</td>
                 <td>{movement.quantityDelta}</td>
                 <td>{movement.sourceLabel ?? movement.sourceKind}</td>
                 <td>Backend</td>
                 <td>
-                  Fisico {movement.balanceAfterPhysical} / Reservado{" "}
-                  {movement.balanceAfterReserved} / Disponivel {movement.balanceAfterAvailable}
+                  Fisico {movement.balanceAfterPhysical} / Reservado {movement.balanceAfterReserved}{" "}
+                  / Disponivel {movement.balanceAfterAvailable}
                 </td>
               </tr>
             ))}
@@ -3527,9 +3558,7 @@ function VehiclesPanel({
         )}
         {pendingDelete ? (
           <div className="confirm-strip" role="alert">
-            <span>
-              Confirmar exclusao logica de {pendingDelete.plate ?? "veiculo sem placa"}?
-            </span>
+            <span>Confirmar exclusao logica de {pendingDelete.plate ?? "veiculo sem placa"}?</span>
             <button
               type="button"
               className="button-danger"

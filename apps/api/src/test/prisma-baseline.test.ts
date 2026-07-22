@@ -116,12 +116,8 @@ describe("Prisma schema baseline", () => {
     }
 
     expect(schema).toMatch(/minimumStock\s+Int\s+@default\(0\)\s+@map\("minimum_stock"\)/);
-    expect(schema).toMatch(
-      /physicalQuantity\s+Int\s+@default\(0\)\s+@map\("physical_quantity"\)/,
-    );
-    expect(schema).toMatch(
-      /reservedQuantity\s+Int\s+@default\(0\)\s+@map\("reserved_quantity"\)/,
-    );
+    expect(schema).toMatch(/physicalQuantity\s+Int\s+@default\(0\)\s+@map\("physical_quantity"\)/);
+    expect(schema).toMatch(/reservedQuantity\s+Int\s+@default\(0\)\s+@map\("reserved_quantity"\)/);
     expect(schema).toMatch(/deactivatedAt\s+DateTime\?\s+@map\("deactivated_at"\)/);
   });
 

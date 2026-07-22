@@ -414,8 +414,18 @@ const product = {
 const productAfterPurchase = { ...product, availableQuantity: 4, physicalQuantity: 6 };
 const productAfterExit = { ...product, availableQuantity: 3, physicalQuantity: 5 };
 const productAfterAdjustment = { ...product, availableQuantity: 5, physicalQuantity: 7 };
-const productAfterReservation = { ...product, availableQuantity: 3, physicalQuantity: 7, reservedQuantity: 4 };
-const productAfterCancel = { ...product, availableQuantity: 5, physicalQuantity: 7, reservedQuantity: 2 };
+const productAfterReservation = {
+  ...product,
+  availableQuantity: 3,
+  physicalQuantity: 7,
+  reservedQuantity: 4,
+};
+const productAfterCancel = {
+  ...product,
+  availableQuantity: 5,
+  physicalQuantity: 7,
+  reservedQuantity: 2,
+};
 
 const suppliers = [
   {

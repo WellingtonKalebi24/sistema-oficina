@@ -181,7 +181,12 @@ export function createStockCatalogRouter(prisma: PrismaDatabase): Router {
         req.body,
         "Invalid product category data.",
       );
-      const category = await updateProductCategory(prisma, actorFromRequest(req), categoryId, input);
+      const category = await updateProductCategory(
+        prisma,
+        actorFromRequest(req),
+        categoryId,
+        input,
+      );
 
       res.json({
         data: serializeProductCategory(category),

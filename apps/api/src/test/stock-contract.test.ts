@@ -203,8 +203,9 @@ describe("stock catalog API contract", () => {
     expect(listAfterDeactivateResponse.status).toBe(200);
 
     const listBody = (await listResponse.json()) as ApiData<ServiceBody[]>;
-    const afterDeactivateBody =
-      (await listAfterDeactivateResponse.json()) as ApiData<ServiceBody[]>;
+    const afterDeactivateBody = (await listAfterDeactivateResponse.json()) as ApiData<
+      ServiceBody[]
+    >;
 
     expect(listBody.data.map((service) => service.id)).toContain(created.data.id);
     expect(afterDeactivateBody.data.map((service) => service.id)).not.toContain(created.data.id);
@@ -322,13 +323,10 @@ describe("stock catalog API contract", () => {
       headers: headersA,
       body: JSON.stringify({ name: "Cross tenant" }),
     });
-    const deactivateSupplierBResponse = await fetch(
-      `${baseUrl}/stock/suppliers/${supplierB.id}`,
-      {
-        method: "DELETE",
-        headers: bearerHeaders(sessionA.accessToken),
-      },
-    );
+    const deactivateSupplierBResponse = await fetch(`${baseUrl}/stock/suppliers/${supplierB.id}`, {
+      method: "DELETE",
+      headers: bearerHeaders(sessionA.accessToken),
+    });
 
     expect(categoryA.tenantId).toBe(tenantA.tenantId);
     expect(supplierB.documentNormalized).toBe("12345678000199");
@@ -700,8 +698,9 @@ describe("stock catalog API contract", () => {
 
     const productAfterReserve = (await productAfterReserveResponse.json()) as ApiData<ProductBody>;
     const activeReservations = (await activeListResponse.json()) as ApiData<ReservationBody[]>;
-    const movementsAfterReserve =
-      (await movementsAfterReserveResponse.json()) as ApiData<MovementBody[]>;
+    const movementsAfterReserve = (await movementsAfterReserveResponse.json()) as ApiData<
+      MovementBody[]
+    >;
 
     expect(productAfterReserve.data).toMatchObject({
       availableQuantity: 2,
@@ -751,8 +750,9 @@ describe("stock catalog API contract", () => {
     expect(cancelledReservation.data.cancelledAt).toEqual(expect.any(String));
 
     const productAfterCancel = (await productAfterCancelResponse.json()) as ApiData<ProductBody>;
-    const cancelledReservations =
-      (await cancelledListResponse.json()) as ApiData<ReservationBody[]>;
+    const cancelledReservations = (await cancelledListResponse.json()) as ApiData<
+      ReservationBody[]
+    >;
 
     expect(productAfterCancel.data).toMatchObject({
       availableQuantity: 6,
@@ -829,8 +829,9 @@ describe("stock catalog API contract", () => {
     expect(foreignProductReservation.status).toBe(404);
     expect(foreignCancel.status).toBe(404);
 
-    const tenantAReservations =
-      (await tenantAReservationsResponse.json()) as ApiData<ReservationBody[]>;
+    const tenantAReservations = (await tenantAReservationsResponse.json()) as ApiData<
+      ReservationBody[]
+    >;
     expect(tenantAReservations.data.map((item) => item.id)).not.toContain(reservationB.data.id);
   });
 });

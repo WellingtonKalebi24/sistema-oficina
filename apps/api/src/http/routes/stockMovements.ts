@@ -72,7 +72,11 @@ export function createStockMovementsRouter(prisma: PrismaDatabase): Router {
     requirePermission(prisma, PERMISSIONS.stockMovementsRead),
     asyncHandler(async (req, res) => {
       const auth = (req as AuthenticatedRequest).auth;
-      const filters = parseRequest(stockFilterSchema, req.query, "Invalid stock reservation filters.");
+      const filters = parseRequest(
+        stockFilterSchema,
+        req.query,
+        "Invalid stock reservation filters.",
+      );
       const reservations = await listStockReservations(prisma, auth.tenantId, filters);
 
       res.json({

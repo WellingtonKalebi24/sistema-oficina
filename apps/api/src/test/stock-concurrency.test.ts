@@ -148,9 +148,9 @@ describe("stock concurrency contract", () => {
       createReservation(headers, product.id, 2),
     ]);
 
-    expect([firstReservation.status, secondReservation.status, thirdReservation.status].sort()).toEqual([
-      201, 201, 409,
-    ]);
+    expect(
+      [firstReservation.status, secondReservation.status, thirdReservation.status].sort(),
+    ).toEqual([201, 201, 409]);
 
     const productAfter = await readProduct(session.accessToken, product.id);
     expect(productAfter).toMatchObject({

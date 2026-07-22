@@ -249,7 +249,10 @@ describe("customer and vehicle API contract", () => {
       ["customer", searchByCustomerResponse],
     ] as const) {
       const body = (await response.json()) as ApiData<VehicleBody[]>;
-      expect(body.data.map((vehicle) => vehicle.id), label).toContain(vehicleBody.data.id);
+      expect(
+        body.data.map((vehicle) => vehicle.id),
+        label,
+      ).toContain(vehicleBody.data.id);
     }
 
     const secondVehicleResponse = await fetch(`${baseUrl}/vehicles`, {

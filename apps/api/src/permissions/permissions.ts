@@ -129,11 +129,13 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
     name: "Criar administradores",
   },
   [PERMISSIONS.stockCatalogRead]: {
-    description: "Permite consultar servicos, categorias, produtos, fornecedores e saldos do tenant autenticado.",
+    description:
+      "Permite consultar servicos, categorias, produtos, fornecedores e saldos do tenant autenticado.",
     name: "Ler catalogo de estoque",
   },
   [PERMISSIONS.stockCatalogWrite]: {
-    description: "Permite criar, editar e desativar servicos, categorias e produtos no tenant autenticado.",
+    description:
+      "Permite criar, editar e desativar servicos, categorias e produtos no tenant autenticado.",
     name: "Gerenciar catalogo de estoque",
   },
   [PERMISSIONS.stockSuppliersWrite]: {

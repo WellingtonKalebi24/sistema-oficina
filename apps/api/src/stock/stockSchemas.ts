@@ -55,7 +55,10 @@ const integerQuantity = z
 
 const positiveIntegerQuantity = z.number().int().positive();
 
-const nonZeroIntegerQuantity = z.number().int().refine((value) => value !== 0);
+const nonZeroIntegerQuantity = z
+  .number()
+  .int()
+  .refine((value) => value !== 0);
 
 const sourceKind = z.string().trim().min(1).max(80);
 
