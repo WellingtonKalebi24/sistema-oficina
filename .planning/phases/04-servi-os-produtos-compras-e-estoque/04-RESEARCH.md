@@ -333,17 +333,15 @@ await prisma.$transaction(async (tx) => {
 
 All claims in this research were verified by local files, GSD seams, npm registry checks or cited official documentation. No `[ASSUMED]` claims are intentionally used. [VERIFIED: research process]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact stock precision**
    - What we know: Phase 4 requires quantities, minimum stock and stock movements. [VERIFIED: requirements]
-   - What's unclear: Whether quantities must support fractional units or integer-only parts. [VERIFIED: requirements absence]
-   - Recommendation: Use `Decimal` in Prisma for quantities/costs if the product catalog may include fluids or bulk materials; use UI labels that do not imply integer-only pieces. [CITED: https://www.prisma.io/docs/orm/prisma-client/queries/transactions]
+   - Resolution: Use integer-only stock quantities for Phase 4 because the MVP scope is parts/pieces control and no current source artifact or code evidence requires fractional inventory. Use `Int`-compatible persisted quantities and reject non-integer quantity input in backend Zod schemas. Keep monetary values such as prices, unit costs and totals as Decimal/BRL-safe values. [VERIFIED: checker revision instruction] [VERIFIED: requirements]
 
 2. **Future quote/work-order source links**
    - What we know: Quote and work order phases come later, while reservation already needs source reference. [VERIFIED: ROADMAP.md]
-   - What's unclear: Final foreign-key targets for quote/work-order reservation origins do not exist yet. [VERIFIED: schema.prisma]
-   - Recommendation: Store `sourceType` and `sourceReference` text now, plus nullable future IDs only when later phases introduce those tables. [VERIFIED: phase context]
+   - Resolution: Store source metadata without hard foreign keys to tables that do not exist in Phase 4. Use fields equivalent to `sourceKind`, nullable `sourceId` and nullable operator-facing `sourceLabel`/`sourceReference` on reservations and movements; validate them as tenant-owned only when a concrete Phase 4 entity is referenced. Later quote/work-order phases may backfill typed nullable IDs or add hard foreign keys after those tables exist. [VERIFIED: checker revision instruction] [VERIFIED: phase context]
 
 ## Environment Availability
 
