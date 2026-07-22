@@ -11,7 +11,7 @@
 | 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
 | 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
-| 4 | Serviços, Produtos, Compras e Estoque | 1/4 | In Progress|  |
+| 4 | Serviços, Produtos, Compras e Estoque | 2/4 | In Progress|  |
 | 5 | Agenda e Recepção | Cobrir agendamento, check-in, checklist e anexos | REC-01..REC-08 | yes |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
 | 7 | Aprovação Pública Segura | Permitir decisão do cliente por token vinculado à versão exata | QTE-12..QTE-18 | yes |
@@ -181,7 +181,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** STK-01, STK-02, STK-03, STK-04, STK-05, STK-06, STK-07, STK-08, STK-09, STK-10, STK-11, STK-12, STK-13, STK-14
 **UI hint:** yes
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -190,7 +190,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02-PLAN.md — Transactional purchases, stock entries/exits/adjustments, movement history and concurrency safety.
+- [x] 04-02-PLAN.md — Transactional purchases, stock entries/exits/adjustments, movement history and concurrency safety.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

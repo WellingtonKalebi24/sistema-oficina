@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
 status: executing
 stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-07-22T15:15:19.710Z"
+last_updated: "2026-07-22T15:25:06.436Z"
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 16
-  completed_plans: 13
-  percent: 25
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State: JO.IA
@@ -45,6 +45,8 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 3 plan 03-02 completed: protected tenant-scoped customer/vehicle API routes, services, audit, history and isolation.
 - Phase 3 plan 03-03 completed: authenticated customer/vehicle UI, local verification and Docker smoke checks.
 - Phase 4 started with initial context at .planning/phases/04-servi-os-produtos-compras-e-estoque/04-CONTEXT.md.
+- Phase 4 plan 04-01 completed: tenant-scoped stock catalog, product, supplier and current stock foundation.
+- Phase 4 plan 04-02 completed: transactional purchases, stock exits, adjustments, movement history and concurrency safety.
 
 ## Current Decisions
 
@@ -73,7 +75,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Create Phase 4 plan for services, products, suppliers, purchases and transactional stock movements.
+Continue Phase 4 with reservations and cancellation semantics in 04-03.
 
 ### Quick Tasks Completed
 
@@ -97,6 +99,10 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 - 03-01: `npm run db:migrate` passed and applied `20260720000000_add_customers_vehicles`, then later reported already in sync.
 - 03-01: `npm run test -w apps/api -- prisma-baseline customer-vehicles` is expected RED for 03-02 customer/vehicle routes; `prisma-baseline` passed and five customer/vehicle tests failed on 404.
 - 03-01: `npm run typecheck -w apps/api`, `npm run lint -w apps/api` and `npm run format:check` passed.
+- 04-02: `npm run db:migrate` passed and applied `20260722120000_add_stock_movements`, then later reported already in sync.
+- 04-02: `npm run test -w apps/api -- stock-contract stock-concurrency` passed with 2 files / 9 tests.
+- 04-02: `npm run test -w apps/api -- stock-contract stock-concurrency prisma-baseline` passed with 3 files / 15 tests.
+- 04-02: `npm run typecheck -w apps/api` and `npm run lint -w apps/api` passed.
 
 ## Known Issues
 
@@ -104,9 +110,9 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 
 ## Session
 
-**Last session:** 2026-07-22T15:14:52.151Z
-**Stopped at:** Phase 4 UI-SPEC approved
-**Resume file:** .planning/phases/04-servi-os-produtos-compras-e-estoque/04-UI-SPEC.md
+**Last session:** 2026-07-22T15:25:06.386Z
+**Stopped at:** Completed 04-02-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -125,6 +131,7 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 | Phase 03 P02 | 10min | 2 tasks | 6 files |
 | Phase 03 P03 | 73min | 3 tasks | 6 files |
 | Phase 04 P01 | 9min | 2 tasks | 10 files |
+| Phase 04 P02 | 15min | 2 tasks | 13 files |
 
 ## Decisions
 
@@ -161,3 +168,5 @@ Create Phase 4 plan for services, products, suppliers, purchases and transaction
 - [Phase 03]: Plan 03 loads customer/vehicle resources only when effective permissions include customers.read or vehicles.read while backend 403 remains authoritative.
 - [Phase 04]: Plan 01 uses /stock/services, /stock/categories, /stock/products and /stock/suppliers for the tenant-scoped stock catalog API.
 - [Phase 04]: Plan 01 initializes ProductStock during product creation and calculates lowStock only when a positive minimum is configured and availability is below it.
+- [Phase 04]: Plan 02 keeps stock movement history append-only through StockMovement while ProductStock remains the current-state row.
+- [Phase 04]: Plan 02 guards concurrent physical stock writes with PostgreSQL row locks inside Prisma transactions.
