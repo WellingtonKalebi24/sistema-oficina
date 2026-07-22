@@ -63,6 +63,34 @@ type SupplierBody = {
   tenantId: string;
 };
 
+type PurchaseBody = {
+  id: string;
+  itemCount: number;
+  items: Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    stockMovementId: string;
+    unitCost: string;
+  }>;
+  supplierId: string;
+  tenantId: string;
+  totalAmount: string;
+};
+
+type MovementBody = {
+  balanceAfterPhysical: number;
+  balanceAfterReserved: number;
+  balanceAfterAvailable: number;
+  id: string;
+  productId: string;
+  quantityDelta: number;
+  sourceId: string | null;
+  sourceKind: string;
+  sourceLabel: string | null;
+  type: string;
+};
+
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
 
@@ -344,6 +372,252 @@ describe("stock catalog API contract", () => {
     expect(JSON.stringify(auditRows.map((row) => row.payload))).not.toContain("Descricao longa");
     expect(JSON.stringify(auditRows.map((row) => row.payload))).not.toContain("98765432000111");
   });
+
+  it("D-03/D-04/D-05/D-10 registers purchase items, entry movements and physical stock in one committed operation", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Compras",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+    const category = await createCategory(headers, { name: "Compra filtros" });
+    const product = await createProduct(headers, {
+      categoryId: category.id,
+      minimumStock: 2,
+      name: "Filtro combustivel",
+      sku: "FLT-CMB-001",
+    });
+    const supplier = await createSupplier(headers, {
+      name: "Fornecedor de Pecas",
+    });
+
+    const purchaseResponse = await fetch(`${baseUrl}/stock/purchases`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        documentNumber: "NF-1001",
+        items: [
+          {
+            productId: product.id,
+            quantity: 5,
+            unitCost: "19.90",
+          },
+        ],
+        purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+        supplierId: supplier.id,
+      }),
+    });
+
+    expect(purchaseResponse.status).toBe(201);
+
+    const purchase = (await purchaseResponse.json()) as ApiData<PurchaseBody>;
+    const productAfterResponse = await fetch(`${baseUrl}/stock/products/${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const movementsResponse = await fetch(`${baseUrl}/stock/movements?productId=${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const auditRows = await getAuditRows(prisma);
+
+    expect(purchase.data).toMatchObject({
+      itemCount: 1,
+      supplierId: supplier.id,
+      tenantId: fixture.tenantId,
+      totalAmount: "99.50",
+    });
+    expect(purchase.data.items[0]).toMatchObject({
+      productId: product.id,
+      quantity: 5,
+      unitCost: "19.90",
+    });
+
+    const productAfter = (await productAfterResponse.json()) as ApiData<ProductBody>;
+    expect(productAfter.data).toMatchObject({
+      availableQuantity: 5,
+      lowStock: false,
+      physicalQuantity: 5,
+      reservedQuantity: 0,
+    });
+
+    const movements = (await movementsResponse.json()) as ApiData<MovementBody[]>;
+    expect(movements.data).toHaveLength(1);
+    expect(movements.data[0]).toMatchObject({
+      balanceAfterAvailable: 5,
+      balanceAfterPhysical: 5,
+      balanceAfterReserved: 0,
+      productId: product.id,
+      quantityDelta: 5,
+      sourceId: purchase.data.id,
+      sourceKind: "purchase",
+      type: "entry",
+    });
+
+    expect(auditRows.map((row) => row.action)).toEqual(
+      expect.arrayContaining(["stock.purchases.created", "stock.movements.entry"]),
+    );
+  });
+
+  it("D-05/D-06/D-10 creates authorized exits and adjustments with source data, movement history and audit", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Movimentos",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+    const category = await createCategory(headers, { name: "Movimento filtros" });
+    const product = await createProduct(headers, {
+      categoryId: category.id,
+      name: "Pastilha de freio",
+    });
+    const supplier = await createSupplier(headers, { name: "Fornecedor Movimento" });
+
+    await createPurchase(headers, {
+      items: [{ productId: product.id, quantity: 8, unitCost: "31.00" }],
+      purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+      supplierId: supplier.id,
+    });
+
+    const exitResponse = await fetch(`${baseUrl}/stock/exits`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        origin: "OS manual 100",
+        productId: product.id,
+        quantity: 3,
+        sourceKind: "manual",
+        sourceLabel: "Uso em servico",
+      }),
+    });
+    const adjustmentResponse = await fetch(`${baseUrl}/stock/adjustments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        productId: product.id,
+        quantityDelta: -1,
+        reason: "Conferencia fisica encontrou uma peca avariada",
+        sourceKind: "inventory_count",
+        sourceLabel: "Inventario 2026-07",
+      }),
+    });
+
+    expect(exitResponse.status).toBe(201);
+    expect(adjustmentResponse.status).toBe(201);
+
+    const exitMovement = (await exitResponse.json()) as ApiData<MovementBody>;
+    const adjustmentMovement = (await adjustmentResponse.json()) as ApiData<MovementBody>;
+    const movementsResponse = await fetch(`${baseUrl}/stock/movements?productId=${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const productAfterResponse = await fetch(`${baseUrl}/stock/products/${product.id}`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const auditRows = await getAuditRows(prisma);
+
+    expect(exitMovement.data).toMatchObject({
+      balanceAfterAvailable: 5,
+      balanceAfterPhysical: 5,
+      productId: product.id,
+      quantityDelta: -3,
+      sourceKind: "manual",
+      sourceLabel: "Uso em servico",
+      type: "exit",
+    });
+    expect(adjustmentMovement.data).toMatchObject({
+      balanceAfterAvailable: 4,
+      balanceAfterPhysical: 4,
+      productId: product.id,
+      quantityDelta: -1,
+      sourceKind: "inventory_count",
+      sourceLabel: "Inventario 2026-07",
+      type: "adjustment",
+    });
+
+    const movements = (await movementsResponse.json()) as ApiData<MovementBody[]>;
+    expect(movements.data.map((movement) => movement.type)).toEqual([
+      "adjustment",
+      "exit",
+      "entry",
+    ]);
+
+    const productAfter = (await productAfterResponse.json()) as ApiData<ProductBody>;
+    expect(productAfter.data).toMatchObject({
+      availableQuantity: 4,
+      physicalQuantity: 4,
+      reservedQuantity: 0,
+    });
+    expect(auditRows.map((row) => row.action)).toEqual(
+      expect.arrayContaining(["stock.movements.exit", "stock.movements.adjustment"]),
+    );
+    expect(JSON.stringify(auditRows.map((row) => row.payload))).not.toContain(
+      "Conferencia fisica encontrou",
+    );
+  });
+
+  it("D-03/D-04/D-05/STK-14 blocks foreign-tenant product and supplier IDs in purchase and stock writes", async () => {
+    const tenantA = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Estoque Tenant A",
+    });
+    const tenantB = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Estoque Tenant B",
+    });
+    const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
+    const sessionB = await loginAs({ baseUrl }, tenantB.adminEmail, tenantB.adminPassword);
+    const headersA = authHeaders(sessionA.accessToken);
+    const headersB = authHeaders(sessionB.accessToken);
+    const categoryA = await createCategory(headersA, { name: "Tenant A" });
+    const categoryB = await createCategory(headersB, { name: "Tenant B" });
+    const productA = await createProduct(headersA, {
+      categoryId: categoryA.id,
+      name: "Produto A",
+    });
+    const productB = await createProduct(headersB, {
+      categoryId: categoryB.id,
+      name: "Produto B",
+    });
+    const supplierB = await createSupplier(headersB, { name: "Fornecedor B" });
+
+    const foreignSupplierPurchase = await fetch(`${baseUrl}/stock/purchases`, {
+      method: "POST",
+      headers: headersA,
+      body: JSON.stringify({
+        items: [{ productId: productA.id, quantity: 1, unitCost: "10.00" }],
+        purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+        supplierId: supplierB.id,
+      }),
+    });
+    const foreignProductPurchase = await fetch(`${baseUrl}/stock/purchases`, {
+      method: "POST",
+      headers: headersA,
+      body: JSON.stringify({
+        items: [{ productId: productB.id, quantity: 1, unitCost: "10.00" }],
+        purchasedAt: new Date("2026-07-22T12:00:00.000Z").toISOString(),
+        supplierId: supplierB.id,
+      }),
+    });
+    const foreignProductExit = await fetch(`${baseUrl}/stock/exits`, {
+      method: "POST",
+      headers: headersA,
+      body: JSON.stringify({
+        origin: "Tentativa cross tenant",
+        productId: productB.id,
+        quantity: 1,
+        sourceKind: "manual",
+      }),
+    });
+    const foreignProductAdjustment = await fetch(`${baseUrl}/stock/adjustments`, {
+      method: "POST",
+      headers: headersA,
+      body: JSON.stringify({
+        productId: productB.id,
+        quantityDelta: 1,
+        reason: "Tentativa cross tenant",
+        sourceKind: "inventory_count",
+      }),
+    });
+
+    expect(foreignSupplierPurchase.status).toBe(404);
+    expect(foreignProductPurchase.status).toBe(404);
+    expect(foreignProductExit.status).toBe(404);
+    expect(foreignProductAdjustment.status).toBe(404);
+  });
 });
 
 function bearerHeaders(accessToken: string): Record<string, string> {
@@ -404,5 +678,21 @@ async function createSupplier(
   expect(response.status).toBe(201);
 
   const responseBody = (await response.json()) as ApiData<SupplierBody>;
+  return responseBody.data;
+}
+
+async function createPurchase(
+  headers: Record<string, string>,
+  body: Record<string, unknown>,
+): Promise<PurchaseBody> {
+  const response = await fetch(`${baseUrl}/stock/purchases`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  expect(response.status).toBe(201);
+
+  const responseBody = (await response.json()) as ApiData<PurchaseBody>;
   return responseBody.data;
 }
