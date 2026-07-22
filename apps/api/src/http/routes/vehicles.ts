@@ -76,7 +76,7 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
     requirePermission(prisma, PERMISSIONS.vehiclesCreate),
     asyncHandler(async (req, res) => {
       const auth = (req as AuthenticatedRequest).auth;
-      const parsed = createVehicleSchema.safeParse(req.body);
+      const parsed = safeParseVehicleData(createVehicleSchema, req.body);
 
       if (!parsed.success) {
         throw badRequest("Invalid vehicle data.");
@@ -104,7 +104,7 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
     requirePermission(prisma, PERMISSIONS.vehiclesUpdate),
     asyncHandler(async (req, res) => {
       const auth = (req as AuthenticatedRequest).auth;
-      const parsed = updateVehicleSchema.safeParse(req.body);
+      const parsed = safeParseVehicleData(updateVehicleSchema, req.body);
 
       if (!parsed.success) {
         throw badRequest("Invalid vehicle data.");
@@ -152,4 +152,15 @@ export function createVehiclesRouter(prisma: PrismaDatabase): Router {
   );
 
   return router;
+}
+
+function safeParseVehicleData<T>(
+  schema: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } },
+  value: unknown,
+): { success: true; data: T } | { success: false } {
+  try {
+    return schema.safeParse(value);
+  } catch {
+    return { success: false };
+  }
 }

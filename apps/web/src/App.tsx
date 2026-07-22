@@ -1,3 +1,19 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faAddressBook,
+  faBars,
+  faBuilding,
+  faCar,
+  faChevronDown,
+  faFolderOpen,
+  faKey,
+  faRightFromBracket,
+  faRotateRight,
+  faShieldHalved,
+  faUserShield,
+  faUsers,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router";
 
@@ -35,6 +51,7 @@ import {
   login,
   logout,
   requestPasswordReset,
+  refreshSession,
 } from "./api/auth.js";
 import {
   type Vehicle,
@@ -89,6 +106,10 @@ const initialAdminData: AdminData = {
   vehicles: [],
 };
 
+function RequiredMark() {
+  return <span className="required-marker" aria-hidden="true" />;
+}
+
 export function App() {
   return (
     <BrowserRouter>
@@ -130,11 +151,17 @@ function AuthAdminApp() {
         const stored = readStoredSession();
 
         if (stored) {
-          setSession(stored);
+          const freshSession = await getFreshSession(stored);
+
+          if (!active) {
+            return;
+          }
+
+          setSession(freshSession);
           setBootState("admin");
           setStatusMessage("Sessao recuperada deste navegador.");
           navigate("/admin/oficina", { replace: true });
-          await loadAdminData(stored);
+          await loadAdminData(freshSession);
         } else {
           setBootState("login");
           setStatusMessage(
@@ -146,8 +173,13 @@ function AuthAdminApp() {
             navigate("/login", { replace: true });
           }
         }
-      } catch {
+      } catch (error) {
         if (!active) {
+          return;
+        }
+
+        if (error instanceof ApiError && error.status === 401) {
+          handleInvalidSession("Sessao expirada. Entre novamente.");
           return;
         }
 
@@ -168,45 +200,47 @@ function AuthAdminApp() {
       return;
     }
 
+    const usableSession = await getFreshSession(currentSession);
+
     setBlocked({});
     const loads: Array<Promise<void>> = [
       loadResource(
         "settings",
-        () => getTenantSettings(currentSession.accessToken),
+        () => getTenantSettings(usableSession.accessToken),
         (settings) => setAdminData((current) => ({ ...current, settings })),
       ),
       loadResource(
         "users",
-        () => listUsers(currentSession.accessToken),
+        () => listUsers(usableSession.accessToken),
         (users) => setAdminData((current) => ({ ...current, users })),
       ),
       loadResource(
         "roles",
-        () => listRoles(currentSession.accessToken),
+        () => listRoles(usableSession.accessToken),
         (roles) => setAdminData((current) => ({ ...current, roles })),
       ),
       loadResource(
         "permissions",
-        () => listPermissions(currentSession.accessToken),
+        () => listPermissions(usableSession.accessToken),
         (permissions) => setAdminData((current) => ({ ...current, permissions })),
       ),
     ];
 
-    if (hasPermission(currentSession, "customers.read")) {
+    if (hasPermission(usableSession, "customers.read")) {
       loads.push(
         loadResource(
           "customers",
-          () => listCustomers(currentSession.accessToken),
+          () => listCustomers(usableSession.accessToken),
           (customers) => setAdminData((current) => ({ ...current, customers })),
         ),
       );
     }
 
-    if (hasPermission(currentSession, "vehicles.read")) {
+    if (hasPermission(usableSession, "vehicles.read")) {
       loads.push(
         loadResource(
           "vehicles",
-          () => listVehicles(currentSession.accessToken),
+          () => listVehicles(usableSession.accessToken),
           (vehicles) => setAdminData((current) => ({ ...current, vehicles })),
         ),
       );
@@ -231,8 +265,63 @@ function AuthAdminApp() {
         return;
       }
 
+      if (error instanceof ApiError && error.status === 401) {
+        handleInvalidSession("Sessao expirada. Entre novamente.");
+        return;
+      }
+
       setStatusMessage(error instanceof Error ? error.message : "Falha ao carregar dados.");
     }
+  }
+
+  async function withAuthenticatedSession<T>(
+    action: (currentSession: StoredSession) => Promise<T>,
+  ): Promise<T> {
+    if (!session) {
+      throw new ApiError(401, "Sessao invalida. Entre novamente.");
+    }
+
+    const usableSession = await getFreshSession(session);
+
+    try {
+      return await action(usableSession);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        const refreshedSession = await refreshStoredSession(usableSession);
+        return action(refreshedSession);
+      }
+
+      throw error;
+    }
+  }
+
+  async function getFreshSession(currentSession: StoredSession): Promise<StoredSession> {
+    if (!isAccessTokenExpiring(currentSession.accessToken)) {
+      return currentSession;
+    }
+
+    return refreshStoredSession(currentSession);
+  }
+
+  async function refreshStoredSession(currentSession: StoredSession): Promise<StoredSession> {
+    try {
+      const refreshedSession = storeSession(await refreshSession(currentSession.refreshToken));
+      setSession(refreshedSession);
+      setStatusMessage("Sessao renovada.");
+      return refreshedSession;
+    } catch {
+      handleInvalidSession("Sessao expirada. Entre novamente.");
+      throw new ApiError(401, "Sessao expirada. Entre novamente.");
+    }
+  }
+
+  function handleInvalidSession(message: string) {
+    clearStoredSession();
+    setSession(null);
+    setAdminData(initialAdminData);
+    setBootState("login");
+    setStatusMessage(message);
+    navigate("/login", { replace: true });
   }
 
   async function handleLogin(email: string, password: string) {
@@ -312,16 +401,22 @@ function AuthAdminApp() {
           adminData={adminData}
           blocked={blocked}
           onChangePassword={async (currentPassword, newPassword) => {
-            await changePassword(session.accessToken, { currentPassword, newPassword });
+            await withAuthenticatedSession((currentSession) =>
+              changePassword(currentSession.accessToken, { currentPassword, newPassword }),
+            );
             setStatusMessage("Senha alterada para esta conta.");
           }}
           onCreateRole={async (input) => {
-            const role = await createRole(session.accessToken, input);
+            const role = await withAuthenticatedSession((currentSession) =>
+              createRole(currentSession.accessToken, input),
+            );
             setAdminData((current) => ({ ...current, roles: [...current.roles, role] }));
             setStatusMessage("Papel registrado para este tenant.");
           }}
           onCreateCustomer={async (input) => {
-            const customer = await createCustomer(session.accessToken, input);
+            const customer = await withAuthenticatedSession((currentSession) =>
+              createCustomer(currentSession.accessToken, input),
+            );
             setAdminData((current) => ({
               ...current,
               customers: [...current.customers, customer].sort((left, right) =>
@@ -331,22 +426,28 @@ function AuthAdminApp() {
             setStatusMessage("Cliente registrado no tenant autenticado.");
           }}
           onCreateUser={async (input) => {
-            const user = await createUser(session.accessToken, input);
+            const user = await withAuthenticatedSession((currentSession) =>
+              createUser(currentSession.accessToken, input),
+            );
             setAdminData((current) => ({ ...current, users: [...current.users, user] }));
             setStatusMessage("Usuario criado no tenant autenticado.");
           }}
           onCreateVehicle={async (input) => {
-            const vehicle = await createVehicle(session.accessToken, input);
+            const vehicle = await withAuthenticatedSession((currentSession) =>
+              createVehicle(currentSession.accessToken, input),
+            );
             setAdminData((current) => ({
               ...current,
               vehicles: [...current.vehicles, vehicle].sort((left, right) =>
-                left.plateNormalized.localeCompare(right.plateNormalized),
+                (left.plateNormalized ?? "").localeCompare(right.plateNormalized ?? ""),
               ),
             }));
             setStatusMessage("Veiculo registrado e vinculado ao cliente atual.");
           }}
           onDeleteCustomer={async (customer) => {
-            await deleteCustomer(session.accessToken, customer.id);
+            await withAuthenticatedSession((currentSession) =>
+              deleteCustomer(currentSession.accessToken, customer.id),
+            );
             setAdminData((current) => ({
               ...current,
               customers: current.customers.filter((item) => item.id !== customer.id),
@@ -354,7 +455,9 @@ function AuthAdminApp() {
             setStatusMessage("Cliente excluido logicamente da lista ativa.");
           }}
           onDeleteVehicle={async (vehicle) => {
-            await deleteVehicle(session.accessToken, vehicle.id);
+            await withAuthenticatedSession((currentSession) =>
+              deleteVehicle(currentSession.accessToken, vehicle.id),
+            );
             setAdminData((current) => ({
               ...current,
               vehicles: current.vehicles.filter((item) => item.id !== vehicle.id),
@@ -362,30 +465,40 @@ function AuthAdminApp() {
             setStatusMessage("Veiculo excluido logicamente da lista ativa.");
           }}
           onLoadCustomerHistory={async (customerId) => {
-            const customerHistory = await listCustomerHistory(session.accessToken, customerId);
+            const customerHistory = await withAuthenticatedSession((currentSession) =>
+              listCustomerHistory(currentSession.accessToken, customerId),
+            );
             setAdminData((current) => ({ ...current, customerHistory }));
             setStatusMessage("Historico basico do cliente sincronizado.");
           }}
           onLoadVehicleHistory={async (vehicleId) => {
-            const vehicleHistory = await listVehicleHistory(session.accessToken, vehicleId);
+            const vehicleHistory = await withAuthenticatedSession((currentSession) =>
+              listVehicleHistory(currentSession.accessToken, vehicleId),
+            );
             setAdminData((current) => ({ ...current, vehicleHistory }));
             setStatusMessage("Historico basico do veiculo sincronizado.");
           }}
           onLogout={handleLogout}
           onRefresh={() => loadAdminData(session)}
           onSearchCustomers={async (search) => {
-            const customers = await listCustomers(session.accessToken, { search });
+            const customers = await withAuthenticatedSession((currentSession) =>
+              listCustomers(currentSession.accessToken, { search }),
+            );
             setAdminData((current) => ({ ...current, customers }));
             setStatusMessage("Busca de clientes sincronizada com a API.");
           }}
           onSearchVehicles={async (search) => {
-            const vehicles = await listVehicles(session.accessToken, { search });
+            const vehicles = await withAuthenticatedSession((currentSession) =>
+              listVehicles(currentSession.accessToken, { search }),
+            );
             setAdminData((current) => ({ ...current, vehicles }));
             setStatusMessage("Busca de veiculos sincronizada com a API.");
           }}
           onSelectView={selectView}
           onUpdateCustomer={async (customerId, input) => {
-            const customer = await updateCustomer(session.accessToken, customerId, input);
+            const customer = await withAuthenticatedSession((currentSession) =>
+              updateCustomer(currentSession.accessToken, customerId, input),
+            );
             setAdminData((current) => ({
               ...current,
               customers: current.customers.map((item) =>
@@ -395,7 +508,9 @@ function AuthAdminApp() {
             setStatusMessage("Cliente atualizado pelo backend.");
           }}
           onUpdateOverrides={async (userId, overrides) => {
-            const user = await replacePermissionOverrides(session.accessToken, userId, overrides);
+            const user = await withAuthenticatedSession((currentSession) =>
+              replacePermissionOverrides(currentSession.accessToken, userId, overrides),
+            );
             setAdminData((current) => ({
               ...current,
               users: current.users.map((item) => (item.id === user.id ? user : item)),
@@ -403,12 +518,16 @@ function AuthAdminApp() {
             setStatusMessage("Overrides atualizados com autoridade do backend.");
           }}
           onUpdateSettings={async (input) => {
-            const settings = await updateTenantSettings(session.accessToken, input);
+            const settings = await withAuthenticatedSession((currentSession) =>
+              updateTenantSettings(currentSession.accessToken, input),
+            );
             setAdminData((current) => ({ ...current, settings }));
             setStatusMessage("Configuracoes da oficina atualizadas.");
           }}
           onUpdateVehicle={async (vehicleId, input) => {
-            const vehicle = await updateVehicle(session.accessToken, vehicleId, input);
+            const vehicle = await withAuthenticatedSession((currentSession) =>
+              updateVehicle(currentSession.accessToken, vehicleId, input),
+            );
             setAdminData((current) => ({
               ...current,
               vehicles: current.vehicles.map((item) => (item.id === vehicle.id ? vehicle : item)),
@@ -487,7 +606,10 @@ function BootstrapPanel({
           <span className="pill">Primeiro acesso</span>
         </div>
         <label className="field">
-          <span>Nome da oficina</span>
+          <span>
+            Nome da oficina
+            <RequiredMark />
+          </span>
           <input
             value={tenantName}
             onChange={(event) => setTenantName(event.target.value)}
@@ -495,7 +617,10 @@ function BootstrapPanel({
           />
         </label>
         <label className="field">
-          <span>Nome do administrador</span>
+          <span>
+            Nome do administrador
+            <RequiredMark />
+          </span>
           <input
             value={adminName}
             onChange={(event) => setAdminName(event.target.value)}
@@ -503,7 +628,10 @@ function BootstrapPanel({
           />
         </label>
         <label className="field">
-          <span>Email do administrador</span>
+          <span>
+            Email do administrador
+            <RequiredMark />
+          </span>
           <input
             type="email"
             value={email}
@@ -512,7 +640,10 @@ function BootstrapPanel({
           />
         </label>
         <label className="field">
-          <span>Senha inicial</span>
+          <span>
+            Senha inicial
+            <RequiredMark />
+          </span>
           <input
             type="password"
             value={password}
@@ -583,7 +714,10 @@ function LoginPanel({
         </CardHeader>
         <CardContent>
           <Label className="field">
-            <span>Email</span>
+            <span>
+              Email
+              <RequiredMark />
+            </span>
             <Input
               type="email"
               value={email}
@@ -592,7 +726,10 @@ function LoginPanel({
             />
           </Label>
           <Label className="field">
-            <span>Senha</span>
+            <span>
+              Senha
+              <RequiredMark />
+            </span>
             <Input
               type="password"
               value={password}
@@ -665,7 +802,10 @@ function ForgotPasswordPage({
         <div className="stacked-forms">
           <form onSubmit={handleRequest}>
             <Label className="field">
-              <span>Email cadastrado</span>
+              <span>
+                Email cadastrado
+                <RequiredMark />
+              </span>
               <Input
                 type="email"
                 value={email}
@@ -682,7 +822,10 @@ function ForgotPasswordPage({
           ) : null}
           <form onSubmit={handleComplete}>
             <Label className="field">
-              <span>Codigo de recuperacao</span>
+              <span>
+                Codigo de recuperacao
+                <RequiredMark />
+              </span>
               <Input
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
@@ -691,7 +834,10 @@ function ForgotPasswordPage({
               />
             </Label>
             <Label className="field">
-              <span>Nova senha</span>
+              <span>
+                Nova senha
+                <RequiredMark />
+              </span>
               <Input
                 type="password"
                 value={newPassword}
@@ -742,55 +888,154 @@ function AdminShell(props: {
   session: StoredSession;
   statusMessage: string;
 }) {
-  const menuItems = useMemo(
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCadastrosOpen, setIsCadastrosOpen] = useState(() =>
+    ["oficina", "usuarios", "papeis", "permissoes"].includes(props.activeView),
+  );
+  const cadastroItems = useMemo(
     () =>
       [
-        { label: "Oficina", permission: "tenant.settings.read", view: "oficina" as const },
-        { label: "Usuarios", permission: "users.read", view: "usuarios" as const },
-        { label: "Papeis", permission: "roles.manage", view: "papeis" as const },
-        { label: "Permissoes", permission: "permissions.manage", view: "permissoes" as const },
-        { label: "Clientes", permission: "customers.read", view: "clientes" as const },
-        { label: "Veiculos", permission: "vehicles.read", view: "veiculos" as const },
+        {
+          icon: faBuilding,
+          label: "Oficina",
+          permission: "tenant.settings.read",
+          view: "oficina" as const,
+        },
+        { icon: faUsers, label: "Usuarios", permission: "users.read", view: "usuarios" as const },
+        {
+          icon: faUserShield,
+          label: "Papeis",
+          permission: "roles.manage",
+          view: "papeis" as const,
+        },
+        {
+          icon: faKey,
+          label: "Permissoes",
+          permission: "permissions.manage",
+          view: "permissoes" as const,
+        },
       ].filter((item) => hasPermission(props.session, item.permission)),
     [props.session],
   );
+  const operationalItems = useMemo(
+    () =>
+      [
+        {
+          icon: faAddressBook,
+          label: "Clientes",
+          permission: "customers.read",
+          view: "clientes" as const,
+        },
+        { icon: faCar, label: "Veiculos", permission: "vehicles.read", view: "veiculos" as const },
+      ].filter((item) => hasPermission(props.session, item.permission)),
+    [props.session],
+  );
+
+  function selectMenuView(view: View) {
+    props.onSelectView(view);
+    setIsMobileNavOpen(false);
+    if (["oficina", "usuarios", "papeis", "permissoes"].includes(view)) {
+      setIsCadastrosOpen(true);
+    }
+  }
+
+  function renderNavButton(item: {
+    icon: IconDefinition;
+    label: string;
+    view: View;
+  }) {
+    return (
+      <button
+        key={item.view}
+        type="button"
+        className={props.activeView === item.view ? "nav-item nav-item--active" : "nav-item"}
+        onClick={() => selectMenuView(item.view)}
+      >
+        <FontAwesomeIcon icon={item.icon} aria-hidden="true" />
+        <span>{item.label}</span>
+      </button>
+    );
+  }
 
   return (
     <>
       <section className="admin-layout" aria-label="Administracao operacional">
         <aside className="panel side-panel">
-          <nav className="nav-list" aria-label="Administracao">
-            {menuItems.map((item) => (
-              <button
-                key={item.view}
-                type="button"
-                className={
-                  props.activeView === item.view ? "nav-item nav-item--active" : "nav-item"
-                }
-                onClick={() => props.onSelectView(item.view)}
-              >
-                {item.label}
-              </button>
-            ))}
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            aria-controls="admin-navigation"
+            aria-expanded={isMobileNavOpen}
+            onClick={() => setIsMobileNavOpen((current) => !current)}
+          >
+            <FontAwesomeIcon icon={faBars} aria-hidden="true" />
+            <span>Menu</span>
+          </button>
+          <nav
+            id="admin-navigation"
+            className={isMobileNavOpen ? "nav-list nav-list--open" : "nav-list"}
+            aria-label="Administracao"
+          >
+            {cadastroItems.length ? (
+              <div className="nav-group">
+                <button
+                  type="button"
+                  className={
+                    ["oficina", "usuarios", "papeis", "permissoes"].includes(props.activeView)
+                      ? "nav-item nav-item--active nav-dropdown-trigger"
+                      : "nav-item nav-dropdown-trigger"
+                  }
+                  aria-controls="cadastros-menu"
+                  aria-expanded={isCadastrosOpen}
+                  onClick={() => setIsCadastrosOpen((current) => !current)}
+                >
+                  <FontAwesomeIcon icon={faFolderOpen} aria-hidden="true" />
+                  <span>Cadastros</span>
+                  <FontAwesomeIcon
+                    className={
+                      isCadastrosOpen
+                        ? "nav-dropdown-chevron nav-dropdown-chevron--open"
+                        : "nav-dropdown-chevron"
+                    }
+                    icon={faChevronDown}
+                    aria-hidden="true"
+                  />
+                </button>
+                <div
+                  id="cadastros-menu"
+                  className={
+                    isCadastrosOpen
+                      ? "nav-group-items nav-group-items--open"
+                      : "nav-group-items"
+                  }
+                >
+                  {cadastroItems.map(renderNavButton)}
+                </div>
+              </div>
+            ) : null}
+            {operationalItems.map(renderNavButton)}
             <button
               type="button"
               className={
                 props.activeView === "seguranca" ? "nav-item nav-item--active" : "nav-item"
               }
-              onClick={() => props.onSelectView("seguranca")}
+              onClick={() => selectMenuView("seguranca")}
             >
-              Seguranca
+              <FontAwesomeIcon icon={faShieldHalved} aria-hidden="true" />
+              <span>Seguranca</span>
             </button>
           </nav>
           <button type="button" className="button-secondary full-width" onClick={props.onRefresh}>
-            Atualizar
+            <FontAwesomeIcon icon={faRotateRight} aria-hidden="true" />
+            <span>Atualizar</span>
           </button>
           <button
             type="button"
             className="button-danger full-width"
             onClick={() => void props.onLogout()}
           >
-            Sair
+            <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
+            <span>Sair</span>
           </button>
         </aside>
         <section className="content-stack">
@@ -902,8 +1147,15 @@ function SettingsPanel({
         }}
       >
         <label className="field">
-          <span>Nome comercial</span>
-          <input value={tradeName} onChange={(event) => setTradeName(event.target.value)} />
+          <span>
+            Nome comercial
+            <RequiredMark />
+          </span>
+          <input
+            value={tradeName}
+            onChange={(event) => setTradeName(event.target.value)}
+            required
+          />
         </label>
         <label className="field">
           <span>Razao social</span>
@@ -962,19 +1214,34 @@ function UsersPanel({
           <span className="pill">Tenant</span>
         </div>
         <label className="field">
-          <span>Nome do usuario</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} />
+          <span>
+            Nome do usuario
+            <RequiredMark />
+          </span>
+          <input value={name} onChange={(event) => setName(event.target.value)} required />
         </label>
         <label className="field">
-          <span>Email do usuario</span>
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <span>
+            Email do usuario
+            <RequiredMark />
+          </span>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
         </label>
         <label className="field">
-          <span>Senha temporaria</span>
+          <span>
+            Senha temporaria
+            <RequiredMark />
+          </span>
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            required
           />
         </label>
         <label className="field">
@@ -1068,12 +1335,18 @@ function RolesPanel({
           <span className="pill">Permissoes</span>
         </div>
         <label className="field">
-          <span>Chave do papel</span>
-          <input value={key} onChange={(event) => setKey(event.target.value)} />
+          <span>
+            Chave do papel
+            <RequiredMark />
+          </span>
+          <input value={key} onChange={(event) => setKey(event.target.value)} required />
         </label>
         <label className="field">
-          <span>Nome do papel</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} />
+          <span>
+            Nome do papel
+            <RequiredMark />
+          </span>
+          <input value={name} onChange={(event) => setName(event.target.value)} required />
         </label>
         <label className="field">
           <span>Permissao inicial</span>
@@ -1264,19 +1537,27 @@ function SecurityPanel({
           <span className="pill">Sessao ativa</span>
         </div>
         <label className="field">
-          <span>Senha atual</span>
+          <span>
+            Senha atual
+            <RequiredMark />
+          </span>
           <input
             type="password"
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.target.value)}
+            required
           />
         </label>
         <label className="field">
-          <span>Nova senha autenticada</span>
+          <span>
+            Nova senha autenticada
+            <RequiredMark />
+          </span>
           <input
             type="password"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
+            required
           />
         </label>
         <button type="submit">Alterar senha</button>
@@ -1371,7 +1652,10 @@ function CustomersPanel({
           <span className="pill">Telefone pode repetir</span>
         </div>
         <label className="field">
-          <span>Nome do cliente</span>
+          <span>
+            Nome do cliente
+            <RequiredMark />
+          </span>
           <input
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
@@ -1596,7 +1880,7 @@ function VehiclesPanel({
       mileage: vehicle.mileage?.toString() ?? "",
       model: vehicle.model ?? "",
       notes: vehicle.notes ?? "",
-      plate: vehicle.plate,
+      plate: vehicle.plate ?? "",
       vin: vehicle.vin ?? "",
       year: vehicle.year?.toString() ?? "",
     });
@@ -1612,12 +1896,12 @@ function VehiclesPanel({
       brand: form.brand,
       color: form.color,
       customerId: form.customerId,
-      mileage: form.mileage ? Number(form.mileage) : null,
+      mileage: toOptionalInt(form.mileage),
       model: form.model,
       notes: form.notes,
       plate: form.plate,
       vin: form.vin,
-      year: form.year ? Number(form.year) : null,
+      year: toOptionalInt(form.year),
     };
 
     try {
@@ -1647,7 +1931,10 @@ function VehiclesPanel({
           <span className="pill">Vinculo atual</span>
         </div>
         <label className="field">
-          <span>Cliente atual</span>
+          <span>
+            Cliente atual
+            <RequiredMark />
+          </span>
           <select
             value={form.customerId}
             onChange={(event) =>
@@ -1666,9 +1953,14 @@ function VehiclesPanel({
         <label className="field">
           <span>Placa</span>
           <input
+            placeholder="Placa ou identificador"
             value={form.plate}
-            onChange={(event) => setForm((current) => ({ ...current, plate: event.target.value }))}
-            required
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                plate: event.target.value,
+              }))
+            }
           />
         </label>
         <label className="field">
@@ -1695,8 +1987,14 @@ function VehiclesPanel({
         <label className="field">
           <span>Chassi/VIN</span>
           <input
+            placeholder="Chassi, VIN ou identificador"
             value={form.vin}
-            onChange={(event) => setForm((current) => ({ ...current, vin: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                vin: event.target.value,
+              }))
+            }
           />
         </label>
         <div className="form-grid form-grid--split">
@@ -1749,7 +2047,9 @@ function VehiclesPanel({
             {error}
           </p>
         ) : null}
-        <p className="helper-text">Placa e chassi ativos duplicados sao bloqueados pelo backend.</p>
+        <p className="helper-text">
+          Veiculo fica vinculado ao cliente selecionado; demais campos podem ser preenchidos depois.
+        </p>
       </form>
       <section className="panel">
         <div className="panel-heading">
@@ -1793,7 +2093,7 @@ function VehiclesPanel({
               <tbody>
                 {vehicles.map((vehicle) => (
                   <tr key={vehicle.id}>
-                    <td>{vehicle.plate}</td>
+                    <td>{vehicle.plate ?? "Sem placa"}</td>
                     <td>{vehicle.customer?.name ?? "Sem cliente"}</td>
                     <td>
                       {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" ")}
@@ -1806,21 +2106,21 @@ function VehiclesPanel({
                           className="button-secondary"
                           onClick={() => edit(vehicle)}
                         >
-                          Editar {vehicle.plate}
+                          Editar {vehicle.plate ?? "veiculo sem placa"}
                         </button>
                         <button
                           type="button"
                           className="button-secondary"
                           onClick={() => void onLoadHistory(vehicle.id)}
                         >
-                          Historico de {vehicle.plate}
+                          Historico de {vehicle.plate ?? "veiculo sem placa"}
                         </button>
                         <button
                           type="button"
                           className="button-danger"
                           onClick={() => setPendingDelete(vehicle)}
                         >
-                          Excluir {vehicle.plate}
+                          Excluir {vehicle.plate ?? "veiculo sem placa"}
                         </button>
                       </div>
                     </td>
@@ -1832,7 +2132,9 @@ function VehiclesPanel({
         )}
         {pendingDelete ? (
           <div className="confirm-strip" role="alert">
-            <span>Confirmar exclusao logica de {pendingDelete.plate}?</span>
+            <span>
+              Confirmar exclusao logica de {pendingDelete.plate ?? "veiculo sem placa"}?
+            </span>
             <button
               type="button"
               className="button-danger"
@@ -1842,7 +2144,7 @@ function VehiclesPanel({
                 void onDeleteVehicle(vehicle);
               }}
             >
-              Confirmar exclusao de {pendingDelete.plate}
+              Confirmar exclusao de {pendingDelete.plate ?? "veiculo sem placa"}
             </button>
           </div>
         ) : null}
@@ -1905,4 +2207,43 @@ function BlockedPanel({ message }: { message: string }) {
 
 export function formatUpdatedAt(value: string | undefined): string {
   return value ? formatDateTime(value) : "Nao sincronizado";
+}
+
+function toOptionalInt(value: string): number | null {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(trimmed, 10);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isAccessTokenExpiring(accessToken: string): boolean {
+  try {
+    const parts = accessToken.split(".");
+
+    if (parts.length !== 3) {
+      return false;
+    }
+
+    const [, payload] = parts;
+
+    if (!payload) {
+      return false;
+    }
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decodedPayload = JSON.parse(window.atob(normalizedPayload)) as { exp?: number };
+
+    if (!decodedPayload.exp) {
+      return true;
+    }
+
+    return decodedPayload.exp * 1000 - Date.now() < 60_000;
+  } catch {
+    return false;
+  }
 }

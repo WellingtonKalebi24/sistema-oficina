@@ -98,7 +98,9 @@ async function request<T>(
   options: { body?: unknown; method?: string } = {},
 ): Promise<T> {
   const init: RequestInit = {
+    cache: "no-store",
     headers: {
+      "Cache-Control": "no-cache",
       ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
       Authorization: `Bearer ${accessToken}`,
     },

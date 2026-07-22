@@ -17,8 +17,8 @@ export type Vehicle = {
   mileage: number | null;
   model: string | null;
   notes: string | null;
-  plate: string;
-  plateNormalized: string;
+  plate: string | null;
+  plateNormalized: string | null;
   tenantId: string;
   updatedAt: string;
   vin: string | null;
@@ -41,7 +41,7 @@ export type VehicleInput = {
   mileage?: number | null;
   model?: string | null;
   notes?: string | null;
-  plate: string;
+  plate?: string | null;
   vin?: string | null;
   year?: number | null;
 };
@@ -102,7 +102,7 @@ function compactVehicleInput(input: VehicleInput): VehicleInput {
     mileage: input.mileage ?? null,
     model: input.model?.trim() || null,
     notes: input.notes?.trim() || null,
-    plate: input.plate.trim(),
+    plate: input.plate?.trim() || null,
     vin: input.vin?.trim() || null,
     year: input.year ?? null,
   };
@@ -114,7 +114,9 @@ async function request<T>(
   options: { body?: unknown; method?: string } = {},
 ): Promise<T> {
   const init: RequestInit = {
+    cache: "no-store",
     headers: {
+      "Cache-Control": "no-cache",
       ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
       Authorization: `Bearer ${accessToken}`,
     },
@@ -166,7 +168,7 @@ function toErrorMessage(status: number, apiMessage?: string): string {
   }
 
   if (status === 400) {
-    return "Confira cliente, placa, chassi e dados do veiculo.";
+    return "Confira placa, chassi e dados do veiculo.";
   }
 
   return "A API de veiculos recusou a operacao.";

@@ -232,13 +232,24 @@ describe("customer and vehicle API contract", () => {
     expect(searchByPlateResponse.status).toBe(200);
     expect(searchByCustomerResponse.status).toBe(200);
 
-    for (const response of [
-      listVehiclesResponse,
-      searchByPlateResponse,
-      searchByCustomerResponse,
-    ]) {
+    const permissivePlateResponse = await fetch(`${baseUrl}/vehicles`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        customerId: customer.id,
+        plate: "@@@",
+      }),
+    });
+
+    expect(permissivePlateResponse.status).toBe(201);
+
+    for (const [label, response] of [
+      ["list", listVehiclesResponse],
+      ["plate", searchByPlateResponse],
+      ["customer", searchByCustomerResponse],
+    ] as const) {
       const body = (await response.json()) as ApiData<VehicleBody[]>;
-      expect(body.data.map((vehicle) => vehicle.id)).toContain(vehicleBody.data.id);
+      expect(body.data.map((vehicle) => vehicle.id), label).toContain(vehicleBody.data.id);
     }
 
     const secondVehicleResponse = await fetch(`${baseUrl}/vehicles`, {

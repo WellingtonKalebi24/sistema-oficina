@@ -8,6 +8,40 @@ const optionalTrimmed = (max: number) =>
     .optional()
     .transform((value) => (value ? value : null));
 
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
+const optionalInt = z
+  .number()
+  .int()
+  .optional()
+  .nullable()
+  .transform((value) => value ?? null);
+
+const patchText = z
+  .string()
+  .trim()
+  .optional()
+  .nullable()
+  .transform((value) => {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    return value ? value : null;
+  });
+
+const patchInt = z
+  .number()
+  .int()
+  .optional()
+  .nullable()
+  .transform((value) => (value === undefined ? undefined : value));
+
 export function normalizeDocument(value: string | null | undefined): {
   documentNormalized: string | null;
   documentType: "cnpj" | "cpf" | null;
@@ -64,11 +98,7 @@ export function normalizePlate(value: string | null | undefined): string | null 
 
   const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-  if (!/^[A-Z]{3}\d{4}$/.test(normalized) && !/^[A-Z]{3}\d[A-Z]\d{2}$/.test(normalized)) {
-    throw new Error("Invalid plate.");
-  }
-
-  return normalized;
+  return normalized || null;
 }
 
 export function normalizeVin(value: string | null | undefined): string | null {
@@ -78,11 +108,7 @@ export function normalizeVin(value: string | null | undefined): string | null {
 
   const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(normalized)) {
-    throw new Error("Invalid VIN.");
-  }
-
-  return normalized;
+  return normalized || null;
 }
 
 export const customerFilterSchema = z.object({
@@ -148,15 +174,15 @@ export const vehicleFilterSchema = z.object({
 
 export const createVehicleSchema = z
   .object({
-    brand: optionalTrimmed(80),
-    color: optionalTrimmed(40),
+    brand: optionalText,
+    color: optionalText,
     customerId: z.string().trim().min(1),
-    mileage: z.number().int().min(0).max(9999999).optional().nullable(),
-    model: optionalTrimmed(80),
-    notes: optionalTrimmed(2000),
-    plate: z.string().trim().min(1).max(16),
-    vin: optionalTrimmed(32),
-    year: z.number().int().min(1900).max(2100).optional().nullable(),
+    mileage: optionalInt,
+    model: optionalText,
+    notes: optionalText,
+    plate: optionalText,
+    vin: optionalText,
+    year: optionalInt,
   })
   .transform((value) => ({
     ...value,
@@ -166,15 +192,15 @@ export const createVehicleSchema = z
 
 export const updateVehicleSchema = z
   .object({
-    brand: z.string().trim().max(80).optional().nullable(),
-    color: z.string().trim().max(40).optional().nullable(),
+    brand: patchText,
+    color: patchText,
     customerId: z.string().trim().min(1).optional(),
-    mileage: z.number().int().min(0).max(9999999).optional().nullable(),
-    model: z.string().trim().max(80).optional().nullable(),
-    notes: z.string().trim().max(2000).optional().nullable(),
-    plate: z.string().trim().min(1).max(16).optional(),
-    vin: optionalTrimmed(32),
-    year: z.number().int().min(1900).max(2100).optional().nullable(),
+    mileage: patchInt,
+    model: patchText,
+    notes: patchText,
+    plate: patchText,
+    vin: patchText,
+    year: patchInt,
   })
   .transform((value) => {
     const normalized: typeof value & {
