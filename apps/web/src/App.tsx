@@ -5,6 +5,7 @@ import {
   faBuilding,
   faCar,
   faChevronDown,
+  faBoxesStacked,
   faFolderOpen,
   faKey,
   faRightFromBracket,
@@ -14,7 +15,7 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router";
 
 import {
@@ -64,6 +65,41 @@ import {
   updateVehicle,
 } from "./api/vehicles.js";
 import {
+  type Product,
+  type ProductCategory,
+  type Purchase,
+  type ServiceCatalogEntry,
+  type StockMovement,
+  type StockReservation,
+  type Supplier,
+  cancelReservation,
+  createCategory as createStockCategory,
+  createProduct as createStockProduct,
+  createPurchase as createStockPurchase,
+  createReservation as createStockReservation,
+  createService as createStockService,
+  createStockAdjustment,
+  createStockExit,
+  createSupplier as createStockSupplier,
+  deactivateProduct as deactivateStockProduct,
+  deactivateService as deactivateStockService,
+  deactivateSupplier as deactivateStockSupplier,
+  listCategories as listStockCategories,
+  listMovements as listStockMovements,
+  listProducts as listStockProducts,
+  listReservations as listStockReservations,
+  listServices as listStockServices,
+  listSuppliers as listStockSuppliers,
+  type ProductCategoryInput,
+  type ProductInput,
+  type PurchaseInput,
+  type ServiceCatalogEntryInput,
+  type StockAdjustmentInput,
+  type StockExitInput,
+  type StockReservationInput,
+  type SupplierInput,
+} from "./api/stock.js";
+import {
   clearStoredSession,
   hasPermission,
   readStoredSession,
@@ -74,33 +110,63 @@ import { Button } from "./components/ui/button.js";
 import { Card, CardContent, CardHeader } from "./components/ui/card.js";
 import { Input } from "./components/ui/input.js";
 import { Label } from "./components/ui/label.js";
-import { formatDateTime } from "./design/formatters.js";
+import { formatCurrency, formatDateTime } from "./design/formatters.js";
 
 type View =
-  "clientes" | "oficina" | "papeis" | "permissoes" | "seguranca" | "usuarios" | "veiculos";
+  | "clientes"
+  | "estoque"
+  | "oficina"
+  | "papeis"
+  | "permissoes"
+  | "seguranca"
+  | "usuarios"
+  | "veiculos";
 type BootState = "loading" | "bootstrap" | "login" | "admin" | "error";
 
 type AdminData = {
   customerHistory: CustomerHistoryEvent[];
   customers: Customer[];
   permissions: Permission[];
+  productCategories: ProductCategory[];
+  products: Product[];
+  purchases: Purchase[];
   roles: Role[];
+  services: ServiceCatalogEntry[];
   settings: TenantSettings | null;
+  stockMovements: StockMovement[];
+  stockReservations: StockReservation[];
+  suppliers: Supplier[];
   users: AdminUser[];
   vehicleHistory: VehicleHistoryEvent[];
   vehicles: Vehicle[];
 };
 
 type BlockedState = Partial<
-  Record<"customers" | "permissions" | "roles" | "settings" | "users" | "vehicles", string>
+  Record<
+    | "customers"
+    | "permissions"
+    | "roles"
+    | "settings"
+    | "stock"
+    | "users"
+    | "vehicles",
+    string
+  >
 >;
 
 const initialAdminData: AdminData = {
   customerHistory: [],
   customers: [],
   permissions: [],
+  productCategories: [],
+  products: [],
+  purchases: [],
   roles: [],
+  services: [],
   settings: null,
+  stockMovements: [],
+  stockReservations: [],
+  suppliers: [],
   users: [],
   vehicleHistory: [],
   vehicles: [],
@@ -246,7 +312,59 @@ function AuthAdminApp() {
       );
     }
 
+    loads.push(...stockLoaders(usableSession));
+
     await Promise.all(loads);
+  }
+
+  function stockLoaders(usableSession: StoredSession): Array<Promise<void>> {
+    const loads: Array<Promise<void>> = [];
+
+    if (hasPermission(usableSession, "stock.catalog.read")) {
+      loads.push(
+        loadResource(
+          "stock",
+          () => listStockServices(usableSession.accessToken),
+          (services) => setAdminData((current) => ({ ...current, services })),
+        ),
+        loadResource(
+          "stock",
+          () => listStockCategories(usableSession.accessToken),
+          (productCategories) => setAdminData((current) => ({ ...current, productCategories })),
+        ),
+        loadResource(
+          "stock",
+          () => listStockProducts(usableSession.accessToken),
+          (products) => setAdminData((current) => ({ ...current, products })),
+        ),
+        loadResource(
+          "stock",
+          () => listStockSuppliers(usableSession.accessToken),
+          (suppliers) => setAdminData((current) => ({ ...current, suppliers })),
+        ),
+      );
+    }
+
+    if (hasPermission(usableSession, "stock.movements.read")) {
+      loads.push(
+        loadResource(
+          "stock",
+          () => listStockMovements(usableSession.accessToken),
+          (stockMovements) => setAdminData((current) => ({ ...current, stockMovements })),
+        ),
+        loadResource(
+          "stock",
+          () => listStockReservations(usableSession.accessToken),
+          (stockReservations) => setAdminData((current) => ({ ...current, stockReservations })),
+        ),
+      );
+    }
+
+    return loads;
+  }
+
+  async function refreshStockData(currentSession: StoredSession) {
+    await Promise.all(stockLoaders(currentSession));
   }
 
   async function loadResource<T>(
@@ -443,6 +561,130 @@ function AuthAdminApp() {
               ),
             }));
             setStatusMessage("Veiculo registrado e vinculado ao cliente atual.");
+          }}
+          onCreateStockAdjustment={async (input) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await createStockAdjustment(currentSession.accessToken, input);
+              await refreshStockData(currentSession);
+            });
+            setStatusMessage("Ajuste registrado pelo backend.");
+          }}
+          onCreateStockCategory={async (input) => {
+            const category = await withAuthenticatedSession((currentSession) =>
+              createStockCategory(currentSession.accessToken, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              productCategories: [...current.productCategories, category].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            }));
+            setStatusMessage("Categoria salva no tenant autenticado.");
+          }}
+          onCreateStockExit={async (input) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await createStockExit(currentSession.accessToken, input);
+              await refreshStockData(currentSession);
+            });
+            setStatusMessage("Saida registrada pelo backend.");
+          }}
+          onCreateStockProduct={async (input) => {
+            const product = await withAuthenticatedSession((currentSession) =>
+              createStockProduct(currentSession.accessToken, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              products: [...current.products, product].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            }));
+            setStatusMessage("Produto salvo no tenant autenticado.");
+          }}
+          onCreateStockPurchase={async (input) => {
+            const purchase = await withAuthenticatedSession(async (currentSession) => {
+              const created = await createStockPurchase(currentSession.accessToken, input);
+              await refreshStockData(currentSession);
+              return created;
+            });
+            setAdminData((current) => ({ ...current, purchases: [purchase, ...current.purchases] }));
+            setStatusMessage("Compra registrada e estoque atualizado pelo backend.");
+          }}
+          onCreateStockReservation={async (input) => {
+            const reservation = await withAuthenticatedSession(async (currentSession) => {
+              const created = await createStockReservation(currentSession.accessToken, input);
+              await refreshStockData(currentSession);
+              return created;
+            });
+            setAdminData((current) => ({
+              ...current,
+              stockReservations: current.stockReservations.some((item) => item.id === reservation.id)
+                ? current.stockReservations.map((item) =>
+                    item.id === reservation.id ? reservation : item,
+                  )
+                : [reservation, ...current.stockReservations],
+            }));
+            setStatusMessage("Reserva registrada sem alterar o saldo fisico.");
+          }}
+          onCreateStockService={async (input) => {
+            const service = await withAuthenticatedSession((currentSession) =>
+              createStockService(currentSession.accessToken, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              services: [...current.services, service].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            }));
+            setStatusMessage("Servico salvo no tenant autenticado.");
+          }}
+          onCreateStockSupplier={async (input) => {
+            const supplier = await withAuthenticatedSession((currentSession) =>
+              createStockSupplier(currentSession.accessToken, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              suppliers: [...current.suppliers, supplier].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            }));
+            setStatusMessage("Fornecedor salvo no tenant autenticado.");
+          }}
+          onDeactivateStockProduct={async (product) => {
+            await withAuthenticatedSession((currentSession) =>
+              deactivateStockProduct(currentSession.accessToken, product.id),
+            );
+            setAdminData((current) => ({
+              ...current,
+              products: current.products.filter((item) => item.id !== product.id),
+            }));
+            setStatusMessage("Produto desativado; historico permanece auditavel.");
+          }}
+          onDeactivateStockService={async (service) => {
+            await withAuthenticatedSession((currentSession) =>
+              deactivateStockService(currentSession.accessToken, service.id),
+            );
+            setAdminData((current) => ({
+              ...current,
+              services: current.services.filter((item) => item.id !== service.id),
+            }));
+            setStatusMessage("Servico desativado; historico permanece auditavel.");
+          }}
+          onDeactivateStockSupplier={async (supplier) => {
+            await withAuthenticatedSession((currentSession) =>
+              deactivateStockSupplier(currentSession.accessToken, supplier.id),
+            );
+            setAdminData((current) => ({
+              ...current,
+              suppliers: current.suppliers.filter((item) => item.id !== supplier.id),
+            }));
+            setStatusMessage("Fornecedor desativado; historico permanece auditavel.");
+          }}
+          onCancelStockReservation={async (reservation) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await cancelReservation(currentSession.accessToken, reservation.id);
+              await refreshStockData(currentSession);
+            });
+            setStatusMessage("Reserva cancelada pelo backend.");
           }}
           onDeleteCustomer={async (customer) => {
             await withAuthenticatedSession((currentSession) =>
@@ -872,6 +1114,18 @@ function AdminShell(props: {
     roleIds?: string[];
   }) => Promise<void>;
   onCreateVehicle: (input: VehicleInput) => Promise<void>;
+  onCancelStockReservation: (reservation: StockReservation) => Promise<void>;
+  onCreateStockAdjustment: (input: StockAdjustmentInput) => Promise<void>;
+  onCreateStockCategory: (input: ProductCategoryInput) => Promise<void>;
+  onCreateStockExit: (input: StockExitInput) => Promise<void>;
+  onCreateStockProduct: (input: ProductInput) => Promise<void>;
+  onCreateStockPurchase: (input: PurchaseInput) => Promise<void>;
+  onCreateStockReservation: (input: StockReservationInput) => Promise<void>;
+  onCreateStockService: (input: ServiceCatalogEntryInput) => Promise<void>;
+  onCreateStockSupplier: (input: SupplierInput) => Promise<void>;
+  onDeactivateStockProduct: (product: Product) => Promise<void>;
+  onDeactivateStockService: (service: ServiceCatalogEntry) => Promise<void>;
+  onDeactivateStockSupplier: (supplier: Supplier) => Promise<void>;
   onDeleteCustomer: (customer: Customer) => Promise<void>;
   onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
   onLoadCustomerHistory: (customerId: string) => Promise<void>;
@@ -927,6 +1181,12 @@ function AdminShell(props: {
           view: "clientes" as const,
         },
         { icon: faCar, label: "Veiculos", permission: "vehicles.read", view: "veiculos" as const },
+        {
+          icon: faBoxesStacked,
+          label: "Estoque",
+          permission: "stock.catalog.read",
+          view: "estoque" as const,
+        },
       ].filter((item) => hasPermission(props.session, item.permission)),
     [props.session],
   );
@@ -1098,6 +1358,30 @@ function AdminShell(props: {
               vehicles={props.adminData.vehicles}
             />
           ) : null}
+          {props.activeView === "estoque" ? (
+            <StockPanel
+              blocked={props.blocked.stock}
+              categories={props.adminData.productCategories}
+              movements={props.adminData.stockMovements}
+              onCancelReservation={props.onCancelStockReservation}
+              onCreateAdjustment={props.onCreateStockAdjustment}
+              onCreateCategory={props.onCreateStockCategory}
+              onCreateExit={props.onCreateStockExit}
+              onCreateProduct={props.onCreateStockProduct}
+              onCreatePurchase={props.onCreateStockPurchase}
+              onCreateReservation={props.onCreateStockReservation}
+              onCreateService={props.onCreateStockService}
+              onCreateSupplier={props.onCreateStockSupplier}
+              onDeactivateProduct={props.onDeactivateStockProduct}
+              onDeactivateService={props.onDeactivateStockService}
+              onDeactivateSupplier={props.onDeactivateStockSupplier}
+              products={props.adminData.products}
+              purchases={props.adminData.purchases}
+              reservations={props.adminData.stockReservations}
+              services={props.adminData.services}
+              suppliers={props.adminData.suppliers}
+            />
+          ) : null}
           {props.activeView === "seguranca" ? (
             <SecurityPanel onChangePassword={props.onChangePassword} session={props.session} />
           ) : null}
@@ -1169,6 +1453,1117 @@ function SettingsPanel({
       </form>
     </section>
   );
+}
+
+type StockTab =
+  | "alertas"
+  | "compras"
+  | "fornecedores"
+  | "movimentos"
+  | "produtos"
+  | "reservas"
+  | "servicos";
+
+function StockPanel({
+  blocked,
+  categories,
+  movements,
+  onCancelReservation,
+  onCreateAdjustment,
+  onCreateCategory,
+  onCreateExit,
+  onCreateProduct,
+  onCreatePurchase,
+  onCreateReservation,
+  onCreateService,
+  onCreateSupplier,
+  onDeactivateProduct,
+  onDeactivateService,
+  onDeactivateSupplier,
+  products,
+  purchases,
+  reservations,
+  services,
+  suppliers,
+}: {
+  blocked: string | undefined;
+  categories: ProductCategory[];
+  movements: StockMovement[];
+  onCancelReservation: (reservation: StockReservation) => Promise<void>;
+  onCreateAdjustment: (input: StockAdjustmentInput) => Promise<void>;
+  onCreateCategory: (input: ProductCategoryInput) => Promise<void>;
+  onCreateExit: (input: StockExitInput) => Promise<void>;
+  onCreateProduct: (input: ProductInput) => Promise<void>;
+  onCreatePurchase: (input: PurchaseInput) => Promise<void>;
+  onCreateReservation: (input: StockReservationInput) => Promise<void>;
+  onCreateService: (input: ServiceCatalogEntryInput) => Promise<void>;
+  onCreateSupplier: (input: SupplierInput) => Promise<void>;
+  onDeactivateProduct: (product: Product) => Promise<void>;
+  onDeactivateService: (service: ServiceCatalogEntry) => Promise<void>;
+  onDeactivateSupplier: (supplier: Supplier) => Promise<void>;
+  products: Product[];
+  purchases: Purchase[];
+  reservations: StockReservation[];
+  services: ServiceCatalogEntry[];
+  suppliers: Supplier[];
+}) {
+  const [activeTab, setActiveTab] = useState<StockTab>("produtos");
+  const [categoryForm, setCategoryForm] = useState({ description: "", name: "" });
+  const [error, setError] = useState("");
+  const [exitForm, setExitForm] = useState({
+    origin: "",
+    productId: "",
+    quantity: "1",
+    sourceKind: "manual",
+  });
+  const [pendingDeactivateProduct, setPendingDeactivateProduct] = useState<Product | null>(null);
+  const [pendingDeactivateService, setPendingDeactivateService] =
+    useState<ServiceCatalogEntry | null>(null);
+  const [pendingDeactivateSupplier, setPendingDeactivateSupplier] = useState<Supplier | null>(null);
+  const [pendingReservationCancel, setPendingReservationCancel] = useState<StockReservation | null>(
+    null,
+  );
+  const [productForm, setProductForm] = useState({
+    categoryId: "",
+    costPrice: "",
+    minimumStock: "0",
+    name: "",
+    salePrice: "",
+    sku: "",
+  });
+  const [purchaseForm, setPurchaseForm] = useState({
+    documentNumber: "",
+    productId: "",
+    purchasedAt: new Date().toISOString().slice(0, 10),
+    quantity: "1",
+    supplierId: "",
+    unitCost: "0.00",
+  });
+  const [reservationForm, setReservationForm] = useState({
+    productId: "",
+    quantity: "1",
+    sourceKind: "manual",
+    sourceReference: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [serviceForm, setServiceForm] = useState({ basePrice: "0.00", description: "", name: "" });
+  const [stockAdjustmentForm, setStockAdjustmentForm] = useState({
+    productId: "",
+    quantityDelta: "1",
+    reason: "",
+    sourceKind: "manual",
+  });
+  const [supplierForm, setSupplierForm] = useState({
+    document: "",
+    name: "",
+    notes: "",
+    phone: "",
+  });
+
+  useEffect(() => {
+    const firstCategoryId = categories[0]?.id;
+
+    if (!productForm.categoryId && firstCategoryId) {
+      setProductForm((current) => ({ ...current, categoryId: firstCategoryId }));
+    }
+  }, [categories, productForm.categoryId]);
+
+  useEffect(() => {
+    const firstProductId = products[0]?.id ?? "";
+    const firstSupplierId = suppliers[0]?.id ?? "";
+
+    if (!purchaseForm.productId && firstProductId) {
+      setPurchaseForm((current) => ({ ...current, productId: firstProductId }));
+    }
+    if (!purchaseForm.supplierId && firstSupplierId) {
+      setPurchaseForm((current) => ({ ...current, supplierId: firstSupplierId }));
+    }
+    if (!exitForm.productId && firstProductId) {
+      setExitForm((current) => ({ ...current, productId: firstProductId }));
+    }
+    if (!stockAdjustmentForm.productId && firstProductId) {
+      setStockAdjustmentForm((current) => ({ ...current, productId: firstProductId }));
+    }
+    if (!reservationForm.productId && firstProductId) {
+      setReservationForm((current) => ({ ...current, productId: firstProductId }));
+    }
+  }, [
+    exitForm.productId,
+    products,
+    purchaseForm.productId,
+    purchaseForm.supplierId,
+    reservationForm.productId,
+    stockAdjustmentForm.productId,
+    suppliers,
+  ]);
+
+  if (blocked) {
+    return <BlockedPanel message={blocked} />;
+  }
+
+  const lowStockProducts = products.filter((product) => product.lowStock);
+
+  async function runStockAction(action: () => Promise<void>) {
+    setSaving(true);
+    setError("");
+
+    try {
+      await action();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel sincronizar o estoque.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function productName(productId: string): string {
+    return products.find((product) => product.id === productId)?.name ?? "Produto";
+  }
+
+  return (
+    <section className="stock-workspace" aria-label="Estoque">
+      <div className="panel stock-tabs" role="tablist" aria-label="Areas de estoque">
+        {(
+          [
+            ["servicos", "Servicos"],
+            ["produtos", "Produtos"],
+            ["fornecedores", "Fornecedores"],
+            ["compras", "Compras"],
+            ["movimentos", "Movimentos"],
+            ["reservas", "Reservas"],
+            ["alertas", "Alertas"],
+          ] as Array<[StockTab, string]>
+        ).map(([tab, label]) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "stock-tab stock-tab--active" : "stock-tab"}
+            onClick={() => setActiveTab(tab)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {error ? (
+        <p className="callout callout--danger" role="status">
+          {error}
+        </p>
+      ) : null}
+
+      {activeTab === "servicos" ? (
+        <section className="workspace-grid stock-grid" aria-label="Servicos de estoque">
+          <form
+            className="panel action-panel"
+            aria-label="Cadastro de servico"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runStockAction(async () => {
+                await onCreateService({
+                  basePrice: serviceForm.basePrice,
+                  description: serviceForm.description,
+                  name: serviceForm.name,
+                });
+                setServiceForm({ basePrice: "0.00", description: "", name: "" });
+              });
+            }}
+          >
+            <PanelTitle eyebrow="Servicos" title="Novo servico" countLabel="Catalogo" />
+            <RequiredInput
+              label="Nome do servico"
+              value={serviceForm.name}
+              onChange={(value) => setServiceForm((current) => ({ ...current, name: value }))}
+            />
+            <RequiredInput
+              inputMode="decimal"
+              label="Preco base"
+              value={serviceForm.basePrice}
+              onChange={(value) => setServiceForm((current) => ({ ...current, basePrice: value }))}
+            />
+            <label className="field">
+              <span>Descricao operacional</span>
+              <input
+                value={serviceForm.description}
+                onChange={(event) =>
+                  setServiceForm((current) => ({ ...current, description: event.target.value }))
+                }
+              />
+            </label>
+            <button type="submit" disabled={saving}>
+              Salvar servico
+            </button>
+          </form>
+          <section className="panel">
+            <PanelTitle eyebrow="Tabela" title="Servicos ativos" countLabel={`${services.length} itens`} />
+            <TableWrap empty={services.length === 0}>
+              <table aria-label="Servicos ativos">
+                <thead>
+                  <tr>
+                    <th scope="col">Servico</th>
+                    <th scope="col">Preco base</th>
+                    <th scope="col">Ativo</th>
+                    <th scope="col">Atualizado</th>
+                    <th scope="col">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((service) => (
+                    <tr key={service.id}>
+                      <td>{service.name}</td>
+                      <td>{formatCurrency(Number(service.basePrice))}</td>
+                      <td>Ativo</td>
+                      <td>{formatUpdatedAt(service.updatedAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() => setPendingDeactivateService(service)}
+                        >
+                          Desativar {service.name}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+            {pendingDeactivateService ? (
+              <ConfirmStrip
+                label={`Confirmar desativacao de ${pendingDeactivateService.name}? O registro sai das listas ativas, mas o historico permanece auditavel.`}
+                buttonLabel="Desativar item"
+                onConfirm={() => {
+                  const service = pendingDeactivateService;
+                  setPendingDeactivateService(null);
+                  void runStockAction(() => onDeactivateService(service));
+                }}
+              />
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "produtos" ? (
+        <section className="workspace-grid stock-grid" aria-label="Produtos">
+          <form
+            className="panel action-panel"
+            aria-label="Cadastro de produto"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runStockAction(async () => {
+                await onCreateProduct({
+                  categoryId: productForm.categoryId,
+                  costPrice: productForm.costPrice || null,
+                  minimumStock: toOptionalInt(productForm.minimumStock) ?? 0,
+                  name: productForm.name,
+                  salePrice: productForm.salePrice || null,
+                  sku: productForm.sku || null,
+                });
+                setProductForm((current) => ({
+                  ...current,
+                  costPrice: "",
+                  minimumStock: "0",
+                  name: "",
+                  salePrice: "",
+                  sku: "",
+                }));
+              });
+            }}
+          >
+            <PanelTitle eyebrow="Produtos" title="Novo produto" countLabel="Saldo atual" />
+            <RequiredInput
+              ariaLabel="Nome do produto *"
+              label="Nome do produto"
+              value={productForm.name}
+              onChange={(value) => setProductForm((current) => ({ ...current, name: value }))}
+            />
+            <label className="field">
+              <span>
+                Categoria
+                <RequiredMark />
+              </span>
+              <select
+                aria-label="Categoria *"
+                value={productForm.categoryId}
+                onChange={(event) =>
+                  setProductForm((current) => ({ ...current, categoryId: event.target.value }))
+                }
+                required
+              >
+                <option value="">Selecione</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="form-grid form-grid--split">
+              <label className="field">
+                <span>SKU/Codigo</span>
+                <input
+                  value={productForm.sku}
+                  onChange={(event) =>
+                    setProductForm((current) => ({ ...current, sku: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Minimo</span>
+                <input
+                  inputMode="numeric"
+                  value={productForm.minimumStock}
+                  onChange={(event) =>
+                    setProductForm((current) => ({
+                      ...current,
+                      minimumStock: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="form-grid form-grid--split">
+              <label className="field">
+                <span>Custo</span>
+                <input
+                  inputMode="decimal"
+                  value={productForm.costPrice}
+                  onChange={(event) =>
+                    setProductForm((current) => ({ ...current, costPrice: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Venda</span>
+                <input
+                  inputMode="decimal"
+                  value={productForm.salePrice}
+                  onChange={(event) =>
+                    setProductForm((current) => ({ ...current, salePrice: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+            <button type="submit" disabled={saving || categories.length === 0}>
+              Salvar produto
+            </button>
+            <div className="stock-subform">
+              <PanelTitle eyebrow="Categoria" title="Nova categoria" countLabel="Opcional" />
+              <RequiredInput
+                label="Nome da categoria"
+                value={categoryForm.name}
+                onChange={(value) => setCategoryForm((current) => ({ ...current, name: value }))}
+              />
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={saving}
+                onClick={() =>
+                  void runStockAction(async () => {
+                    await onCreateCategory(categoryForm);
+                    setCategoryForm({ description: "", name: "" });
+                  })
+                }
+              >
+                Salvar categoria
+              </button>
+            </div>
+          </form>
+          <section className="panel">
+            <PanelTitle eyebrow="Tabela" title="Produtos ativos" countLabel={`${products.length} itens`} />
+            <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
+              <label className="field">
+                <span>Buscar produto</span>
+                <input placeholder="Produto, SKU ou categoria" />
+              </label>
+              <button type="submit">Buscar produtos</button>
+            </form>
+            <TableWrap empty={products.length === 0}>
+              <table aria-label="Produtos de estoque">
+                <thead>
+                  <tr>
+                    <th scope="col">SKU/Codigo</th>
+                    <th scope="col">Produto</th>
+                    <th scope="col">Categoria</th>
+                    <th scope="col">Estoque fisico</th>
+                    <th scope="col">Reservado</th>
+                    <th scope="col">Disponivel</th>
+                    <th scope="col">Minimo</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.id}>
+                      <td>{product.sku ?? "Sem codigo"}</td>
+                      <td>{product.name}</td>
+                      <td>{product.category?.name ?? "Sem categoria"}</td>
+                      <td className="numeric-cell">{product.physicalQuantity}</td>
+                      <td className="numeric-cell">{product.reservedQuantity}</td>
+                      <td className="numeric-cell">{product.availableQuantity}</td>
+                      <td className="numeric-cell">{product.minimumStock}</td>
+                      <td>
+                        {product.lowStock ? (
+                          <span className="status-badge status-badge--warning">Estoque baixo</span>
+                        ) : (
+                          <span className="status-badge">Disponivel</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() => setPendingDeactivateProduct(product)}
+                        >
+                          Desativar {product.name}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+            {pendingDeactivateProduct ? (
+              <ConfirmStrip
+                label={`Confirmar desativacao de ${pendingDeactivateProduct.name}? O registro sai das listas ativas, mas o historico permanece auditavel.`}
+                buttonLabel="Desativar item"
+                onConfirm={() => {
+                  const product = pendingDeactivateProduct;
+                  setPendingDeactivateProduct(null);
+                  void runStockAction(() => onDeactivateProduct(product));
+                }}
+              />
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "fornecedores" ? (
+        <section className="workspace-grid stock-grid" aria-label="Fornecedores">
+          <form
+            className="panel action-panel"
+            aria-label="Cadastro de fornecedor"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runStockAction(async () => {
+                await onCreateSupplier(supplierForm);
+                setSupplierForm({ document: "", name: "", notes: "", phone: "" });
+              });
+            }}
+          >
+            <PanelTitle eyebrow="Fornecedores" title="Novo fornecedor" countLabel="Compras" />
+            <RequiredInput
+              label="Nome do fornecedor"
+              value={supplierForm.name}
+              onChange={(value) => setSupplierForm((current) => ({ ...current, name: value }))}
+            />
+            <label className="field">
+              <span>Documento</span>
+              <input
+                value={supplierForm.document}
+                onChange={(event) =>
+                  setSupplierForm((current) => ({ ...current, document: event.target.value }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Telefone</span>
+              <input
+                value={supplierForm.phone}
+                onChange={(event) =>
+                  setSupplierForm((current) => ({ ...current, phone: event.target.value }))
+                }
+              />
+            </label>
+            <button type="submit" disabled={saving}>
+              Salvar fornecedor
+            </button>
+          </form>
+          <section className="panel">
+            <PanelTitle
+              eyebrow="Tabela"
+              title="Fornecedores ativos"
+              countLabel={`${suppliers.length} itens`}
+            />
+            <TableWrap empty={suppliers.length === 0}>
+              <table aria-label="Fornecedores ativos">
+                <thead>
+                  <tr>
+                    <th scope="col">Fornecedor</th>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Telefone</th>
+                    <th scope="col">Ativo</th>
+                    <th scope="col">Atualizado</th>
+                    <th scope="col">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suppliers.map((supplier) => (
+                    <tr key={supplier.id}>
+                      <td>{supplier.name}</td>
+                      <td>{supplier.document ?? "Sem documento"}</td>
+                      <td>{supplier.phone ?? "Sem telefone"}</td>
+                      <td>Ativo</td>
+                      <td>{formatUpdatedAt(supplier.updatedAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() => setPendingDeactivateSupplier(supplier)}
+                        >
+                          Desativar {supplier.name}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+            {pendingDeactivateSupplier ? (
+              <ConfirmStrip
+                label={`Confirmar desativacao de ${pendingDeactivateSupplier.name}? O registro sai das listas ativas, mas o historico permanece auditavel.`}
+                buttonLabel="Desativar item"
+                onConfirm={() => {
+                  const supplier = pendingDeactivateSupplier;
+                  setPendingDeactivateSupplier(null);
+                  void runStockAction(() => onDeactivateSupplier(supplier));
+                }}
+              />
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "compras" ? (
+        <section className="workspace-grid stock-grid" aria-label="Compras">
+          <form
+            className="panel action-panel"
+            aria-label="Registro de compra"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runStockAction(() =>
+                onCreatePurchase({
+                  documentNumber: purchaseForm.documentNumber || null,
+                  items: [
+                    {
+                      productId: purchaseForm.productId,
+                      quantity: toPositiveInt(purchaseForm.quantity),
+                      unitCost: purchaseForm.unitCost,
+                    },
+                  ],
+                  purchasedAt: new Date(`${purchaseForm.purchasedAt}T12:00:00-03:00`).toISOString(),
+                  supplierId: purchaseForm.supplierId,
+                }),
+              );
+            }}
+          >
+            <PanelTitle eyebrow="Compras" title="Nova entrada" countLabel="Transacional" />
+            <label className="field">
+              <span>
+                Fornecedor da compra
+                <RequiredMark />
+              </span>
+              <select
+                aria-label="Fornecedor da compra *"
+                value={purchaseForm.supplierId}
+                onChange={(event) =>
+                  setPurchaseForm((current) => ({ ...current, supplierId: event.target.value }))
+                }
+                required
+              >
+                <option value="">Selecione</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>
+                Produto comprado
+                <RequiredMark />
+              </span>
+              <select
+                aria-label="Produto comprado *"
+                value={purchaseForm.productId}
+                onChange={(event) =>
+                  setPurchaseForm((current) => ({ ...current, productId: event.target.value }))
+                }
+                required
+              >
+                <option value="">Selecione</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <RequiredInput
+              inputMode="numeric"
+              label="Quantidade comprada"
+              value={purchaseForm.quantity}
+              onChange={(value) => setPurchaseForm((current) => ({ ...current, quantity: value }))}
+            />
+            <RequiredInput
+              inputMode="decimal"
+              label="Custo unitario"
+              value={purchaseForm.unitCost}
+              onChange={(value) => setPurchaseForm((current) => ({ ...current, unitCost: value }))}
+            />
+            <label className="field">
+              <span>Data da compra</span>
+              <input
+                type="date"
+                value={purchaseForm.purchasedAt}
+                onChange={(event) =>
+                  setPurchaseForm((current) => ({ ...current, purchasedAt: event.target.value }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Documento da compra</span>
+              <input
+                value={purchaseForm.documentNumber}
+                onChange={(event) =>
+                  setPurchaseForm((current) => ({
+                    ...current,
+                    documentNumber: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <button type="submit" disabled={saving || !products.length || !suppliers.length}>
+              Registrar compra
+            </button>
+          </form>
+          <section className="panel">
+            <PanelTitle eyebrow="Tabela" title="Compras registradas" countLabel={`${purchases.length} itens`} />
+            <TableWrap empty={purchases.length === 0}>
+              <table aria-label="Compras registradas">
+                <thead>
+                  <tr>
+                    <th scope="col">Compra</th>
+                    <th scope="col">Fornecedor</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Itens</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Entrada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchases.map((purchase) => (
+                    <tr key={purchase.id}>
+                      <td>{purchase.documentNumber ?? purchase.id}</td>
+                      <td>{suppliers.find((supplier) => supplier.id === purchase.supplierId)?.name ?? "Fornecedor"}</td>
+                      <td>{formatUpdatedAt(purchase.purchasedAt)}</td>
+                      <td>{purchase.itemCount}</td>
+                      <td>{formatCurrency(Number(purchase.totalAmount))}</td>
+                      <td>Estoque atualizado pelo backend</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "movimentos" ? (
+        <section className="workspace-grid stock-grid" aria-label="Movimentos">
+          <div className="panel action-panel stacked-forms">
+            <form
+              aria-label="Registro de saida"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void runStockAction(() =>
+                  onCreateExit({
+                    origin: exitForm.origin,
+                    productId: exitForm.productId,
+                    quantity: toPositiveInt(exitForm.quantity),
+                    sourceKind: exitForm.sourceKind,
+                    sourceLabel: exitForm.origin,
+                  }),
+                );
+              }}
+            >
+              <PanelTitle eyebrow="Saida" title="Registrar retirada" countLabel="Origem" />
+              <ProductSelect
+                label="Produto da saida"
+                products={products}
+                value={exitForm.productId}
+                onChange={(value) => setExitForm((current) => ({ ...current, productId: value }))}
+              />
+              <RequiredInput
+                inputMode="numeric"
+                label="Quantidade de saida"
+                value={exitForm.quantity}
+                onChange={(value) => setExitForm((current) => ({ ...current, quantity: value }))}
+              />
+              <RequiredInput
+                label="Origem da saida"
+                value={exitForm.origin}
+                onChange={(value) => setExitForm((current) => ({ ...current, origin: value }))}
+              />
+              <button type="submit" disabled={saving || !products.length}>
+                Registrar saida
+              </button>
+            </form>
+            <form
+              aria-label="Registro de ajuste"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void runStockAction(() =>
+                  onCreateAdjustment({
+                    productId: stockAdjustmentForm.productId,
+                    quantityDelta: toSignedInt(stockAdjustmentForm.quantityDelta),
+                    reason: stockAdjustmentForm.reason,
+                    sourceKind: stockAdjustmentForm.sourceKind,
+                    sourceLabel: stockAdjustmentForm.reason,
+                  }),
+                );
+              }}
+            >
+              <PanelTitle eyebrow="Ajuste" title="Ajustar saldo fisico" countLabel="Motivo" />
+              <ProductSelect
+                label="Produto do ajuste"
+                products={products}
+                value={stockAdjustmentForm.productId}
+                onChange={(value) =>
+                  setStockAdjustmentForm((current) => ({ ...current, productId: value }))
+                }
+              />
+              <RequiredInput
+                inputMode="numeric"
+                label="Diferenca do ajuste"
+                value={stockAdjustmentForm.quantityDelta}
+                onChange={(value) =>
+                  setStockAdjustmentForm((current) => ({ ...current, quantityDelta: value }))
+                }
+              />
+              <RequiredInput
+                label="Motivo do ajuste"
+                value={stockAdjustmentForm.reason}
+                onChange={(value) =>
+                  setStockAdjustmentForm((current) => ({ ...current, reason: value }))
+                }
+              />
+              <p className="helper-text">
+                Confirmar ajuste de estoque de {productName(stockAdjustmentForm.productId)}? Informe
+                motivo operacional antes de salvar.
+              </p>
+              <button type="submit" disabled={saving || !products.length}>
+                Registrar ajuste
+              </button>
+            </form>
+          </div>
+          <MovementTable movements={movements} products={products} />
+        </section>
+      ) : null}
+
+      {activeTab === "reservas" ? (
+        <section className="workspace-grid stock-grid" aria-label="Reservas">
+          <form
+            className="panel action-panel"
+            aria-label="Registro de reserva"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runStockAction(() =>
+                onCreateReservation({
+                  productId: reservationForm.productId,
+                  quantity: toPositiveInt(reservationForm.quantity),
+                  sourceKind: reservationForm.sourceKind,
+                  sourceLabel: reservationForm.sourceReference,
+                  sourceReference: reservationForm.sourceReference,
+                }),
+              );
+            }}
+          >
+            <PanelTitle eyebrow="Reservas" title="Reservar peca" countLabel="Disponibilidade" />
+            <ProductSelect
+              label="Produto reservado"
+              products={products}
+              value={reservationForm.productId}
+              onChange={(value) =>
+                setReservationForm((current) => ({ ...current, productId: value }))
+              }
+            />
+            <RequiredInput
+              inputMode="numeric"
+              label="Quantidade reservada"
+              value={reservationForm.quantity}
+              onChange={(value) =>
+                setReservationForm((current) => ({ ...current, quantity: value }))
+              }
+            />
+            <RequiredInput
+              label="Referencia da origem"
+              value={reservationForm.sourceReference}
+              onChange={(value) =>
+                setReservationForm((current) => ({ ...current, sourceReference: value }))
+              }
+            />
+            <button type="submit" disabled={saving || !products.length}>
+              Reservar peca
+            </button>
+          </form>
+          <section className="panel">
+            <PanelTitle eyebrow="Tabela" title="Reservas" countLabel={`${reservations.length} itens`} />
+            <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
+              <label className="field">
+                <span>Buscar reserva</span>
+                <input placeholder="Produto ou origem" />
+              </label>
+              <button type="submit">Buscar reservas</button>
+            </form>
+            <TableWrap empty={reservations.length === 0}>
+              <table aria-label="Reservas de estoque">
+                <thead>
+                  <tr>
+                    <th scope="col">Produto</th>
+                    <th scope="col">Quantidade</th>
+                    <th scope="col">Origem</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Atualizado</th>
+                    <th scope="col">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reservations.map((reservation) => (
+                    <tr key={reservation.id}>
+                      <td>{productName(reservation.productId)}</td>
+                      <td>{reservation.quantity}</td>
+                      <td>{reservation.sourceLabel ?? reservation.sourceReference ?? reservation.sourceKind}</td>
+                      <td>{reservation.status === "active" ? "Ativa" : "Cancelada"}</td>
+                      <td>{formatUpdatedAt(reservation.updatedAt)}</td>
+                      <td>
+                        {reservation.status === "active" ? (
+                          <button
+                            type="button"
+                            className="button-danger"
+                            onClick={() => setPendingReservationCancel(reservation)}
+                          >
+                            Cancelar reserva de {productName(reservation.productId)}
+                          </button>
+                        ) : (
+                          "Sem acao"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+            {pendingReservationCancel ? (
+              <ConfirmStrip
+                label={`Confirmar cancelamento da reserva de ${productName(pendingReservationCancel.productId)}? A disponibilidade sera recalculada pelo backend.`}
+                buttonLabel="Confirmar cancelamento da reserva"
+                onConfirm={() => {
+                  const reservation = pendingReservationCancel;
+                  setPendingReservationCancel(null);
+                  void runStockAction(() => onCancelReservation(reservation));
+                }}
+              />
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "alertas" ? (
+        <section className="panel" aria-label="Alertas de estoque">
+          <PanelTitle eyebrow="Alertas" title="Estoque baixo" countLabel={`${lowStockProducts.length} itens`} />
+          {lowStockProducts.length === 0 ? (
+            <div className="empty-state">Nenhum item de estoque encontrado</div>
+          ) : (
+            <div className="alert-list">
+              {lowStockProducts.map((product) => (
+                <div key={product.id} className="stock-alert-row">
+                  <strong>{product.name}</strong>
+                  <span>Disponivel {product.availableQuantity}</span>
+                  <span>Minimo {product.minimumStock}</span>
+                  <span className="status-badge status-badge--warning">Estoque baixo</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function RequiredInput({
+  ariaLabel,
+  inputMode,
+  label,
+  onChange,
+  value,
+}: {
+  ariaLabel?: string;
+  inputMode?: "decimal" | "numeric";
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="field">
+      <span>
+        {label}
+        <RequiredMark />
+      </span>
+      <input
+        aria-label={ariaLabel ?? `${label} *`}
+        inputMode={inputMode}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      />
+    </label>
+  );
+}
+
+function ProductSelect({
+  label,
+  onChange,
+  products,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  products: Product[];
+  value: string;
+}) {
+  return (
+    <label className="field">
+      <span>
+        {label}
+        <RequiredMark />
+      </span>
+      <select
+        aria-label={`${label} *`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      >
+        <option value="">Selecione</option>
+        {products.map((product) => (
+          <option key={product.id} value={product.id}>
+            {product.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function PanelTitle({
+  countLabel,
+  eyebrow,
+  title,
+}: {
+  countLabel: string;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <div className="panel-heading">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+      </div>
+      <span className="pill">{countLabel}</span>
+    </div>
+  );
+}
+
+function TableWrap({ children, empty }: { children: ReactNode; empty: boolean }) {
+  if (empty) {
+    return (
+      <div className="empty-state">
+        <strong>Nenhum item de estoque encontrado</strong>
+        <span>Cadastre produtos, fornecedores ou compras para iniciar o controle transacional do estoque.</span>
+      </div>
+    );
+  }
+
+  return <div className="table-wrap">{children}</div>;
+}
+
+function ConfirmStrip({
+  buttonLabel,
+  label,
+  onConfirm,
+}: {
+  buttonLabel: string;
+  label: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="confirm-strip" role="alert">
+      <span>{label}</span>
+      <button type="button" className="button-danger" onClick={onConfirm}>
+        {buttonLabel}
+      </button>
+    </div>
+  );
+}
+
+function MovementTable({ movements, products }: { movements: StockMovement[]; products: Product[] }) {
+  return (
+    <section className="panel">
+      <PanelTitle eyebrow="Historico" title="Movimentos" countLabel={`${movements.length} linhas`} />
+      <form className="inline-filter" onSubmit={(event) => event.preventDefault()}>
+        <label className="field">
+          <span>Buscar movimento</span>
+          <input placeholder="Produto, tipo ou origem" />
+        </label>
+        <button type="submit">Buscar movimentos</button>
+      </form>
+      <TableWrap empty={movements.length === 0}>
+        <table aria-label="Historico de movimentos">
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Produto</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Quantidade</th>
+              <th scope="col">Origem</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Saldo apos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {movements.map((movement) => (
+              <tr key={movement.id}>
+                <td>{formatUpdatedAt(movement.createdAt)}</td>
+                <td>{products.find((product) => product.id === movement.productId)?.name ?? "Produto"}</td>
+                <td>{movement.type}</td>
+                <td>{movement.quantityDelta}</td>
+                <td>{movement.sourceLabel ?? movement.sourceKind}</td>
+                <td>Backend</td>
+                <td>
+                  Fisico {movement.balanceAfterPhysical} / Reservado{" "}
+                  {movement.balanceAfterReserved} / Disponivel {movement.balanceAfterAvailable}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrap>
+    </section>
+  );
+}
+
+function toPositiveInt(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function toSignedInt(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed !== 0 ? parsed : 1;
 }
 
 function UsersPanel({

@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App.js";
@@ -479,7 +479,22 @@ const adjustmentMovement = {
   type: "adjustment",
 };
 
-const reservation = {
+type ReservationFixture = {
+  cancelledAt: string | null;
+  createdAt: string;
+  id: string;
+  productId: string;
+  quantity: number;
+  sourceId: string | null;
+  sourceKind: string;
+  sourceLabel: string | null;
+  sourceReference: string | null;
+  status: "active" | "cancelled";
+  tenantId: string;
+  updatedAt: string;
+};
+
+const reservation: ReservationFixture = {
   cancelledAt: null,
   createdAt: "2026-07-22T12:20:00.000Z",
   id: "reservation-1",

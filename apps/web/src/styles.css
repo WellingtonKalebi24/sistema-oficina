@@ -428,6 +428,12 @@ th {
   color: var(--color-success);
 }
 
+.status-badge--warning {
+  border: 1px solid rgba(197, 139, 47, 0.42);
+  background: #fff7e8;
+  color: #76531e;
+}
+
 .empty-state {
   display: grid;
   gap: var(--space-2);
@@ -496,6 +502,60 @@ th {
 
 .customer-vehicle-grid {
   grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+}
+
+.stock-workspace,
+.alert-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stock-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.stock-tab {
+  min-height: 36px;
+  border-color: var(--color-line);
+  background: #ffffff;
+  color: var(--color-text);
+}
+
+.stock-tab:hover,
+.stock-tab--active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.stock-grid {
+  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+}
+
+.stock-subform {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.numeric-cell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stock-alert-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) repeat(3, max-content);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid rgba(197, 139, 47, 0.42);
+  border-radius: var(--radius-control);
+  background: #fffaf0;
 }
 
 .inline-filter {
@@ -678,6 +738,7 @@ th {
   .admin-layout,
   .inline-filter,
   .history-row,
+  .stock-alert-row,
   .form-grid--split {
     grid-template-columns: 1fr;
   }
