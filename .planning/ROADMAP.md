@@ -11,7 +11,7 @@
 | 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
 | 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
-| 4 | Serviços, Produtos, Compras e Estoque | 3/4 | In Progress|  |
+| 4 | Serviços, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
 | 5 | Agenda e Recepção | Cobrir agendamento, check-in, checklist e anexos | REC-01..REC-08 | yes |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
 | 7 | Aprovação Pública Segura | Permitir decisão do cliente por token vinculado à versão exata | QTE-12..QTE-18 | yes |
@@ -181,7 +181,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** STK-01, STK-02, STK-03, STK-04, STK-05, STK-06, STK-07, STK-08, STK-09, STK-10, STK-11, STK-12, STK-13, STK-14
 **UI hint:** yes
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -198,7 +198,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 04-04-PLAN.md — Authenticated Estoque UI, stock web client and final Phase 4 verification.
+- [x] 04-04-PLAN.md — Authenticated Estoque UI, stock web client and final Phase 4 verification. (completed 2026-07-22)
 
 **Scope**
 

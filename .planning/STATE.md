@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
-status: executing
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-07-22T15:35:08.790Z"
+status: ready
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-07-22T15:58:08.221Z"
 progress:
   total_phases: 12
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
-  completed_plans: 15
-  percent: 94
+  completed_plans: 16
+  percent: 33
 ---
 
 # Project State: JO.IA
@@ -48,6 +48,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 4 plan 04-01 completed: tenant-scoped stock catalog, product, supplier and current stock foundation.
 - Phase 4 plan 04-02 completed: transactional purchases, stock exits, adjustments, movement history and concurrency safety.
 - Phase 4 plan 04-03 completed: reservations and cancellation semantics with availability-safe transactions.
+- Phase 4 plan 04-04 completed: authenticated Estoque UI, stock web client and final Phase 4 verification.
 
 ## Current Decisions
 
@@ -76,7 +77,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 4 with authenticated stock UI and final verification in 04-04.
+Continue Phase 5 with agenda and reception planning/execution.
 
 ### Quick Tasks Completed
 
@@ -111,8 +112,8 @@ Continue Phase 4 with authenticated stock UI and final verification in 04-04.
 
 ## Session
 
-**Last session:** 2026-07-22T15:35:08.727Z
-**Stopped at:** Completed 04-03-PLAN.md
+**Last session:** 2026-07-22T15:57:54.890Z
+**Stopped at:** Completed 04-04-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -134,6 +135,7 @@ Continue Phase 4 with authenticated stock UI and final verification in 04-04.
 | Phase 04 P01 | 9min | 2 tasks | 10 files |
 | Phase 04 P02 | 15min | 2 tasks | 13 files |
 | Phase 04 P03 | 25min | 2 tasks | 9 files |
+| Phase 04 P04 | 32min | 3 tasks | 12 files |
 
 ## Decisions
 
@@ -175,3 +177,5 @@ Continue Phase 4 with authenticated stock UI and final verification in 04-04.
 - [Phase 04]: Plan 03 reservation APIs use /stock/reservations and /stock/reservations/:reservationId/cancel under the authenticated stock router.
 - [Phase 04]: Plan 03 reservation history uses zero-quantity StockMovement rows to show reserved/available changes without changing physical stock.
 - [Phase 04]: Plan 03 reservation source metadata remains nullable text/id data until quote and work-order tables exist.
+- [Phase 04]: Plan 04 kept purchase rows in browser memory because the backend exposes purchase creation but not purchase listing; stock balances, movements and reservations refresh from server data.
+- [Phase 04]: Plan 04 preserved permissive vehicle registration while adding stock-specific required markers and backend-authoritative stock UI actions.
