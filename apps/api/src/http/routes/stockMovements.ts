@@ -4,13 +4,18 @@ import type { PrismaDatabase } from "../../db/prisma.js";
 import { PERMISSIONS } from "../../permissions/permissions.js";
 import { createPurchase, serializePurchase } from "../../stock/purchaseService.js";
 import {
+  cancelStockReservation,
+  createStockReservation,
   createStockAdjustment,
   createStockExit,
+  listStockReservations,
   listStockMovements,
+  serializeStockReservation,
   serializeStockMovement,
 } from "../../stock/stockService.js";
 import {
   createPurchaseSchema,
+  createStockReservationSchema,
   createStockAdjustmentSchema,
   createStockExitSchema,
   stockFilterSchema,
@@ -58,6 +63,59 @@ export function createStockMovementsRouter(prisma: PrismaDatabase): Router {
 
       res.status(201).json({
         data: serializeStockMovement(movement),
+      });
+    }),
+  );
+
+  router.get(
+    "/stock/reservations",
+    requirePermission(prisma, PERMISSIONS.stockMovementsRead),
+    asyncHandler(async (req, res) => {
+      const auth = (req as AuthenticatedRequest).auth;
+      const filters = parseRequest(stockFilterSchema, req.query, "Invalid stock reservation filters.");
+      const reservations = await listStockReservations(prisma, auth.tenantId, filters);
+
+      res.json({
+        data: reservations.map(serializeStockReservation),
+      });
+    }),
+  );
+
+  router.post(
+    "/stock/reservations",
+    requirePermission(prisma, PERMISSIONS.stockReservationsCreate),
+    asyncHandler(async (req, res) => {
+      const input = parseRequest(
+        createStockReservationSchema,
+        req.body,
+        "Invalid stock reservation data.",
+      );
+      const reservation = await createStockReservation(prisma, actorFromRequest(req), input);
+
+      res.status(201).json({
+        data: serializeStockReservation(reservation),
+      });
+    }),
+  );
+
+  router.post(
+    "/stock/reservations/:reservationId/cancel",
+    requirePermission(prisma, PERMISSIONS.stockReservationsCancel),
+    asyncHandler(async (req, res) => {
+      const reservationId = req.params.reservationId;
+
+      if (typeof reservationId !== "string" || reservationId.trim() === "") {
+        throw badRequest("Invalid stock reservation id.");
+      }
+
+      const reservation = await cancelStockReservation(
+        prisma,
+        actorFromRequest(req),
+        reservationId,
+      );
+
+      res.json({
+        data: serializeStockReservation(reservation),
       });
     }),
   );

@@ -12,6 +12,8 @@ export const PERMISSIONS = {
   stockExitsCreate: "stock.exits.create",
   stockMovementsRead: "stock.movements.read",
   stockPurchasesCreate: "stock.purchases.create",
+  stockReservationsCancel: "stock.reservations.cancel",
+  stockReservationsCreate: "stock.reservations.create",
   stockSuppliersWrite: "stock.suppliers.write",
   tenantSettingsRead: "tenant.settings.read",
   tenantSettingsUpdate: "tenant.settings.update",
@@ -51,6 +53,8 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.stockMovementsRead,
   PERMISSIONS.stockExitsCreate,
   PERMISSIONS.stockAdjustmentsCreate,
+  PERMISSIONS.stockReservationsCreate,
+  PERMISSIONS.stockReservationsCancel,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -151,6 +155,14 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.stockAdjustmentsCreate]: {
     description: "Permite registrar ajustes de estoque com motivo operacional e auditoria.",
     name: "Registrar ajustes de estoque",
+  },
+  [PERMISSIONS.stockReservationsCreate]: {
+    description: "Permite reservar pecas sem alterar o saldo fisico do estoque.",
+    name: "Reservar pecas",
+  },
+  [PERMISSIONS.stockReservationsCancel]: {
+    description: "Permite cancelar reservas de pecas e restaurar disponibilidade operacional.",
+    name: "Cancelar reservas de pecas",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",

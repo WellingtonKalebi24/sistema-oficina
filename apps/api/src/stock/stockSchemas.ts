@@ -81,6 +81,7 @@ export const stockFilterSchema = z.object({
   productId: z.string().trim().min(1).optional(),
   search: z.string().trim().max(120).optional(),
   sourceKind: z.string().trim().max(80).optional(),
+  status: z.enum(["active", "cancelled"]).optional(),
   type: z.string().trim().max(40).optional(),
 });
 
@@ -198,6 +199,15 @@ export const createStockAdjustmentSchema = z.object({
   sourceLabel: optionalShortText(240),
 });
 
+export const createStockReservationSchema = z.object({
+  productId: z.string().trim().min(1),
+  quantity: positiveIntegerQuantity,
+  sourceId: optionalShortText(120),
+  sourceKind,
+  sourceLabel: optionalShortText(240),
+  sourceReference: optionalShortText(240),
+});
+
 export type StockFilters = z.infer<typeof stockFilterSchema>;
 export type CreateServiceCatalogEntryInput = z.infer<typeof createServiceCatalogEntrySchema>;
 export type UpdateServiceCatalogEntryInput = z.infer<typeof updateServiceCatalogEntrySchema>;
@@ -210,3 +220,4 @@ export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
 export type CreateStockExitInput = z.infer<typeof createStockExitSchema>;
 export type CreateStockAdjustmentInput = z.infer<typeof createStockAdjustmentSchema>;
+export type CreateStockReservationInput = z.infer<typeof createStockReservationSchema>;

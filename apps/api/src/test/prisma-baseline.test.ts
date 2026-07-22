@@ -44,7 +44,12 @@ const requiredStockCatalogModels = [
   "Supplier",
 ] as const;
 
-const requiredStockMovementModels = ["Purchase", "PurchaseItem", "StockMovement"] as const;
+const requiredStockMovementModels = [
+  "Purchase",
+  "PurchaseItem",
+  "StockMovement",
+  "StockReservation",
+] as const;
 
 const forbiddenBusinessOrCommunicationModels = [
   "Quote",
@@ -130,6 +135,8 @@ describe("Prisma schema baseline", () => {
     expect(schema).toMatch(/totalAmount\s+Decimal\s+@map\("total_amount"\)/);
     expect(schema).toMatch(/quantityDelta\s+Int\s+@map\("quantity_delta"\)/);
     expect(schema).toMatch(/sourceKind\s+String\s+@map\("source_kind"\)/);
+    expect(schema).toMatch(/sourceReference\s+String\?\s+@map\("source_reference"\)/);
+    expect(schema).toMatch(/cancelledAt\s+DateTime\?\s+@map\("cancelled_at"\)/);
     expect(schema).toMatch(/balanceAfterPhysical\s+Int\s+@map\("balance_after_physical"\)/);
     expect(schema).toMatch(/balanceAfterReserved\s+Int\s+@map\("balance_after_reserved"\)/);
     expect(schema).toMatch(/balanceAfterAvailable\s+Int\s+@map\("balance_after_available"\)/);

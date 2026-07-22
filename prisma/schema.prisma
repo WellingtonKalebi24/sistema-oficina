@@ -40,6 +40,7 @@ model Tenant {
   purchases                    Purchase[]
   purchaseItems                PurchaseItem[]
   stockMovements               StockMovement[]
+  stockReservations            StockReservation[]
 
   @@index([status])
   @@map("tenants")
@@ -364,11 +365,12 @@ model Product {
   deactivatedAt       DateTime? @map("deactivated_at")
   deactivatedByUserId String?   @map("deactivated_by_user_id")
 
-  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  stock    ProductStock?
-  purchaseItems PurchaseItem[]
-  stockMovements StockMovement[]
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category          ProductCategory    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  stock             ProductStock?
+  purchaseItems     PurchaseItem[]
+  stockMovements    StockMovement[]
+  stockReservations StockReservation[]
 
   @@index([tenantId, deactivatedAt])
   @@index([tenantId, categoryId])
@@ -480,4 +482,29 @@ model StockMovement {
   @@index([tenantId, type, createdAt])
   @@index([tenantId, sourceKind, sourceId])
   @@map("stock_movements")
+}
+
+model StockReservation {
+  id                String    @id @default(cuid())
+  tenantId          String    @map("tenant_id")
+  productId         String    @map("product_id")
+  quantity          Int
+  sourceKind        String    @map("source_kind")
+  sourceId          String?   @map("source_id")
+  sourceLabel       String?   @map("source_label")
+  sourceReference   String?   @map("source_reference")
+  status            String    @default("active")
+  createdByUserId   String?   @map("created_by_user_id")
+  cancelledByUserId String?   @map("cancelled_by_user_id")
+  cancelledAt       DateTime? @map("cancelled_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, productId, status])
+  @@index([tenantId, sourceKind, sourceId])
+  @@map("stock_reservations")
 }
