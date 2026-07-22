@@ -181,6 +181,24 @@ Plans:
 **Mode:** mvp
 **Requirements:** STK-01, STK-02, STK-03, STK-04, STK-05, STK-06, STK-07, STK-08, STK-09, STK-10, STK-11, STK-12, STK-13, STK-14
 **UI hint:** yes
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Tenant-scoped catalog schema, permissions, service/product/supplier APIs and RED contracts.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02-PLAN.md — Transactional purchases, stock entries/exits/adjustments, movement history and concurrency safety.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03-PLAN.md — Reservations and cancellation semantics with availability-safe transactions.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 04-04-PLAN.md — Authenticated Estoque UI, stock web client and final Phase 4 verification.
 
 **Scope**
 
