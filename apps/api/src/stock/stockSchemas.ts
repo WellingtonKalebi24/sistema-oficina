@@ -53,6 +53,12 @@ const integerQuantity = z
   .nullable()
   .transform((value) => value ?? 0);
 
+const positiveIntegerQuantity = z.number().int().positive();
+
+const nonZeroIntegerQuantity = z.number().int().refine((value) => value !== 0);
+
+const sourceKind = z.string().trim().min(1).max(80);
+
 export function normalizeSupplierDocument(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -72,7 +78,10 @@ export function normalizeSupplierPhone(value: string | null | undefined): string
 }
 
 export const stockFilterSchema = z.object({
+  productId: z.string().trim().min(1).optional(),
   search: z.string().trim().max(120).optional(),
+  sourceKind: z.string().trim().max(80).optional(),
+  type: z.string().trim().max(40).optional(),
 });
 
 export const createServiceCatalogEntrySchema = z.object({
@@ -154,6 +163,41 @@ export const updateSupplierSchema = z
     return normalized;
   });
 
+export const createPurchaseSchema = z.object({
+  documentNumber: optionalShortText(80),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().trim().min(1),
+        quantity: positiveIntegerQuantity,
+        unitCost: decimalString,
+      }),
+    )
+    .min(1),
+  purchasedAt: z
+    .string()
+    .trim()
+    .datetime({ offset: true })
+    .transform((value) => new Date(value)),
+  supplierId: z.string().trim().min(1),
+});
+
+export const createStockExitSchema = z.object({
+  origin: z.string().trim().min(1).max(240),
+  productId: z.string().trim().min(1),
+  quantity: positiveIntegerQuantity,
+  sourceKind,
+  sourceLabel: optionalShortText(240),
+});
+
+export const createStockAdjustmentSchema = z.object({
+  productId: z.string().trim().min(1),
+  quantityDelta: nonZeroIntegerQuantity,
+  reason: z.string().trim().min(1).max(500),
+  sourceKind,
+  sourceLabel: optionalShortText(240),
+});
+
 export type StockFilters = z.infer<typeof stockFilterSchema>;
 export type CreateServiceCatalogEntryInput = z.infer<typeof createServiceCatalogEntrySchema>;
 export type UpdateServiceCatalogEntryInput = z.infer<typeof updateServiceCatalogEntrySchema>;
@@ -163,3 +207,6 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
 export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
+export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
+export type CreateStockExitInput = z.infer<typeof createStockExitSchema>;
+export type CreateStockAdjustmentInput = z.infer<typeof createStockAdjustmentSchema>;

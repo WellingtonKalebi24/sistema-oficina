@@ -44,6 +44,8 @@ const requiredStockCatalogModels = [
   "Supplier",
 ] as const;
 
+const requiredStockMovementModels = ["Purchase", "PurchaseItem", "StockMovement"] as const;
+
 const forbiddenBusinessOrCommunicationModels = [
   "Quote",
   "WorkOrder",
@@ -116,6 +118,21 @@ describe("Prisma schema baseline", () => {
       /reservedQuantity\s+Int\s+@default\(0\)\s+@map\("reserved_quantity"\)/,
     );
     expect(schema).toMatch(/deactivatedAt\s+DateTime\?\s+@map\("deactivated_at"\)/);
+  });
+
+  it("contains the Phase 4 purchase, purchase item and stock movement ledger contract", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+
+    for (const model of requiredStockMovementModels) {
+      expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
+    }
+
+    expect(schema).toMatch(/totalAmount\s+Decimal\s+@map\("total_amount"\)/);
+    expect(schema).toMatch(/quantityDelta\s+Int\s+@map\("quantity_delta"\)/);
+    expect(schema).toMatch(/sourceKind\s+String\s+@map\("source_kind"\)/);
+    expect(schema).toMatch(/balanceAfterPhysical\s+Int\s+@map\("balance_after_physical"\)/);
+    expect(schema).toMatch(/balanceAfterReserved\s+Int\s+@map\("balance_after_reserved"\)/);
+    expect(schema).toMatch(/balanceAfterAvailable\s+Int\s+@map\("balance_after_available"\)/);
   });
 
   it("keeps out-of-scope business and communication entities out of the schema", async () => {

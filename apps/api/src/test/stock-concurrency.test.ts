@@ -168,7 +168,13 @@ async function createStockedProduct(
 
   expect(purchaseResponse.status).toBe(201);
 
-  return readProduct(headers.authorization.replace("Bearer ", ""), product.id);
+  const authorization = headers.authorization;
+
+  if (!authorization) {
+    throw new Error("Missing authorization header in stock concurrency helper.");
+  }
+
+  return readProduct(authorization.replace("Bearer ", ""), product.id);
 }
 
 async function createCategory(headers: Record<string, string>): Promise<CategoryBody> {

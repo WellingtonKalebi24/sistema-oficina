@@ -37,6 +37,9 @@ model Tenant {
   products                     Product[]
   productStocks                ProductStock[]
   suppliers                    Supplier[]
+  purchases                    Purchase[]
+  purchaseItems                PurchaseItem[]
+  stockMovements               StockMovement[]
 
   @@index([status])
   @@map("tenants")
@@ -364,6 +367,8 @@ model Product {
   tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   stock    ProductStock?
+  purchaseItems PurchaseItem[]
+  stockMovements StockMovement[]
 
   @@index([tenantId, deactivatedAt])
   @@index([tenantId, categoryId])
@@ -402,10 +407,77 @@ model Supplier {
   deactivatedAt       DateTime? @map("deactivated_at")
   deactivatedByUserId String?   @map("deactivated_by_user_id")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
 
   @@index([tenantId, deactivatedAt])
   @@index([tenantId, name])
   @@index([tenantId, documentNormalized])
   @@map("suppliers")
+}
+
+model Purchase {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  supplierId      String   @map("supplier_id")
+  documentNumber  String?  @map("document_number")
+  purchasedAt     DateTime @map("purchased_at")
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(12, 2)
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items    PurchaseItem[]
+
+  @@index([tenantId, purchasedAt])
+  @@index([tenantId, supplierId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id            String  @id @default(cuid())
+  tenantId      String  @map("tenant_id")
+  purchaseId    String  @map("purchase_id")
+  productId     String  @map("product_id")
+  quantity      Int
+  unitCost      Decimal @map("unit_cost") @db.Decimal(12, 2)
+  totalCost     Decimal @map("total_cost") @db.Decimal(12, 2)
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchase      Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockMovement StockMovement?
+
+  @@index([tenantId, purchaseId])
+  @@index([tenantId, productId])
+  @@map("purchase_items")
+}
+
+model StockMovement {
+  id                    String   @id @default(cuid())
+  tenantId              String   @map("tenant_id")
+  productId             String   @map("product_id")
+  purchaseItemId        String?  @unique @map("purchase_item_id")
+  type                  String
+  quantityDelta         Int      @map("quantity_delta")
+  sourceKind            String   @map("source_kind")
+  sourceId              String?  @map("source_id")
+  sourceLabel           String?  @map("source_label")
+  balanceAfterPhysical  Int      @map("balance_after_physical")
+  balanceAfterReserved  Int      @map("balance_after_reserved")
+  balanceAfterAvailable Int      @map("balance_after_available")
+  createdByUserId       String?  @map("created_by_user_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaseItem PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, productId, createdAt])
+  @@index([tenantId, type, createdAt])
+  @@index([tenantId, sourceKind, sourceId])
+  @@map("stock_movements")
 }

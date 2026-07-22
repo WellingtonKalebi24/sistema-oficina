@@ -6,8 +6,12 @@ export const PERMISSIONS = {
   customersUpdate: "customers.update",
   permissionsManage: "permissions.manage",
   rolesManage: "roles.manage",
+  stockAdjustmentsCreate: "stock.adjustments.create",
   stockCatalogRead: "stock.catalog.read",
   stockCatalogWrite: "stock.catalog.write",
+  stockExitsCreate: "stock.exits.create",
+  stockMovementsRead: "stock.movements.read",
+  stockPurchasesCreate: "stock.purchases.create",
   stockSuppliersWrite: "stock.suppliers.write",
   tenantSettingsRead: "tenant.settings.read",
   tenantSettingsUpdate: "tenant.settings.update",
@@ -43,6 +47,10 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.stockCatalogRead,
   PERMISSIONS.stockCatalogWrite,
   PERMISSIONS.stockSuppliersWrite,
+  PERMISSIONS.stockPurchasesCreate,
+  PERMISSIONS.stockMovementsRead,
+  PERMISSIONS.stockExitsCreate,
+  PERMISSIONS.stockAdjustmentsCreate,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -127,6 +135,22 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.stockSuppliersWrite]: {
     description: "Permite criar, editar e desativar fornecedores no tenant autenticado.",
     name: "Gerenciar fornecedores",
+  },
+  [PERMISSIONS.stockPurchasesCreate]: {
+    description: "Permite registrar compras com itens e entrada transacional de estoque.",
+    name: "Registrar compras",
+  },
+  [PERMISSIONS.stockMovementsRead]: {
+    description: "Permite consultar historico de movimentacoes de estoque do tenant autenticado.",
+    name: "Ler movimentacoes de estoque",
+  },
+  [PERMISSIONS.stockExitsCreate]: {
+    description: "Permite registrar saidas de estoque com origem rastreavel.",
+    name: "Registrar saidas de estoque",
+  },
+  [PERMISSIONS.stockAdjustmentsCreate]: {
+    description: "Permite registrar ajustes de estoque com motivo operacional e auditoria.",
+    name: "Registrar ajustes de estoque",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",
