@@ -55,8 +55,8 @@
 - [x] **STK-07**: Authorized user can register stock adjustments with reason and audit.
 - [x] **STK-08**: User can configure minimum stock for products.
 - [x] **STK-09**: System calculates low-stock visual alerts from current stock data.
-- [ ] **STK-10**: User can reserve parts for a quote or work order without corrupting physical balance.
-- [ ] **STK-11**: User can cancel a reservation and restore availability.
+- [x] **STK-10**: User can reserve parts for a quote or work order without corrupting physical balance.
+- [x] **STK-11**: User can cancel a reservation and restore availability.
 - [x] **STK-12**: User can inspect stock movement history with source operation.
 - [x] **STK-13**: Concurrent stock operations do not produce negative or incorrect balances.
 - [x] **STK-14**: Catalog, supplier and stock data cannot cross tenant boundaries.
@@ -218,8 +218,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STK-07 | Phase 4 | Complete |
 | STK-08 | Phase 4 | Complete |
 | STK-09 | Phase 4 | Complete |
-| STK-10 | Phase 4 | Pending |
-| STK-11 | Phase 4 | Pending |
+| STK-10 | Phase 4 | Complete |
+| STK-11 | Phase 4 | Complete |
 | STK-12 | Phase 4 | Complete |
 | STK-13 | Phase 4 | Complete |
 | STK-14 | Phase 4 | Complete |

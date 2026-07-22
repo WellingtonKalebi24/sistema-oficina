@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
 status: executing
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-07-22T15:25:06.436Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-07-22T15:35:08.790Z"
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 16
-  completed_plans: 14
-  percent: 88
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State: JO.IA
@@ -47,6 +47,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 - Phase 4 started with initial context at .planning/phases/04-servi-os-produtos-compras-e-estoque/04-CONTEXT.md.
 - Phase 4 plan 04-01 completed: tenant-scoped stock catalog, product, supplier and current stock foundation.
 - Phase 4 plan 04-02 completed: transactional purchases, stock exits, adjustments, movement history and concurrency safety.
+- Phase 4 plan 04-03 completed: reservations and cancellation semantics with availability-safe transactions.
 
 ## Current Decisions
 
@@ -75,7 +76,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 4 with reservations and cancellation semantics in 04-03.
+Continue Phase 4 with authenticated stock UI and final verification in 04-04.
 
 ### Quick Tasks Completed
 
@@ -110,8 +111,8 @@ Continue Phase 4 with reservations and cancellation semantics in 04-03.
 
 ## Session
 
-**Last session:** 2026-07-22T15:25:06.386Z
-**Stopped at:** Completed 04-02-PLAN.md
+**Last session:** 2026-07-22T15:35:08.727Z
+**Stopped at:** Completed 04-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -132,6 +133,7 @@ Continue Phase 4 with reservations and cancellation semantics in 04-03.
 | Phase 03 P03 | 73min | 3 tasks | 6 files |
 | Phase 04 P01 | 9min | 2 tasks | 10 files |
 | Phase 04 P02 | 15min | 2 tasks | 13 files |
+| Phase 04 P03 | 25min | 2 tasks | 9 files |
 
 ## Decisions
 
@@ -170,3 +172,6 @@ Continue Phase 4 with reservations and cancellation semantics in 04-03.
 - [Phase 04]: Plan 01 initializes ProductStock during product creation and calculates lowStock only when a positive minimum is configured and availability is below it.
 - [Phase 04]: Plan 02 keeps stock movement history append-only through StockMovement while ProductStock remains the current-state row.
 - [Phase 04]: Plan 02 guards concurrent physical stock writes with PostgreSQL row locks inside Prisma transactions.
+- [Phase 04]: Plan 03 reservation APIs use /stock/reservations and /stock/reservations/:reservationId/cancel under the authenticated stock router.
+- [Phase 04]: Plan 03 reservation history uses zero-quantity StockMovement rows to show reserved/available changes without changing physical stock.
+- [Phase 04]: Plan 03 reservation source metadata remains nullable text/id data until quote and work-order tables exist.
