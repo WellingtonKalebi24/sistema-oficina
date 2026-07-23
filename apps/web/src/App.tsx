@@ -15,7 +15,7 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router";
 
 import {
@@ -187,15 +187,9 @@ function AuthAdminApp() {
   const [adminData, setAdminData] = useState<AdminData>(initialAdminData);
   const [blocked, setBlocked] = useState<BlockedState>({});
   const [statusMessage, setStatusMessage] = useState("Sincronizando estado de acesso.");
-  const bootStartedRef = useRef(false);
   const isForgotPasswordRoute = location.pathname === "/forgot-password";
 
   useEffect(() => {
-    if (bootStartedRef.current) {
-      return;
-    }
-
-    bootStartedRef.current = true;
     let active = true;
     const initialStoredSession = readStoredSession();
 
@@ -260,7 +254,7 @@ function AuthAdminApp() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, []);
 
   async function loadAdminData(currentSession: StoredSession = session as StoredSession) {
     if (!currentSession) {
