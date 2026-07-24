@@ -65,10 +65,10 @@
 
 - [x] **REC-01**: User can create, edit and view appointments in daily and weekly agenda views.
 - [x] **REC-02**: User can associate appointment with customer and vehicle.
-- [ ] **REC-03**: User can perform vehicle check-in from an appointment or directly from customer/vehicle data.
-- [ ] **REC-04**: User can record checklist items, mileage, fuel level, damage notes and items left in the vehicle.
+- [x] **REC-03**: User can perform vehicle check-in from an appointment or directly from customer/vehicle data.
+- [x] **REC-04**: User can record checklist items, mileage, fuel level, damage notes and items left in the vehicle.
 - [ ] **REC-05**: User can attach photos and files to the check-in record.
-- [ ] **REC-06**: User can consult check-in records after reception.
+- [x] **REC-06**: User can consult check-in records after reception.
 - [x] **REC-07**: Reception data and attachments cannot cross tenant boundaries.
 - [x] **REC-08**: Relevant reception changes are audited.
 
@@ -225,10 +225,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STK-14 | Phase 4 | Complete |
 | REC-01 | Phase 5 | Complete |
 | REC-02 | Phase 5 | Complete |
-| REC-03 | Phase 5 | Pending |
-| REC-04 | Phase 5 | Pending |
+| REC-03 | Phase 5 | Complete |
+| REC-04 | Phase 5 | Complete |
 | REC-05 | Phase 5 | Pending |
-| REC-06 | Phase 5 | Pending |
+| REC-06 | Phase 5 | Complete |
 | REC-07 | Phase 5 | Complete |
 | REC-08 | Phase 5 | Complete |
 | QTE-01 | Phase 6 | Pending |
