@@ -232,6 +232,28 @@ Plans:
 **Mode:** mvp
 **Requirements:** REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08
 **UI hint:** yes
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 05-01-PLAN.md — Agenda autenticada com criacao, edicao, cancelamento e tabela diaria/semanal tenant-scoped.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 05-02-PLAN.md — Check-in transacional por agendamento ou direto, checklist e status Aguardando diagnostico.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 05-03-PLAN.md — Consulta posterior, edicao auditada, isolamento cross-tenant e detalhe responsivo.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 05-04-PLAN.md — Anexos opcionais com storage local protegido, categorias canonicas, download/delete autorizados e auditoria.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 05-05-PLAN.md — Preferencia tenant-level de visualizacao, acabamento responsivo e verificacao final da Phase 5.
 
 **Scope**
 
