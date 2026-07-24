@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
 status: ready
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-07-24T11:39:43.699Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-07-24T11:48:54.622Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 18
+  completed_plans: 19
   percent: 33
 ---
 
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-24T11:39:37.032Z
-**Stopped at:** Completed 05-02-PLAN.md
+**Last session:** 2026-07-24T11:48:44.512Z
+**Stopped at:** Completed 05-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -138,6 +138,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 04 P04 | 32min | 3 tasks | 12 files |
 | Phase 05 P01 | 15min | 2 tasks | 5 files |
 | Phase 05 P02 | 5min | 2 tasks | 4 files |
+| Phase 05 P03 | 6min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -187,3 +188,5 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 02 mounts /reception/appointments after requireAuth with backend read/write/cancel permissions.
 - [Phase 05]: Plan 02 keeps appointment cancellation on a dedicated cancel endpoint instead of allowing direct Cancelado status updates.
 - [Phase 05]: Plan 02 filters appointment audit metadata to changed fields and linked IDs, excluding raw notes.
+- [Phase 05]: Agenda data loads from /reception/appointments only when reception.appointments.read is present; backend 403 remains authoritative.
+- [Phase 05]: Daily Agenda keeps the time-ordered table as the primary anchor with only Fazer check-in, Editar and Cancelar row actions.
