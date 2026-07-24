@@ -534,6 +534,11 @@ th {
   grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
 }
 
+.stock-form-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .stock-subform {
   display: grid;
   gap: var(--space-3);

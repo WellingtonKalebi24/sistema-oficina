@@ -1739,130 +1739,132 @@ function StockPanel({
 
       {activeTab === "produtos" ? (
         <section className="workspace-grid stock-grid" aria-label="Produtos">
-          <form
-            className="panel action-panel"
-            aria-label="Cadastro de produto"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void runStockAction(async () => {
-                await onCreateProduct({
-                  categoryId: productForm.categoryId,
-                  costPrice: productForm.costPrice || null,
-                  minimumStock: toOptionalInt(productForm.minimumStock) ?? 0,
-                  name: productForm.name,
-                  salePrice: productForm.salePrice || null,
-                  sku: productForm.sku || null,
+          <div className="stock-form-stack">
+            <form
+              className="panel action-panel"
+              aria-label="Cadastro de produto"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void runStockAction(async () => {
+                  await onCreateProduct({
+                    categoryId: productForm.categoryId,
+                    costPrice: productForm.costPrice || null,
+                    minimumStock: toOptionalInt(productForm.minimumStock) ?? 0,
+                    name: productForm.name,
+                    salePrice: productForm.salePrice || null,
+                    sku: productForm.sku || null,
+                  });
+                  setProductForm((current) => ({
+                    ...current,
+                    costPrice: "",
+                    minimumStock: "0",
+                    name: "",
+                    salePrice: "",
+                    sku: "",
+                  }));
                 });
-                setProductForm((current) => ({
-                  ...current,
-                  costPrice: "",
-                  minimumStock: "0",
-                  name: "",
-                  salePrice: "",
-                  sku: "",
-                }));
-              });
-            }}
-          >
-            <PanelTitle eyebrow="Produtos" title="Novo produto" countLabel="Saldo atual" />
-            <RequiredInput
-              ariaLabel="Nome do produto *"
-              label="Nome do produto"
-              value={productForm.name}
-              onChange={(value) => setProductForm((current) => ({ ...current, name: value }))}
-            />
-            <label className="field">
-              <span>
-                Categoria
-                <RequiredMark />
-              </span>
-              <select
-                aria-label="Categoria *"
-                value={productForm.categoryId}
-                onChange={(event) =>
-                  setProductForm((current) => ({ ...current, categoryId: event.target.value }))
-                }
-                required
-              >
-                <option value="">Selecione</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="form-grid form-grid--split">
+              }}
+            >
+              <PanelTitle eyebrow="Produtos" title="Novo produto" countLabel="Saldo atual" />
+              <RequiredInput
+                ariaLabel="Nome do produto *"
+                label="Nome do produto"
+                value={productForm.name}
+                onChange={(value) => setProductForm((current) => ({ ...current, name: value }))}
+              />
               <label className="field">
-                <span>SKU/Codigo</span>
-                <input
-                  value={productForm.sku}
+                <span>
+                  Categoria
+                  <RequiredMark />
+                </span>
+                <select
+                  aria-label="Categoria *"
+                  value={productForm.categoryId}
                   onChange={(event) =>
-                    setProductForm((current) => ({ ...current, sku: event.target.value }))
+                    setProductForm((current) => ({ ...current, categoryId: event.target.value }))
                   }
-                />
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <label className="field">
-                <span>Minimo</span>
-                <input
-                  inputMode="numeric"
-                  value={productForm.minimumStock}
-                  onChange={(event) =>
-                    setProductForm((current) => ({
-                      ...current,
-                      minimumStock: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <div className="form-grid form-grid--split">
-              <label className="field">
-                <span>Custo</span>
-                <input
-                  inputMode="decimal"
-                  value={productForm.costPrice}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, costPrice: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field">
-                <span>Venda</span>
-                <input
-                  inputMode="decimal"
-                  value={productForm.salePrice}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, salePrice: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
-            <button type="submit" disabled={saving || categories.length === 0}>
-              Salvar produto
-            </button>
-            <div className="stock-subform">
+              <div className="form-grid form-grid--split">
+                <label className="field">
+                  <span>SKU/Codigo</span>
+                  <input
+                    value={productForm.sku}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, sku: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Minimo</span>
+                  <input
+                    inputMode="numeric"
+                    value={productForm.minimumStock}
+                    onChange={(event) =>
+                      setProductForm((current) => ({
+                        ...current,
+                        minimumStock: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <div className="form-grid form-grid--split">
+                <label className="field">
+                  <span>Custo</span>
+                  <input
+                    inputMode="decimal"
+                    value={productForm.costPrice}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, costPrice: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Venda</span>
+                  <input
+                    inputMode="decimal"
+                    value={productForm.salePrice}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, salePrice: event.target.value }))
+                    }
+                  />
+                </label>
+              </div>
+              <button type="submit" disabled={saving || categories.length === 0}>
+                Salvar produto
+              </button>
+            </form>
+            <form
+              className="panel stock-subform"
+              aria-label="Cadastro de categoria"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void runStockAction(async () => {
+                  await onCreateCategory(categoryForm);
+                  setCategoryForm({ description: "", name: "" });
+                });
+              }}
+            >
               <PanelTitle eyebrow="Categoria" title="Nova categoria" countLabel="Opcional" />
               <RequiredInput
                 label="Nome da categoria"
                 value={categoryForm.name}
                 onChange={(value) => setCategoryForm((current) => ({ ...current, name: value }))}
               />
-              <button
-                type="button"
-                className="button-secondary"
-                disabled={saving}
-                onClick={() =>
-                  void runStockAction(async () => {
-                    await onCreateCategory(categoryForm);
-                    setCategoryForm({ description: "", name: "" });
-                  })
-                }
-              >
+              <button type="submit" className="button-secondary" disabled={saving}>
                 Salvar categoria
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
           <section className="panel">
             <PanelTitle
               eyebrow="Tabela"

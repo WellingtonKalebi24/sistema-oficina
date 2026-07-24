@@ -46,6 +46,16 @@ describe("JO.IA stock UI", () => {
     expect(screen.getByRole("button", { name: "Salvar produto" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nome do produto *")).toBeInTheDocument();
     expect(screen.getByLabelText("Categoria *")).toBeInTheDocument();
+    const productForm = screen.getByLabelText("Cadastro de produto") as HTMLFormElement;
+    const categoryForm = screen.getByLabelText("Cadastro de categoria") as HTMLFormElement;
+    const categoryNameInput = screen.getByLabelText("Nome da categoria *");
+    expect(productForm).not.toContainElement(categoryNameInput);
+    expect(categoryForm).toContainElement(categoryNameInput);
+    fireEvent.change(screen.getByLabelText("Nome do produto *"), {
+      target: { value: "Oleo" },
+    });
+    expect(productForm.checkValidity()).toBe(true);
+    expect(categoryForm.checkValidity()).toBe(false);
     expect(screen.getByRole("table", { name: "Produtos de estoque" })).toHaveTextContent(
       "SKU/Codigo",
     );
