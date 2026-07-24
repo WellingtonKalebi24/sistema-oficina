@@ -140,7 +140,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P02 | 5min | 2 tasks | 4 files |
 | Phase 05 P03 | 6min | 2 tasks | 4 files |
 | Phase 05 P04 | 6min | 2 tasks | 6 files |
-| Phase Phase 05 PP05 | 8min | 2 tasks tasks | 3 files files |
+| Phase 05 P05 | 8min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -194,5 +194,5 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Daily Agenda keeps the time-ordered table as the primary anchor with only Fazer check-in, Editar and Cancelar row actions.
 - [Phase 05]: Plan 04 requires appointmentId on ReceptionCheckIn so direct check-in must create a converted trace appointment before persisting check-in. — Preserves D-04 traceability and keeps direct check-in compatible with the required appointmentId schema.
 - [Phase 05]: Plan 04 keeps check-in status as persisted text with exact default Aguardando diagnostico and leaves attachments to the dedicated attachment plan. — Matches the existing Portuguese status pattern and avoids mixing REC-05 attachment storage into the check-in foundation migration.
-- [Phase Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. — Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
-- [Phase Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. — Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
+- [Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. — Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
+- [Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. — Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
