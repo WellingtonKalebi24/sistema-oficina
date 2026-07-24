@@ -57,6 +57,30 @@ type AppointmentBody = {
   vehicleId: string;
 };
 
+type CheckInBody = {
+  appointment: {
+    id: string;
+    status: "Agendado" | "Cancelado" | "Convertido";
+  };
+  appointmentId: string;
+  checklistItems: Array<{
+    condition: string;
+    id: string;
+    label: string;
+    notes: string | null;
+  }>;
+  customerId: string;
+  damageNotes: string;
+  enteredAt: string;
+  fuelLevel: string;
+  id: string;
+  itemsLeft: string | null;
+  mileage: number | null;
+  status: "Aguardando diagnostico";
+  tenantId: string;
+  vehicleId: string;
+};
+
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
 
@@ -307,6 +331,173 @@ describe("reception appointment API contract", () => {
   });
 });
 
+describe("reception check-in RED API contract", () => {
+  it("D-01/D-02/D-03/D-06/D-07/D-08 converts an appointment into a required-data check-in while optional fields and attachments may be absent", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in",
+    });
+    const customer = await createCustomerFixture(prisma, fixture.tenantId, {
+      name: "Cliente Check-in",
+    });
+    const vehicle = await createVehicleFixture(prisma, fixture.tenantId, customer.customerId, {
+      plateNormalized: "CHK0101",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+    const appointment = await createAppointment(headers, {
+      customerId: customer.customerId,
+      expectedService: "Recepcao para diagnostico",
+      origin: "counter",
+      startsAt: "2026-07-24T12:00:00.000Z",
+      vehicleId: vehicle.vehicleId,
+    });
+
+    const response = await createCheckIn(headers, {
+      appointmentId: appointment.id,
+      checklistItems: [
+        {
+          condition: "ok",
+          label: "Lataria dianteira",
+          notes: "Sem novas avarias",
+        },
+        {
+          condition: "avaria",
+          label: "Parachoque traseiro",
+          notes: "Risco visivel na entrada",
+        },
+      ],
+      customerId: customer.customerId,
+      damageNotes: "Risco visivel no parachoque traseiro",
+      enteredAt: "2026-07-24T12:10:00.000Z",
+      fuelLevel: "1/2",
+      vehicleId: vehicle.vehicleId,
+    });
+
+    expect(response.status).toBe(201);
+
+    const body = (await response.json()) as ApiData<CheckInBody>;
+    expect(body.data).toMatchObject({
+      appointmentId: appointment.id,
+      customerId: customer.customerId,
+      damageNotes: "Risco visivel no parachoque traseiro",
+      fuelLevel: "1/2",
+      itemsLeft: null,
+      mileage: null,
+      status: "Aguardando diagnostico",
+      tenantId: fixture.tenantId,
+      vehicleId: vehicle.vehicleId,
+    });
+    expect(body.data.appointment.status).toBe("Convertido");
+    expect(body.data.checklistItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          condition: "ok",
+          label: "Lataria dianteira",
+        }),
+        expect.objectContaining({
+          condition: "avaria",
+          label: "Parachoque traseiro",
+        }),
+      ]),
+    );
+  });
+
+  it("D-01/D-02/D-04/D-06 creates a direct check-in with a converted trace appointment and persists optional mileage/items-left data", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in Direto",
+    });
+    const customer = await createCustomerFixture(prisma, fixture.tenantId, {
+      name: "Cliente Direto",
+    });
+    const vehicle = await createVehicleFixture(prisma, fixture.tenantId, customer.customerId, {
+      plateNormalized: "DIR0101",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+
+    const response = await createCheckIn(headers, {
+      checklistItems: [
+        {
+          condition: "ok",
+          label: "Painel e luzes",
+        },
+      ],
+      customerId: customer.customerId,
+      damageNotes: "Sem avarias aparentes",
+      enteredAt: "2026-07-24T13:10:00.000Z",
+      expectedService: "Check-in direto para diagnostico",
+      fuelLevel: "3/4",
+      itemsLeft: "Documento do veiculo no porta-luvas",
+      mileage: 48210,
+      vehicleId: vehicle.vehicleId,
+    });
+
+    expect(response.status).toBe(201);
+
+    const body = (await response.json()) as ApiData<CheckInBody>;
+    expect(body.data.appointmentId).toEqual(expect.any(String));
+    expect(body.data.appointment.status).toBe("Convertido");
+    expect(body.data).toMatchObject({
+      customerId: customer.customerId,
+      itemsLeft: "Documento do veiculo no porta-luvas",
+      mileage: 48210,
+      status: "Aguardando diagnostico",
+      vehicleId: vehicle.vehicleId,
+    });
+  });
+
+  it("D-05/D-07 rejects check-in without tenant-scoped customer, vehicle, entry date, fuel level or checklist inspection data", async () => {
+    const tenantA = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in A",
+    });
+    const tenantB = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in B",
+    });
+    const customerA = await createCustomerFixture(prisma, tenantA.tenantId);
+    const customerB = await createCustomerFixture(prisma, tenantB.tenantId);
+    const vehicleB = await createVehicleFixture(prisma, tenantB.tenantId, customerB.customerId);
+    const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
+    const headersA = authHeaders(sessionA.accessToken);
+
+    const missingFuel = await createCheckIn(headersA, {
+      checklistItems: [
+        {
+          condition: "ok",
+          label: "Lataria",
+        },
+      ],
+      customerId: customerA.customerId,
+      damageNotes: "Sem avarias",
+      enteredAt: "2026-07-24T14:10:00.000Z",
+      vehicleId: vehicleB.vehicleId,
+    });
+    const missingChecklist = await createCheckIn(headersA, {
+      customerId: customerA.customerId,
+      damageNotes: "Sem avarias",
+      enteredAt: "2026-07-24T14:10:00.000Z",
+      fuelLevel: "1/4",
+      vehicleId: vehicleB.vehicleId,
+    });
+    const foreignCustomerVehicle = await createCheckIn(headersA, {
+      checklistItems: [
+        {
+          condition: "ok",
+          label: "Lataria",
+        },
+      ],
+      customerId: customerB.customerId,
+      damageNotes: "Tentativa cross tenant",
+      enteredAt: "2026-07-24T14:10:00.000Z",
+      fuelLevel: "1/4",
+      vehicleId: vehicleB.vehicleId,
+    });
+
+    expect(missingFuel.status).toBe(400);
+    expect(missingChecklist.status).toBe(400);
+    expect(foreignCustomerVehicle.status).toBe(400);
+  });
+});
+
 function bearerHeaders(accessToken: string): Record<string, string> {
   return {
     authorization: `Bearer ${accessToken}`,
@@ -334,4 +525,15 @@ async function createAppointment(
 
   const responseBody = (await response.json()) as ApiData<AppointmentBody>;
   return responseBody.data;
+}
+
+async function createCheckIn(
+  headers: Record<string, string>,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  return fetch(`${baseUrl}/reception/check-ins`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
 }
