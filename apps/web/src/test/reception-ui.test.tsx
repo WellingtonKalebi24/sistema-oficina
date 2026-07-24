@@ -124,6 +124,145 @@ describe("JO.IA reception agenda UI", () => {
     ).toBeInTheDocument();
     assertNoCommunicationLanguage();
   });
+
+  it("REC-06 supports appointment-origin check-in, later consultation and confirmed audit-relevant edits", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/check-ins", { data: [] }),
+      route("POST", "/reception/check-ins", { data: appointmentCheckIn }, 201),
+      route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
+      route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
+      route("PATCH", "/reception/check-ins/check-in-1", { data: editedCheckIn }),
+      route("GET", "/reception/check-ins", { data: [editedCheckIn] }),
+    ]);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+
+    const table = await screen.findByRole("table", { name: "Agenda diaria" });
+    fireEvent.click(within(table).getByRole("button", { name: "Fazer check-in" }));
+
+    const form = await screen.findByRole("form", { name: "Check-in de recepcao" });
+    expect(form).toHaveTextContent("Maria Oliveira");
+    expect(form).toHaveTextContent("ABC1D23");
+    expect(form).toHaveTextContent("24/07/2026");
+    expect(within(form).getByLabelText(/Cliente/)).toBeRequired();
+    expect(within(form).getByLabelText(/Veiculo/)).toBeRequired();
+    expect(within(form).getByLabelText(/Entrada/)).toBeRequired();
+    expect(within(form).getByLabelText(/Combustivel/)).toBeRequired();
+    expect(within(form).getByLabelText(/Quilometragem/)).not.toBeRequired();
+    expect(within(form).getByLabelText(/Itens deixados/)).not.toBeRequired();
+
+    fireEvent.change(within(form).getByLabelText(/Quilometragem/), {
+      target: { value: "45120" },
+    });
+    fireEvent.change(within(form).getByLabelText(/Combustivel/), {
+      target: { value: "1/2" },
+    });
+    fireEvent.change(within(form).getByLabelText(/Avarias/), {
+      target: { value: "Risco no parachoque" },
+    });
+    fireEvent.click(within(form).getByLabelText("Lataria conferida"));
+    fireEvent.click(within(form).getByRole("button", { name: "Concluir check-in" }));
+
+    expect(
+      await screen.findByText("Check-in concluido e status definido como Aguardando diagnostico."),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Check-ins" }));
+
+    const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
+    expect(checkInsTable).toHaveTextContent("Aguardando diagnostico");
+    expect(checkInsTable).toHaveTextContent("45120 km");
+    fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
+
+    const detail = await screen.findByRole("region", { name: "Detalhe do check-in" });
+    expect(detail).toHaveTextContent("Recepcao para diagnostico");
+    expect(detail).toHaveTextContent("Lataria conferida");
+
+    fireEvent.change(within(detail).getByLabelText(/Quilometragem/), {
+      target: { value: "45200" },
+    });
+    fireEvent.change(within(detail).getByLabelText(/Itens deixados/), {
+      target: { value: "Chave reserva" },
+    });
+    fireEvent.click(within(detail).getByRole("button", { name: "Salvar checklist" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Confirmar edicao dos dados auditaveis deste check-in?",
+    );
+    expect(await screen.findByText("Checklist atualizado com auditoria do backend.")).toBeInTheDocument();
+    assertNoCommunicationLanguage();
+  });
+
+  it("REC-04 supports direct check-in with tenant-scoped customer and vehicle selection", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: [] }),
+      route("GET", "/reception/check-ins", { data: [] }),
+      route("POST", "/reception/check-ins", { data: directCheckIn }, 201),
+      route("GET", "/reception/check-ins", { data: [directCheckIn] }),
+      route("GET", "/reception/appointments?date=2026-07-24", {
+        data: [directConvertedAppointment],
+      }),
+    ]);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+    await screen.findByText("Nenhum agendamento encontrado");
+
+    fireEvent.click(screen.getByRole("button", { name: "Registrar check-in direto" }));
+
+    const form = await screen.findByRole("form", { name: "Check-in de recepcao" });
+    expect(within(form).getByLabelText(/Cliente/)).toHaveValue("customer-1");
+    expect(within(form).getByLabelText(/Veiculo/)).toHaveValue("vehicle-1");
+
+    fireEvent.change(within(form).getByLabelText(/Combustivel/), {
+      target: { value: "3/4" },
+    });
+    fireEvent.change(within(form).getByLabelText(/Avarias/), {
+      target: { value: "Sem avarias aparentes" },
+    });
+    fireEvent.click(within(form).getByLabelText("Lataria conferida"));
+    fireEvent.click(within(form).getByRole("button", { name: "Concluir check-in" }));
+
+    expect(
+      await screen.findByText("Check-in concluido e status definido como Aguardando diagnostico."),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Convertido")).toBeInTheDocument();
+    assertNoCommunicationLanguage();
+  });
+
+  it("renders backend 403 from check-in APIs as the authoritative reception blocked state", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/check-ins", { error: { message: "Forbidden" } }, 403),
+    ]);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+
+    expect(
+      await screen.findByText("Acesso bloqueado pela permissao do servidor."),
+    ).toBeInTheDocument();
+    assertNoCommunicationLanguage();
+  });
 });
 
 async function login() {
@@ -209,6 +348,8 @@ const allPermissions = [
   "reception.appointments.read",
   "reception.appointments.write",
   "reception.appointments.cancel",
+  "reception.checkins.read",
+  "reception.checkins.write",
 ];
 
 const tenantSettings = {
@@ -329,6 +470,87 @@ const dailyAppointments = [
     vehicleId: "vehicle-1",
   }),
 ];
+
+const convertedAppointment = appointmentFixture({
+  customer: { id: "customer-1", name: "Maria Oliveira" },
+  customerId: "customer-1",
+  expectedService: "Recepcao para diagnostico",
+  id: "appointment-1",
+  startsAt: "2026-07-24T11:30:00.000Z",
+  status: "Convertido",
+  vehicle: { id: "vehicle-1", plateNormalized: "ABC1D23" },
+  vehicleId: "vehicle-1",
+});
+
+const directConvertedAppointment = appointmentFixture({
+  customer: { id: "customer-1", name: "Maria Oliveira" },
+  customerId: "customer-1",
+  expectedService: "Check-in direto",
+  id: "appointment-direct-1",
+  origin: "direct-check-in",
+  startsAt: "2026-07-24T12:00:00.000Z",
+  status: "Convertido",
+  vehicle: { id: "vehicle-1", plateNormalized: "ABC1D23" },
+  vehicleId: "vehicle-1",
+});
+
+const appointmentCheckIn = {
+  appointment: {
+    expectedService: convertedAppointment.expectedService,
+    id: convertedAppointment.id,
+    origin: convertedAppointment.origin,
+    startsAt: convertedAppointment.startsAt,
+    status: convertedAppointment.status,
+  },
+  appointmentId: convertedAppointment.id,
+  checklistItems: [
+    {
+      condition: "ok",
+      id: "checklist-1",
+      label: "Lataria conferida",
+      notes: null,
+    },
+  ],
+  createdAt: "2026-07-24T11:35:00.000Z",
+  createdByUserId: "admin-1",
+  customer: { id: "customer-1", name: "Maria Oliveira" },
+  customerId: "customer-1",
+  damageNotes: "Risco no parachoque",
+  enteredAt: "2026-07-24T11:35:00.000Z",
+  fuelLevel: "1/2",
+  id: "check-in-1",
+  itemsLeft: null,
+  mileage: 45120,
+  status: "Aguardando diagnostico",
+  tenantId: "tenant-1",
+  updatedAt: "2026-07-24T11:35:00.000Z",
+  updatedByUserId: null,
+  vehicle: { id: "vehicle-1", plateNormalized: "ABC1D23" },
+  vehicleId: "vehicle-1",
+};
+
+const editedCheckIn = {
+  ...appointmentCheckIn,
+  itemsLeft: "Chave reserva",
+  mileage: 45200,
+  updatedByUserId: "admin-1",
+};
+
+const directCheckIn = {
+  ...appointmentCheckIn,
+  appointment: {
+    expectedService: directConvertedAppointment.expectedService,
+    id: directConvertedAppointment.id,
+    origin: directConvertedAppointment.origin,
+    startsAt: directConvertedAppointment.startsAt,
+    status: directConvertedAppointment.status,
+  },
+  appointmentId: directConvertedAppointment.id,
+  damageNotes: "Sem avarias aparentes",
+  fuelLevel: "3/4",
+  id: "check-in-direct-1",
+  mileage: null,
+};
 
 const weeklyAppointments = [
   appointmentFixture({
