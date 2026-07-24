@@ -10,9 +10,19 @@ import {
   updateAppointment,
 } from "../../reception/appointmentService.js";
 import {
+  createCheckIn,
+  getCheckIn,
+  listCheckIns,
+  serializeCheckIn,
+  updateCheckIn,
+} from "../../reception/checkInService.js";
+import {
   appointmentListSchema,
   cancelAppointmentSchema,
+  checkInListSchema,
+  createCheckInSchema,
   createAppointmentSchema,
+  updateCheckInSchema,
   updateAppointmentSchema,
 } from "../../reception/receptionSchemas.js";
 import { readPathId } from "../../customers/customerService.js";
@@ -88,6 +98,61 @@ export function createReceptionRouter(prisma: PrismaDatabase): Router {
 
       res.json({
         data: serializeAppointment(appointment),
+      });
+    }),
+  );
+
+  router.get(
+    "/reception/check-ins",
+    requirePermission(prisma, PERMISSIONS.receptionCheckInsRead),
+    asyncHandler(async (req, res) => {
+      const auth = (req as AuthenticatedRequest).auth;
+      const filters = parseRequest(checkInListSchema, req.query, "Invalid check-in filters.");
+      const checkIns = await listCheckIns(prisma, auth.tenantId, filters);
+
+      res.json({
+        data: checkIns.map(serializeCheckIn),
+      });
+    }),
+  );
+
+  router.get(
+    "/reception/check-ins/:checkInId",
+    requirePermission(prisma, PERMISSIONS.receptionCheckInsRead),
+    asyncHandler(async (req, res) => {
+      const auth = (req as AuthenticatedRequest).auth;
+      const checkInId = readPathId(req.params.checkInId);
+      const checkIn = await getCheckIn(prisma, auth.tenantId, checkInId);
+
+      res.json({
+        data: serializeCheckIn(checkIn),
+      });
+    }),
+  );
+
+  router.post(
+    "/reception/check-ins",
+    requirePermission(prisma, PERMISSIONS.receptionCheckInsWrite),
+    asyncHandler(async (req, res) => {
+      const input = parseRequest(createCheckInSchema, req.body, "Invalid check-in data.");
+      const checkIn = await createCheckIn(prisma, actorFromRequest(req), input);
+
+      res.status(201).json({
+        data: serializeCheckIn(checkIn),
+      });
+    }),
+  );
+
+  router.patch(
+    "/reception/check-ins/:checkInId",
+    requirePermission(prisma, PERMISSIONS.receptionCheckInsWrite),
+    asyncHandler(async (req, res) => {
+      const checkInId = readPathId(req.params.checkInId);
+      const input = parseRequest(updateCheckInSchema, req.body, "Invalid check-in data.");
+      const checkIn = await updateCheckIn(prisma, actorFromRequest(req), checkInId, input);
+
+      res.json({
+        data: serializeCheckIn(checkIn),
       });
     }),
   );

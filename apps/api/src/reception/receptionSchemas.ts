@@ -71,8 +71,7 @@ export const checkInListSchema = z.object({
   vehicleId: z.string().trim().min(1).optional(),
 });
 
-export const createCheckInSchema = z
-  .object({
+export const createCheckInSchema = z.object({
     appointmentId: z.string().trim().min(1).optional(),
     checklistItems: z.array(checklistItemSchema).min(1),
     customerId: z.string().trim().min(1),
@@ -83,9 +82,6 @@ export const createCheckInSchema = z
     itemsLeft: optionalText(2000),
     mileage: z.number().int().nonnegative().optional().nullable(),
     vehicleId: z.string().trim().min(1),
-  })
-  .refine((value) => Boolean(value.appointmentId) || Boolean(value.expectedService), {
-    message: "Expected service is required for direct check-in.",
   });
 
 export const updateCheckInSchema = z
