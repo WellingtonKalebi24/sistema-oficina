@@ -42,6 +42,8 @@ model Tenant {
   stockMovements               StockMovement[]
   stockReservations            StockReservation[]
   appointments                 Appointment[]
+  receptionCheckIns            ReceptionCheckIn[]
+  receptionChecklistItems      ReceptionChecklistItem[]
 
   @@index([status])
   @@map("tenants")
@@ -87,6 +89,8 @@ model User {
   customerVehicleHistoryEvents CustomerVehicleHistoryEvent[] @relation("CustomerVehicleHistoryCreatedByUser")
   createdAppointments          Appointment[]                 @relation("AppointmentCreatedByUser")
   cancelledAppointments        Appointment[]                 @relation("AppointmentCancelledByUser")
+  createdReceptionCheckIns     ReceptionCheckIn[]            @relation("ReceptionCheckInCreatedByUser")
+  updatedReceptionCheckIns     ReceptionCheckIn[]            @relation("ReceptionCheckInUpdatedByUser")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -256,6 +260,7 @@ model Customer {
   vehicles      Vehicle[]
   historyEvents CustomerVehicleHistoryEvent[]
   appointments  Appointment[]
+  checkIns      ReceptionCheckIn[]
 
   @@index([tenantId, deletedAt])
   @@index([tenantId, name])
@@ -288,6 +293,7 @@ model Vehicle {
   deletedByUser User?                         @relation("VehicleDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
   historyEvents CustomerVehicleHistoryEvent[]
   appointments  Appointment[]
+  checkIns      ReceptionCheckIn[]
 
   @@index([tenantId, deletedAt])
   @@index([tenantId, customerId])
@@ -535,10 +541,61 @@ model Appointment {
   vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
   createdByUser   User?    @relation("AppointmentCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
   cancelledByUser User?    @relation("AppointmentCancelledByUser", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+  checkIn         ReceptionCheckIn?
 
   @@index([tenantId, startsAt])
   @@index([tenantId, status, startsAt])
   @@index([tenantId, customerId, startsAt])
   @@index([tenantId, vehicleId, startsAt])
   @@map("appointments")
+}
+
+model ReceptionCheckIn {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  appointmentId   String    @unique @map("appointment_id")
+  customerId      String    @map("customer_id")
+  vehicleId       String    @map("vehicle_id")
+  enteredAt       DateTime  @map("entered_at")
+  fuelLevel       String    @map("fuel_level")
+  damageNotes     String    @map("damage_notes")
+  mileage         Int?
+  itemsLeft       String?   @map("items_left")
+  status          String    @default("Aguardando diagnostico")
+  createdByUserId String?   @map("created_by_user_id")
+  updatedByUserId String?   @map("updated_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant        Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointment   Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  customer      Customer                 @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  vehicle       Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdByUser User?                    @relation("ReceptionCheckInCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUser User?                    @relation("ReceptionCheckInUpdatedByUser", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  checklist     ReceptionChecklistItem[]
+
+  @@index([tenantId, enteredAt])
+  @@index([tenantId, status, enteredAt])
+  @@index([tenantId, customerId, enteredAt])
+  @@index([tenantId, vehicleId, enteredAt])
+  @@map("reception_check_ins")
+}
+
+model ReceptionChecklistItem {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  checkInId String   @map("check_in_id")
+  label     String
+  condition String
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  checkIn ReceptionCheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, checkInId])
+  @@index([tenantId, label])
+  @@map("reception_checklist_items")
 }

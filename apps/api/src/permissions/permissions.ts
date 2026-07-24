@@ -8,6 +8,8 @@ export const PERMISSIONS = {
   receptionAppointmentsCancel: "reception.appointments.cancel",
   receptionAppointmentsRead: "reception.appointments.read",
   receptionAppointmentsWrite: "reception.appointments.write",
+  receptionCheckInsRead: "reception.checkins.read",
+  receptionCheckInsWrite: "reception.checkins.write",
   rolesManage: "roles.manage",
   stockAdjustmentsCreate: "stock.adjustments.create",
   stockCatalogRead: "stock.catalog.read",
@@ -61,6 +63,8 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.receptionAppointmentsRead,
   PERMISSIONS.receptionAppointmentsWrite,
   PERMISSIONS.receptionAppointmentsCancel,
+  PERMISSIONS.receptionCheckInsRead,
+  PERMISSIONS.receptionCheckInsWrite,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -183,6 +187,14 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.receptionAppointmentsCancel]: {
     description: "Permite cancelar agendamentos com rastreabilidade operacional.",
     name: "Cancelar agendamentos",
+  },
+  [PERMISSIONS.receptionCheckInsRead]: {
+    description: "Permite consultar check-ins e checklist de recepcao do tenant autenticado.",
+    name: "Ler check-ins de recepcao",
+  },
+  [PERMISSIONS.receptionCheckInsWrite]: {
+    description: "Permite criar e editar check-ins de recepcao com checklist operacional.",
+    name: "Gerenciar check-ins de recepcao",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",
