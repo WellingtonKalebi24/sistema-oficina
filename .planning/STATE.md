@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 4 - Servicos, Produtos, Compras e Estoque
 status: ready
-stopped_at: Phase 5 planned
-last_updated: "2026-07-24T11:15:40.743Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-24T11:32:18.327Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 16
+  completed_plans: 17
   percent: 33
 ---
 
@@ -112,9 +112,9 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-24T11:15:40.464Z
-**Stopped at:** Phase 5 planned
-**Resume file:** .planning/phases/05-agenda-e-recep-o/05-01-PLAN.md
+**Last session:** 2026-07-24T11:32:18.256Z
+**Stopped at:** Completed 05-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -136,6 +136,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 04 P02 | 15min | 2 tasks | 13 files |
 | Phase 04 P03 | 25min | 2 tasks | 9 files |
 | Phase 04 P04 | 32min | 3 tasks | 12 files |
+| Phase 05 P01 | 15min | 2 tasks | 5 files |
 
 ## Decisions
 
@@ -179,3 +180,6 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 04]: Plan 03 reservation source metadata remains nullable text/id data until quote and work-order tables exist.
 - [Phase 04]: Plan 04 kept purchase rows in browser memory because the backend exposes purchase creation but not purchase listing; stock balances, movements and reservations refresh from server data.
 - [Phase 04]: Plan 04 preserved permissive vehicle registration while adding stock-specific required markers and backend-authoritative stock UI actions.
+- [Phase 05]: 05-01 keeps appointment API behavior intentionally RED for 05-02 while making schema, permissions and cleanup compile-ready.
+- [Phase 05]: Appointment status values are stored as text using the product-facing Portuguese states Agendado, Cancelado and Convertido.
+- [Phase 05]: Reception appointment permissions are centralized in apps/api/src/permissions/permissions.ts for seed, bootstrap, auth serialization and fixtures.
