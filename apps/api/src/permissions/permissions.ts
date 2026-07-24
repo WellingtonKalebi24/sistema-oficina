@@ -5,6 +5,9 @@ export const PERMISSIONS = {
   customersRead: "customers.read",
   customersUpdate: "customers.update",
   permissionsManage: "permissions.manage",
+  receptionAppointmentsCancel: "reception.appointments.cancel",
+  receptionAppointmentsRead: "reception.appointments.read",
+  receptionAppointmentsWrite: "reception.appointments.write",
   rolesManage: "roles.manage",
   stockAdjustmentsCreate: "stock.adjustments.create",
   stockCatalogRead: "stock.catalog.read",
@@ -55,6 +58,9 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.stockAdjustmentsCreate,
   PERMISSIONS.stockReservationsCreate,
   PERMISSIONS.stockReservationsCancel,
+  PERMISSIONS.receptionAppointmentsRead,
+  PERMISSIONS.receptionAppointmentsWrite,
+  PERMISSIONS.receptionAppointmentsCancel,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -165,6 +171,18 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.stockReservationsCancel]: {
     description: "Permite cancelar reservas de pecas e restaurar disponibilidade operacional.",
     name: "Cancelar reservas de pecas",
+  },
+  [PERMISSIONS.receptionAppointmentsRead]: {
+    description: "Permite consultar agenda diaria e semanal do tenant autenticado.",
+    name: "Ler agenda",
+  },
+  [PERMISSIONS.receptionAppointmentsWrite]: {
+    description: "Permite criar e editar agendamentos vinculados a clientes e veiculos do tenant.",
+    name: "Gerenciar agendamentos",
+  },
+  [PERMISSIONS.receptionAppointmentsCancel]: {
+    description: "Permite cancelar agendamentos com rastreabilidade operacional.",
+    name: "Cancelar agendamentos",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",

@@ -41,6 +41,7 @@ model Tenant {
   purchaseItems                PurchaseItem[]
   stockMovements               StockMovement[]
   stockReservations            StockReservation[]
+  appointments                 Appointment[]
 
   @@index([status])
   @@map("tenants")
@@ -84,6 +85,8 @@ model User {
   deletedCustomers             Customer[]                    @relation("CustomerDeletedByUser")
   deletedVehicles              Vehicle[]                     @relation("VehicleDeletedByUser")
   customerVehicleHistoryEvents CustomerVehicleHistoryEvent[] @relation("CustomerVehicleHistoryCreatedByUser")
+  createdAppointments          Appointment[]                 @relation("AppointmentCreatedByUser")
+  cancelledAppointments        Appointment[]                 @relation("AppointmentCancelledByUser")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -252,6 +255,7 @@ model Customer {
   deletedByUser User?                         @relation("CustomerDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
   vehicles      Vehicle[]
   historyEvents CustomerVehicleHistoryEvent[]
+  appointments  Appointment[]
 
   @@index([tenantId, deletedAt])
   @@index([tenantId, name])
@@ -283,6 +287,7 @@ model Vehicle {
   customer      Customer                      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   deletedByUser User?                         @relation("VehicleDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
   historyEvents CustomerVehicleHistoryEvent[]
+  appointments  Appointment[]
 
   @@index([tenantId, deletedAt])
   @@index([tenantId, customerId])
@@ -439,13 +444,13 @@ model Purchase {
 }
 
 model PurchaseItem {
-  id            String  @id @default(cuid())
-  tenantId      String  @map("tenant_id")
-  purchaseId    String  @map("purchase_id")
-  productId     String  @map("product_id")
-  quantity      Int
-  unitCost      Decimal @map("unit_cost") @db.Decimal(12, 2)
-  totalCost     Decimal @map("total_cost") @db.Decimal(12, 2)
+  id         String  @id @default(cuid())
+  tenantId   String  @map("tenant_id")
+  purchaseId String  @map("purchase_id")
+  productId  String  @map("product_id")
+  quantity   Int
+  unitCost   Decimal @map("unit_cost") @db.Decimal(12, 2)
+  totalCost  Decimal @map("total_cost") @db.Decimal(12, 2)
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   purchase      Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
@@ -507,4 +512,33 @@ model StockReservation {
   @@index([tenantId, productId, status])
   @@index([tenantId, sourceKind, sourceId])
   @@map("stock_reservations")
+}
+
+model Appointment {
+  id                String    @id @default(cuid())
+  tenantId          String    @map("tenant_id")
+  customerId        String    @map("customer_id")
+  vehicleId         String    @map("vehicle_id")
+  startsAt          DateTime  @map("starts_at")
+  expectedService   String    @map("expected_service")
+  notes             String?
+  origin            String
+  status            String    @default("Agendado")
+  createdByUserId   String?   @map("created_by_user_id")
+  cancelledByUserId String?   @map("cancelled_by_user_id")
+  cancelledAt       DateTime? @map("cancelled_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdByUser   User?    @relation("AppointmentCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  cancelledByUser User?    @relation("AppointmentCancelledByUser", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, startsAt])
+  @@index([tenantId, status, startsAt])
+  @@index([tenantId, customerId, startsAt])
+  @@index([tenantId, vehicleId, startsAt])
+  @@map("appointments")
 }
