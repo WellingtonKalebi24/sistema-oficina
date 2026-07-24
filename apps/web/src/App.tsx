@@ -4,6 +4,7 @@ import {
   faBars,
   faBuilding,
   faCar,
+  faCalendarDays,
   faChevronDown,
   faBoxesStacked,
   faFolderOpen,
@@ -65,6 +66,14 @@ import {
   updateVehicle,
 } from "./api/vehicles.js";
 import {
+  type Appointment,
+  type AppointmentInput,
+  cancelAppointment as cancelReceptionAppointment,
+  createAppointment as createReceptionAppointment,
+  listAppointments as listReceptionAppointments,
+  updateAppointment as updateReceptionAppointment,
+} from "./api/reception.js";
+import {
   type Product,
   type ProductCategory,
   type Purchase,
@@ -113,6 +122,7 @@ import { Label } from "./components/ui/label.js";
 import { formatCurrency, formatDateTime } from "./design/formatters.js";
 
 type View =
+  | "agenda"
   | "clientes"
   | "estoque"
   | "oficina"
@@ -126,6 +136,7 @@ type BootState = "loading" | "bootstrap" | "login" | "admin" | "error";
 type AdminData = {
   customerHistory: CustomerHistoryEvent[];
   customers: Customer[];
+  appointments: Appointment[];
   permissions: Permission[];
   productCategories: ProductCategory[];
   products: Product[];
@@ -143,12 +154,20 @@ type AdminData = {
 
 type BlockedState = Partial<
   Record<
-    "customers" | "permissions" | "roles" | "settings" | "stock" | "users" | "vehicles",
+    | "customers"
+    | "permissions"
+    | "reception"
+    | "roles"
+    | "settings"
+    | "stock"
+    | "users"
+    | "vehicles",
     string
   >
 >;
 
 const initialAdminData: AdminData = {
+  appointments: [],
   customerHistory: [],
   customers: [],
   permissions: [],
@@ -307,6 +326,16 @@ function AuthAdminApp() {
       );
     }
 
+    if (hasPermission(usableSession, "reception.appointments.read")) {
+      loads.push(
+        loadResource(
+          "reception",
+          () => listReceptionAppointments(usableSession.accessToken, { date: todayDateOnly() }),
+          (appointments) => setAdminData((current) => ({ ...current, appointments })),
+        ),
+      );
+    }
+
     loads.push(...stockLoaders(usableSession));
 
     await Promise.all(loads);
@@ -360,6 +389,17 @@ function AuthAdminApp() {
 
   async function refreshStockData(currentSession: StoredSession) {
     await Promise.all(stockLoaders(currentSession));
+  }
+
+  async function loadReceptionAppointments(
+    currentSession: StoredSession,
+    filters: { date: string } | { weekOf: string },
+  ) {
+    await loadResource(
+      "reception",
+      () => listReceptionAppointments(currentSession.accessToken, filters),
+      (appointments) => setAdminData((current) => ({ ...current, appointments })),
+    );
   }
 
   async function loadResource<T>(
@@ -537,6 +577,28 @@ function AuthAdminApp() {
               ),
             }));
             setStatusMessage("Cliente registrado no tenant autenticado.");
+          }}
+          onCancelAppointment={async (appointment, reason) => {
+            const cancelled = await withAuthenticatedSession((currentSession) =>
+              cancelReceptionAppointment(currentSession.accessToken, appointment.id, { reason }),
+            );
+            setAdminData((current) => ({
+              ...current,
+              appointments: current.appointments.map((item) =>
+                item.id === cancelled.id ? cancelled : item,
+              ),
+            }));
+            setStatusMessage("Agendamento cancelado com historico auditavel.");
+          }}
+          onCreateAppointment={async (input) => {
+            const appointment = await withAuthenticatedSession((currentSession) =>
+              createReceptionAppointment(currentSession.accessToken, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              appointments: [...current.appointments, appointment].sort(compareAppointments),
+            }));
+            setStatusMessage("Agendamento salvo no tenant autenticado.");
           }}
           onCreateUser={async (input) => {
             const user = await withAuthenticatedSession((currentSession) =>
@@ -720,6 +782,11 @@ function AuthAdminApp() {
             setAdminData((current) => ({ ...current, vehicleHistory }));
             setStatusMessage("Historico basico do veiculo sincronizado.");
           }}
+          onLoadAppointments={async (filters) => {
+            await withAuthenticatedSession((currentSession) =>
+              loadReceptionAppointments(currentSession, filters),
+            );
+          }}
           onLogout={handleLogout}
           onRefresh={() => loadAdminData(session)}
           onSearchCustomers={async (search) => {
@@ -748,6 +815,18 @@ function AuthAdminApp() {
               ),
             }));
             setStatusMessage("Cliente atualizado pelo backend.");
+          }}
+          onUpdateAppointment={async (appointmentId, input) => {
+            const appointment = await withAuthenticatedSession((currentSession) =>
+              updateReceptionAppointment(currentSession.accessToken, appointmentId, input),
+            );
+            setAdminData((current) => ({
+              ...current,
+              appointments: current.appointments
+                .map((item) => (item.id === appointment.id ? appointment : item))
+                .sort(compareAppointments),
+            }));
+            setStatusMessage("Agendamento atualizado no tenant autenticado.");
           }}
           onUpdateOverrides={async (userId, overrides) => {
             const user = await withAuthenticatedSession((currentSession) =>
@@ -1099,7 +1178,9 @@ function AdminShell(props: {
   activeView: View;
   adminData: AdminData;
   blocked: BlockedState;
+  onCancelAppointment: (appointment: Appointment, reason: string) => Promise<void>;
   onChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  onCreateAppointment: (input: AppointmentInput) => Promise<void>;
   onCreateCustomer: (input: CustomerInput) => Promise<void>;
   onCreateRole: (input: {
     description?: string;
@@ -1129,12 +1210,14 @@ function AdminShell(props: {
   onDeleteCustomer: (customer: Customer) => Promise<void>;
   onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
   onLoadCustomerHistory: (customerId: string) => Promise<void>;
+  onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
   onLoadVehicleHistory: (vehicleId: string) => Promise<void>;
   onLogout: () => Promise<void>;
   onRefresh: () => Promise<void>;
   onSearchCustomers: (search: string) => Promise<void>;
   onSearchVehicles: (search: string) => Promise<void>;
   onSelectView: (view: View) => void;
+  onUpdateAppointment: (appointmentId: string, input: Partial<AppointmentInput>) => Promise<void>;
   onUpdateCustomer: (customerId: string, input: CustomerInput) => Promise<void>;
   onUpdateOverrides: (userId: string, overrides: PermissionOverride[]) => Promise<void>;
   onUpdateSettings: (input: Partial<TenantSettings>) => Promise<void>;
@@ -1174,6 +1257,12 @@ function AdminShell(props: {
   const operationalItems = useMemo(
     () =>
       [
+        {
+          icon: faCalendarDays,
+          label: "Agenda",
+          permission: "reception.appointments.read",
+          view: "agenda" as const,
+        },
         {
           icon: faAddressBook,
           label: "Clientes",
@@ -1339,6 +1428,20 @@ function AdminShell(props: {
               onUpdateCustomer={props.onUpdateCustomer}
             />
           ) : null}
+          {props.activeView === "agenda" ? (
+            <AgendaPanel
+              appointments={props.adminData.appointments}
+              blocked={props.blocked.reception}
+              canCancel={hasPermission(props.session, "reception.appointments.cancel")}
+              canWrite={hasPermission(props.session, "reception.appointments.write")}
+              customers={props.adminData.customers}
+              onCancelAppointment={props.onCancelAppointment}
+              onCreateAppointment={props.onCreateAppointment}
+              onLoadAppointments={props.onLoadAppointments}
+              onUpdateAppointment={props.onUpdateAppointment}
+              vehicles={props.adminData.vehicles}
+            />
+          ) : null}
           {props.activeView === "veiculos" ? (
             <VehiclesPanel
               blocked={props.blocked.vehicles}
@@ -1383,6 +1486,609 @@ function AdminShell(props: {
       </section>
     </>
   );
+}
+
+type AgendaMode = "day" | "week";
+
+function AgendaPanel({
+  appointments,
+  blocked,
+  canCancel,
+  canWrite,
+  customers,
+  onCancelAppointment,
+  onCreateAppointment,
+  onLoadAppointments,
+  onUpdateAppointment,
+  vehicles,
+}: {
+  appointments: Appointment[];
+  blocked: string | undefined;
+  canCancel: boolean;
+  canWrite: boolean;
+  customers: Customer[];
+  onCancelAppointment: (appointment: Appointment, reason: string) => Promise<void>;
+  onCreateAppointment: (input: AppointmentInput) => Promise<void>;
+  onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
+  onUpdateAppointment: (appointmentId: string, input: Partial<AppointmentInput>) => Promise<void>;
+  vehicles: Vehicle[];
+}) {
+  const defaultDate = todayDateOnly();
+  const [activeMode, setActiveMode] = useState<AgendaMode>("day");
+  const [date, setDate] = useState(defaultDate);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState(() => emptyAppointmentForm(defaultDate, customers, vehicles));
+  const [pendingCancel, setPendingCancel] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("todos");
+
+  useEffect(() => {
+    if (!form.customerId && customers[0]?.id) {
+      setForm((current) => ({ ...current, customerId: customers[0]?.id ?? "" }));
+    }
+
+    if (!form.vehicleId && vehicles[0]?.id) {
+      setForm((current) => ({ ...current, vehicleId: vehicles[0]?.id ?? "" }));
+    }
+  }, [customers, form.customerId, form.vehicleId, vehicles]);
+
+  if (blocked) {
+    return <BlockedPanel message={blocked} />;
+  }
+
+  const filteredAppointments = appointments
+    .filter((appointment) =>
+      statusFilter === "todos" ? true : appointment.status === statusFilter,
+    )
+    .filter((appointment) => {
+      const needle = search.trim().toLocaleLowerCase("pt-BR");
+
+      if (!needle) {
+        return true;
+      }
+
+      return [
+        appointment.customer.name,
+        appointment.vehicle.plateNormalized ?? "",
+        appointment.expectedService,
+        appointment.origin,
+      ]
+        .join(" ")
+        .toLocaleLowerCase("pt-BR")
+        .includes(needle);
+    })
+    .sort(compareAppointments);
+
+  async function changeMode(nextMode: AgendaMode) {
+    setActiveMode(nextMode);
+    setError("");
+
+    if (nextMode === "day") {
+      await onLoadAppointments({ date });
+      return;
+    }
+
+    await onLoadAppointments({ weekOf: startOfBusinessWeek(date) });
+  }
+
+  async function refreshCurrentMode(nextDate = date) {
+    setError("");
+
+    if (activeMode === "day") {
+      await onLoadAppointments({ date: nextDate });
+      return;
+    }
+
+    await onLoadAppointments({ weekOf: startOfBusinessWeek(nextDate) });
+  }
+
+  function editAppointment(appointment: Appointment) {
+    setEditingAppointment(appointment);
+    setForm({
+      customerId: appointment.customerId,
+      expectedService: appointment.expectedService,
+      notes: appointment.notes ?? "",
+      origin: appointment.origin,
+      startsAt: toDateTimeLocalValue(appointment.startsAt),
+      vehicleId: appointment.vehicleId,
+    });
+    setSelectedAppointment(appointment);
+    setError("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    const input: AppointmentInput = {
+      customerId: form.customerId,
+      expectedService: form.expectedService,
+      notes: form.notes,
+      origin: form.origin,
+      startsAt: toIsoDateTime(form.startsAt),
+      vehicleId: form.vehicleId,
+    };
+
+    try {
+      if (editingAppointment) {
+        await onUpdateAppointment(editingAppointment.id, input);
+      } else {
+        await onCreateAppointment(input);
+      }
+
+      setEditingAppointment(null);
+      setForm(emptyAppointmentForm(date, customers, vehicles));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o agendamento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function confirmCancel() {
+    if (!pendingCancel) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      await onCancelAppointment(pendingCancel, "Cancelado na agenda operacional.");
+      setPendingCancel(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Nao foi possivel cancelar o agendamento.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="agenda-workspace" aria-label="Agenda">
+      <div className="agenda-main">
+        <section className="panel agenda-table-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Agenda</p>
+              <h2>{activeMode === "day" ? "Agenda diaria" : "Agenda semanal"}</h2>
+            </div>
+            <span className="pill">{filteredAppointments.length} agendamentos</span>
+          </div>
+          <div className="agenda-tabs" role="tablist" aria-label="Modo da agenda">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMode === "day"}
+              className={activeMode === "day" ? "stock-tab stock-tab--active" : "stock-tab"}
+              onClick={() => void changeMode("day")}
+            >
+              Agenda diaria
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMode === "week"}
+              className={activeMode === "week" ? "stock-tab stock-tab--active" : "stock-tab"}
+              onClick={() => void changeMode("week")}
+            >
+              Agenda semanal
+            </button>
+          </div>
+          {activeMode === "day" ? (
+            <DailyAgendaTable
+              appointments={filteredAppointments}
+              canCancel={canCancel}
+              canWrite={canWrite}
+              onCancel={setPendingCancel}
+              onEdit={editAppointment}
+              onSelect={setSelectedAppointment}
+            />
+          ) : (
+            <WeeklyAgenda appointments={filteredAppointments} />
+          )}
+          {filteredAppointments.length === 0 ? (
+            <div className="empty-state">
+              <strong>Nenhum agendamento encontrado</strong>
+              <span>Crie um agendamento ou registre um check-in direto para iniciar a recepcao do veiculo.</span>
+            </div>
+          ) : null}
+        </section>
+        <aside className="panel agenda-side-panel" aria-label="Filtros da agenda">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Filtros</p>
+              <h2>Data e busca</h2>
+            </div>
+          </div>
+          <label className="field">
+            <span>Data</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value);
+                void refreshCurrentMode(event.target.value);
+              }}
+            />
+          </label>
+          <label className="field">
+            <span>Cliente ou placa</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar agenda"
+            />
+          </label>
+          <label className="field">
+            <span>Status</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="todos">Todos</option>
+              <option value="Agendado">Agendado</option>
+              <option value="Convertido">Convertido</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </label>
+          <button type="button" className="button-secondary" onClick={() => void refreshCurrentMode()}>
+            Atualizar agenda
+          </button>
+          <button type="button" className="button-secondary">
+            Registrar check-in direto
+          </button>
+          {selectedAppointment ? (
+            <section className="agenda-detail-panel" aria-label="Detalhes do agendamento">
+              <div className="panel-heading panel-heading--compact">
+                <div>
+                  <p className="eyebrow">Detalhe</p>
+                  <h2>{selectedAppointment.customer.name}</h2>
+                </div>
+                <span className={statusClassName(selectedAppointment.status)}>
+                  {selectedAppointment.status}
+                </span>
+              </div>
+              <dl className="agenda-detail-list">
+                <div>
+                  <dt>Horario</dt>
+                  <dd>{formatAgendaDateTime(selectedAppointment.startsAt)}</dd>
+                </div>
+                <div>
+                  <dt>Placa</dt>
+                  <dd>{selectedAppointment.vehicle.plateNormalized ?? "Sem placa"}</dd>
+                </div>
+                <div>
+                  <dt>Servico previsto</dt>
+                  <dd>{selectedAppointment.expectedService}</dd>
+                </div>
+                <div>
+                  <dt>Origem</dt>
+                  <dd>{selectedAppointment.origin}</dd>
+                </div>
+              </dl>
+            </section>
+          ) : null}
+        </aside>
+      </div>
+      <form className="panel agenda-form" aria-label="Agendamento" onSubmit={submit}>
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Cadastro</p>
+            <h2>{editingAppointment ? "Editar agendamento" : "Novo agendamento"}</h2>
+          </div>
+          <span className="pill">API real</span>
+        </div>
+        <div className="form-grid form-grid--agenda">
+          <label className="field">
+            <span>
+              Cliente
+              <RequiredMark />
+            </span>
+            <select
+              value={form.customerId}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, customerId: event.target.value }))
+              }
+              required
+            >
+              <option value="">Selecione</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>
+              Veiculo
+              <RequiredMark />
+            </span>
+            <select
+              value={form.vehicleId}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, vehicleId: event.target.value }))
+              }
+              required
+            >
+              <option value="">Selecione</option>
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {[vehicle.plate ?? "Sem placa", vehicle.brand, vehicle.model]
+                    .filter(Boolean)
+                    .join(" - ")}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>
+              Data e hora
+              <RequiredMark />
+            </span>
+            <input
+              type="datetime-local"
+              value={form.startsAt}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, startsAt: event.target.value }))
+              }
+              required
+            />
+          </label>
+          <label className="field">
+            <span>
+              Servico previsto
+              <RequiredMark />
+            </span>
+            <input
+              value={form.expectedService}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, expectedService: event.target.value }))
+              }
+              required
+            />
+          </label>
+          <label className="field">
+            <span>
+              Origem
+              <RequiredMark />
+            </span>
+            <input
+              value={form.origin}
+              onChange={(event) => setForm((current) => ({ ...current, origin: event.target.value }))}
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Observacoes internas</span>
+            <textarea
+              value={form.notes}
+              onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+            />
+          </label>
+        </div>
+        <div className="button-row">
+          <button type="submit" disabled={!canWrite || saving}>
+            {saving ? "Salvando..." : "Salvar agendamento"}
+          </button>
+          {editingAppointment ? (
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => {
+                setEditingAppointment(null);
+                setForm(emptyAppointmentForm(date, customers, vehicles));
+              }}
+            >
+              Cancelar edicao
+            </button>
+          ) : null}
+        </div>
+        {error ? (
+          <p className="callout callout--danger" role="status">
+            {error}
+          </p>
+        ) : null}
+      </form>
+      {pendingCancel ? (
+        <div className="confirm-strip" role="alert">
+          <span>
+            Confirmar cancelamento do agendamento de {pendingCancel.customer.name} para{" "}
+            {formatAgendaDateTime(pendingCancel.startsAt)}? O historico permanecera auditavel.
+          </span>
+          <button
+            type="button"
+            className="button-danger"
+            disabled={saving}
+            onClick={() => void confirmCancel()}
+          >
+            Confirmar cancelamento
+          </button>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function DailyAgendaTable({
+  appointments,
+  canCancel,
+  canWrite,
+  onCancel,
+  onEdit,
+  onSelect,
+}: {
+  appointments: Appointment[];
+  canCancel: boolean;
+  canWrite: boolean;
+  onCancel: (appointment: Appointment) => void;
+  onEdit: (appointment: Appointment) => void;
+  onSelect: (appointment: Appointment) => void;
+}) {
+  return (
+    <div className="table-wrap agenda-table-wrap">
+      <table aria-label="Agenda diaria">
+        <thead>
+          <tr>
+            <th scope="col">Horario</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Veiculo</th>
+            <th scope="col">Placa</th>
+            <th scope="col">Servico previsto</th>
+            <th scope="col">Status</th>
+            <th scope="col">Origem</th>
+            <th scope="col">Acoes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {appointments.map((appointment) => (
+            <tr key={appointment.id} onClick={() => onSelect(appointment)}>
+              <td className="numeric-cell">{formatAgendaTime(appointment.startsAt)}</td>
+              <td>{appointment.customer.name}</td>
+              <td>{appointment.vehicle.id}</td>
+              <td>{appointment.vehicle.plateNormalized ?? "Sem placa"}</td>
+              <td>{appointment.expectedService}</td>
+              <td>
+                <span className={statusClassName(appointment.status)}>{appointment.status}</span>
+              </td>
+              <td>{appointment.origin}</td>
+              <td>
+                <div className="table-actions">
+                  {canWrite ? (
+                    <button type="button" onClick={() => onSelect(appointment)}>
+                      Fazer check-in
+                    </button>
+                  ) : null}
+                  {canWrite ? (
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      onClick={() => onEdit(appointment)}
+                    >
+                      Editar
+                    </button>
+                  ) : null}
+                  {canCancel ? (
+                    <button
+                      type="button"
+                      className="button-danger"
+                      onClick={() => onCancel(appointment)}
+                    >
+                      Cancelar
+                    </button>
+                  ) : null}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function WeeklyAgenda({ appointments }: { appointments: Appointment[] }) {
+  const days = ["Segunda", "Terca", "Quarta", "Quinta", "Sexta"];
+
+  return (
+    <section className="weekly-agenda" aria-label="Agenda semanal">
+      {days.map((dayName, index) => {
+        const dayAppointments = appointments.filter((appointment) => {
+          const day = new Date(appointment.startsAt).getUTCDay();
+          return day === index + 1;
+        });
+
+        return (
+          <div key={dayName} className="weekly-column">
+            <h3>{dayName}</h3>
+            {dayAppointments.length === 0 ? (
+              <span className="helper-text">Sem agendamentos</span>
+            ) : (
+              dayAppointments.map((appointment) => (
+                <article key={appointment.id} className="appointment-chip">
+                  <strong>{formatAgendaTime(appointment.startsAt)}</strong>
+                  <span>{appointment.customer.name}</span>
+                  <span>{appointment.expectedService}</span>
+                  <span>{appointment.vehicle.plateNormalized ?? "Sem placa"}</span>
+                </article>
+              ))
+            )}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function emptyAppointmentForm(date: string, customers: Customer[], vehicles: Vehicle[]) {
+  return {
+    customerId: customers[0]?.id ?? "",
+    expectedService: "",
+    notes: "",
+    origin: "Balcao",
+    startsAt: `${date}T08:00`,
+    vehicleId: vehicles[0]?.id ?? "",
+  };
+}
+
+function compareAppointments(left: Appointment, right: Appointment): number {
+  return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
+}
+
+function todayDateOnly(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function startOfBusinessWeek(date: string): string {
+  const value = new Date(`${date}T12:00:00.000Z`);
+  const day = value.getUTCDay() || 7;
+  value.setUTCDate(value.getUTCDate() - day + 1);
+  return value.toISOString().slice(0, 10);
+}
+
+function toIsoDateTime(value: string): string {
+  return new Date(value).toISOString();
+}
+
+function toDateTimeLocalValue(value: string): string {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function formatAgendaTime(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
+}
+
+function formatAgendaDateTime(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
+}
+
+function statusClassName(status: Appointment["status"]): string {
+  if (status === "Cancelado") {
+    return "status-badge status-badge--danger";
+  }
+
+  if (status === "Convertido") {
+    return "status-badge";
+  }
+
+  return "status-badge status-badge--warning";
 }
 
 function SettingsPanel({
