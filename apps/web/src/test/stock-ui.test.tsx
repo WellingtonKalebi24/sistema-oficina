@@ -132,10 +132,22 @@ describe("JO.IA stock UI", () => {
     });
     fireEvent.change(screen.getByLabelText("Quantidade comprada *"), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("Custo unitario *"), { target: { value: "35.50" } });
+    fireEvent.change(screen.getByLabelText("Anexo do documento da compra"), {
+      target: {
+        files: [new File(["nota fiscal"], "nf-shell-100.pdf", { type: "application/pdf" })],
+      },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Registrar compra" }));
     expect(
       await screen.findByText("Compra registrada e estoque atualizado pelo backend."),
     ).toBeInTheDocument();
+    const purchaseCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/stock/purchases"),
+    );
+    const purchaseRequest = JSON.parse(String(purchaseCall?.[1]?.body)) as {
+      documentNumber?: string;
+    };
+    expect(purchaseRequest.documentNumber).toBe("nf-shell-100.pdf");
 
     fireEvent.click(screen.getByRole("tab", { name: "Movimentos" }));
     fireEvent.change(screen.getByLabelText("Produto da saida *"), {

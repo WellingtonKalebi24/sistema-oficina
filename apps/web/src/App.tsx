@@ -2124,16 +2124,21 @@ function StockPanel({
               />
             </label>
             <label className="field">
-              <span>Documento da compra</span>
+              <span>Anexo do documento da compra</span>
               <input
-                value={purchaseForm.documentNumber}
+                aria-label="Anexo do documento da compra"
+                accept="application/pdf,image/*,.xml,.txt,.csv"
+                type="file"
                 onChange={(event) =>
                   setPurchaseForm((current) => ({
                     ...current,
-                    documentNumber: event.target.value,
+                    documentNumber: event.target.files?.[0]?.name ?? "",
                   }))
                 }
               />
+              {purchaseForm.documentNumber ? (
+                <small>Arquivo selecionado: {purchaseForm.documentNumber}</small>
+              ) : null}
             </label>
             <button type="submit" disabled={saving || !products.length || !suppliers.length}>
               Registrar compra
