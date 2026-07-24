@@ -323,17 +323,15 @@ receptionAttachmentsDelete: "reception.attachments.delete",
 | A3 | Suggested permission key names are final. | Code Examples | Permission naming may be adjusted by planner to match product language. |
 | A4 | Attachment path authorization risk is mitigated by DB lookup before streaming. | Don't Hand-Roll, Pitfalls | Implementation must still normalize paths and test traversal cases. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `agendaViewMode` live directly on `CompanySetting`?**
    - What we know: Phase 5 requires a tenant-level visualization setting, and `CompanySetting` already stores tenant settings. [VERIFIED: codebase grep]
-   - What's unclear: Whether later settings should be split into domain-specific config tables. [ASSUMED]
-   - Recommendation: Add `agendaViewMode String @default("table")` to `CompanySetting` for MVP. [ASSUMED]
+   - Resolution: Store `agendaViewMode` directly on `CompanySetting` because D-13 and D-14 make the visualization mode a tenant-level office configuration, not a user preference. Add `agendaViewMode String @default("table")` with accepted values `table`, `calendar`, `kanban`. [RESOLVED: user revision instruction]
 
 2. **Should attachment deletes remove bytes immediately or mark rows deleted?**
    - What we know: UI requires destructive confirmation and backend permission checks. [VERIFIED: 05-UI-SPEC.md]
-   - What's unclear: Retention policy is not defined. [ASSUMED]
-   - Recommendation: Soft-delete attachment metadata (`deletedAt`, `deletedByUserId`) and optionally unlink local file after audit; do not expose deleted rows. [ASSUMED]
+   - Resolution: Attachment deletion soft-deletes metadata with audit while removing physical bytes when feasible. Metadata remains tenant-scoped and non-downloadable after deletion so history is audit-safe without exposing files. [RESOLVED: user revision instruction]
 
 ## Environment Availability
 

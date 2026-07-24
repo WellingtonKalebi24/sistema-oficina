@@ -232,28 +232,48 @@ Plans:
 **Mode:** mvp
 **Requirements:** REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08
 **UI hint:** yes
-**Plans:** 5 plans
+**Plans:** 10 plans
 
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Agenda autenticada com criacao, edicao, cancelamento e tabela diaria/semanal tenant-scoped.
+- [ ] 05-01-PLAN.md — Schema, permissoes e contratos RED de agendamentos tenant-scoped.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02-PLAN.md — Check-in transacional por agendamento ou direto, checklist e status Aguardando diagnostico.
+- [ ] 05-02-PLAN.md — API protegida de agenda com CRUD, listagem diaria/semanal, tenant isolation e auditoria.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 05-03-PLAN.md — Consulta posterior, edicao auditada, isolamento cross-tenant e detalhe responsivo.
+- [ ] 05-03-PLAN.md — UI Agenda table-first com criacao, edicao, cancelamento e comportamento mobile.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-04-PLAN.md — Anexos opcionais com storage local protegido, categorias canonicas, download/delete autorizados e auditoria.
+- [ ] 05-04-PLAN.md — Schema, permissoes e contratos RED de check-in, checklist e auditoria.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 05-05-PLAN.md — Preferencia tenant-level de visualizacao, acabamento responsivo e verificacao final da Phase 5.
+- [ ] 05-05-PLAN.md — API transacional de check-in e checklist por agendamento ou direto.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 05-06-PLAN.md — UI de check-in, consulta posterior, edicao auditada e hardening de isolamento.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 05-07-PLAN.md — Dependencia aprovada, configuracao e schema de anexos protegidos.
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 05-08-PLAN.md — API de anexos com upload, download, delete autorizado, soft-delete e auditoria.
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 05-09-PLAN.md — UI de anexos opcionais no detalhe do check-in.
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [ ] 05-10-PLAN.md — Preferencia tenant-level de visualizacao, smoke docs e validacao final da Phase 5.
 
 **Scope**
 
