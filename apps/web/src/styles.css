@@ -602,6 +602,25 @@ th {
   border-top: 1px solid var(--color-line);
 }
 
+.check-in-form,
+.check-in-edit-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.check-row input {
+  width: 18px;
+  min-height: 18px;
+}
+
 .agenda-detail-list {
   display: grid;
   gap: var(--space-2);

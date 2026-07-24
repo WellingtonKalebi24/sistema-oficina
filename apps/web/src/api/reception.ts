@@ -28,6 +28,43 @@ export type Appointment = {
   vehicleId: string;
 };
 
+export type CheckInStatus = "Aguardando diagnostico";
+
+export type CheckInChecklistItem = {
+  condition: string;
+  id?: string;
+  label: string;
+  notes?: string | null;
+};
+
+export type CheckIn = {
+  appointment: {
+    expectedService: string;
+    id: string;
+    origin: string;
+    startsAt: string;
+    status: AppointmentStatus;
+  };
+  appointmentId: string;
+  checklistItems: CheckInChecklistItem[];
+  createdAt: string;
+  createdByUserId: string | null;
+  customer: { id: string; name: string };
+  customerId: string;
+  damageNotes: string;
+  enteredAt: string;
+  fuelLevel: string;
+  id: string;
+  itemsLeft: string | null;
+  mileage: number | null;
+  status: CheckInStatus;
+  tenantId: string;
+  updatedAt: string;
+  updatedByUserId: string | null;
+  vehicle: { id: string; plateNormalized: string | null };
+  vehicleId: string;
+};
+
 export type AppointmentListFilters =
   | {
       date: string;
@@ -54,6 +91,29 @@ export type AppointmentUpdateInput = Partial<AppointmentInput> & {
 export type AppointmentCancelInput = {
   reason?: string | null;
 };
+
+export type CheckInListFilters = {
+  customerId?: string;
+  date?: string;
+  vehicleId?: string;
+};
+
+export type CheckInInput = {
+  appointmentId?: string;
+  checklistItems: CheckInChecklistItem[];
+  customerId: string;
+  damageNotes: string;
+  enteredAt: string;
+  expectedService?: string;
+  fuelLevel: string;
+  itemsLeft?: string | null;
+  mileage?: number | null;
+  vehicleId: string;
+};
+
+export type CheckInUpdateInput = Partial<
+  Pick<CheckInInput, "checklistItems" | "damageNotes" | "enteredAt" | "fuelLevel" | "itemsLeft" | "mileage">
+>;
 
 export async function listAppointments(
   accessToken: string,
@@ -94,6 +154,38 @@ export async function cancelAppointment(
   });
 }
 
+export async function listCheckIns(
+  accessToken: string,
+  filters: CheckInListFilters = {},
+): Promise<CheckIn[]> {
+  return request(`/reception/check-ins${toOptionalQuery(filters)}`, accessToken);
+}
+
+export async function getCheckIn(accessToken: string, checkInId: string): Promise<CheckIn> {
+  return request(`/reception/check-ins/${checkInId}`, accessToken);
+}
+
+export async function createCheckIn(
+  accessToken: string,
+  input: CheckInInput,
+): Promise<CheckIn> {
+  return request("/reception/check-ins", accessToken, {
+    body: compactObject(input),
+    method: "POST",
+  });
+}
+
+export async function updateCheckIn(
+  accessToken: string,
+  checkInId: string,
+  input: CheckInUpdateInput,
+): Promise<CheckIn> {
+  return request(`/reception/check-ins/${checkInId}`, accessToken, {
+    body: compactObject(input),
+    method: "PATCH",
+  });
+}
+
 function toQuery(filters: AppointmentListFilters): string {
   const query = new URLSearchParams();
 
@@ -106,6 +198,19 @@ function toQuery(filters: AppointmentListFilters): string {
   }
 
   return `?${query.toString()}`;
+}
+
+function toOptionalQuery(filters: CheckInListFilters): string {
+  const query = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) {
+      query.set(key, value);
+    }
+  }
+
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : "";
 }
 
 function compactObject<T extends Record<string, unknown>>(input: T): T {

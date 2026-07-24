@@ -68,9 +68,16 @@ import {
 import {
   type Appointment,
   type AppointmentInput,
+  type CheckIn,
+  type CheckInInput,
+  type CheckInUpdateInput,
   cancelAppointment as cancelReceptionAppointment,
+  createCheckIn as createReceptionCheckIn,
   createAppointment as createReceptionAppointment,
+  getCheckIn as getReceptionCheckIn,
+  listCheckIns as listReceptionCheckIns,
   listAppointments as listReceptionAppointments,
+  updateCheckIn as updateReceptionCheckIn,
   updateAppointment as updateReceptionAppointment,
 } from "./api/reception.js";
 import {
@@ -137,6 +144,7 @@ type AdminData = {
   customerHistory: CustomerHistoryEvent[];
   customers: Customer[];
   appointments: Appointment[];
+  checkIns: CheckIn[];
   permissions: Permission[];
   productCategories: ProductCategory[];
   products: Product[];
@@ -168,6 +176,7 @@ type BlockedState = Partial<
 
 const initialAdminData: AdminData = {
   appointments: [],
+  checkIns: [],
   customerHistory: [],
   customers: [],
   permissions: [],
@@ -402,6 +411,14 @@ function AuthAdminApp() {
     );
   }
 
+  async function loadReceptionCheckIns(currentSession: StoredSession) {
+    await loadResource(
+      "reception",
+      () => listReceptionCheckIns(currentSession.accessToken),
+      (checkIns) => setAdminData((current) => ({ ...current, checkIns })),
+    );
+  }
+
   async function loadResource<T>(
     key: keyof BlockedState,
     action: () => Promise<T>,
@@ -600,6 +617,33 @@ function AuthAdminApp() {
             }));
             setStatusMessage("Agendamento salvo no tenant autenticado.");
           }}
+          onCreateCheckIn={async (input) => {
+            const checkIn = await withAuthenticatedSession(async (currentSession) => {
+              const created = await createReceptionCheckIn(currentSession.accessToken, input);
+              await loadReceptionCheckIns(currentSession);
+
+              if (!input.appointmentId) {
+                await loadReceptionAppointments(currentSession, { date: todayDateOnly() });
+              }
+
+              return created;
+            });
+            setAdminData((current) => ({
+              ...current,
+              appointments: current.appointments
+                .map((item) =>
+                  item.id === checkIn.appointmentId
+                    ? {
+                        ...item,
+                        status: checkIn.appointment.status,
+                      }
+                    : item,
+                )
+                .sort(compareAppointments),
+            }));
+            setStatusMessage("Check-in concluido e status definido como Aguardando diagnostico.");
+            return checkIn;
+          }}
           onCreateUser={async (input) => {
             const user = await withAuthenticatedSession((currentSession) =>
               createUser(currentSession.accessToken, input),
@@ -787,6 +831,14 @@ function AuthAdminApp() {
               loadReceptionAppointments(currentSession, filters),
             );
           }}
+          onLoadCheckIn={async (checkInId) =>
+            withAuthenticatedSession((currentSession) =>
+              getReceptionCheckIn(currentSession.accessToken, checkInId),
+            )
+          }
+          onLoadCheckIns={async () => {
+            await withAuthenticatedSession((currentSession) => loadReceptionCheckIns(currentSession));
+          }}
           onLogout={handleLogout}
           onRefresh={() => loadAdminData(session)}
           onSearchCustomers={async (search) => {
@@ -827,6 +879,19 @@ function AuthAdminApp() {
                 .sort(compareAppointments),
             }));
             setStatusMessage("Agendamento atualizado no tenant autenticado.");
+          }}
+          onUpdateCheckIn={async (checkInId, input) => {
+            const checkIn = await withAuthenticatedSession(async (currentSession) => {
+              const updated = await updateReceptionCheckIn(
+                currentSession.accessToken,
+                checkInId,
+                input,
+              );
+              await loadReceptionCheckIns(currentSession);
+              return updated;
+            });
+            setStatusMessage("Checklist atualizado com auditoria do backend.");
+            return checkIn;
           }}
           onUpdateOverrides={async (userId, overrides) => {
             const user = await withAuthenticatedSession((currentSession) =>
@@ -1181,6 +1246,7 @@ function AdminShell(props: {
   onCancelAppointment: (appointment: Appointment, reason: string) => Promise<void>;
   onChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   onCreateAppointment: (input: AppointmentInput) => Promise<void>;
+  onCreateCheckIn: (input: CheckInInput) => Promise<CheckIn>;
   onCreateCustomer: (input: CustomerInput) => Promise<void>;
   onCreateRole: (input: {
     description?: string;
@@ -1211,6 +1277,8 @@ function AdminShell(props: {
   onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
   onLoadCustomerHistory: (customerId: string) => Promise<void>;
   onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
+  onLoadCheckIn: (checkInId: string) => Promise<CheckIn>;
+  onLoadCheckIns: () => Promise<void>;
   onLoadVehicleHistory: (vehicleId: string) => Promise<void>;
   onLogout: () => Promise<void>;
   onRefresh: () => Promise<void>;
@@ -1218,6 +1286,7 @@ function AdminShell(props: {
   onSearchVehicles: (search: string) => Promise<void>;
   onSelectView: (view: View) => void;
   onUpdateAppointment: (appointmentId: string, input: Partial<AppointmentInput>) => Promise<void>;
+  onUpdateCheckIn: (checkInId: string, input: CheckInUpdateInput) => Promise<CheckIn>;
   onUpdateCustomer: (customerId: string, input: CustomerInput) => Promise<void>;
   onUpdateOverrides: (userId: string, overrides: PermissionOverride[]) => Promise<void>;
   onUpdateSettings: (input: Partial<TenantSettings>) => Promise<void>;
@@ -1433,12 +1502,19 @@ function AdminShell(props: {
               appointments={props.adminData.appointments}
               blocked={props.blocked.reception}
               canCancel={hasPermission(props.session, "reception.appointments.cancel")}
+              canReadCheckIns={hasPermission(props.session, "reception.checkins.read")}
               canWrite={hasPermission(props.session, "reception.appointments.write")}
+              canWriteCheckIns={hasPermission(props.session, "reception.checkins.write")}
+              checkIns={props.adminData.checkIns}
               customers={props.adminData.customers}
               onCancelAppointment={props.onCancelAppointment}
               onCreateAppointment={props.onCreateAppointment}
+              onCreateCheckIn={props.onCreateCheckIn}
               onLoadAppointments={props.onLoadAppointments}
+              onLoadCheckIn={props.onLoadCheckIn}
+              onLoadCheckIns={props.onLoadCheckIns}
               onUpdateAppointment={props.onUpdateAppointment}
+              onUpdateCheckIn={props.onUpdateCheckIn}
               vehicles={props.adminData.vehicles}
             />
           ) : null}
@@ -1488,29 +1564,52 @@ function AdminShell(props: {
   );
 }
 
-type AgendaMode = "day" | "week";
+type AgendaMode = "checkins" | "day" | "week";
+
+type CheckInDraftSource =
+  | {
+      appointment: Appointment;
+      type: "appointment";
+    }
+  | {
+      type: "direct";
+    };
 
 function AgendaPanel({
   appointments,
   blocked,
   canCancel,
+  canReadCheckIns,
   canWrite,
+  canWriteCheckIns,
+  checkIns,
   customers,
   onCancelAppointment,
   onCreateAppointment,
+  onCreateCheckIn,
   onLoadAppointments,
+  onLoadCheckIn,
+  onLoadCheckIns,
   onUpdateAppointment,
+  onUpdateCheckIn,
   vehicles,
 }: {
   appointments: Appointment[];
   blocked: string | undefined;
   canCancel: boolean;
+  canReadCheckIns: boolean;
   canWrite: boolean;
+  canWriteCheckIns: boolean;
+  checkIns: CheckIn[];
   customers: Customer[];
   onCancelAppointment: (appointment: Appointment, reason: string) => Promise<void>;
   onCreateAppointment: (input: AppointmentInput) => Promise<void>;
+  onCreateCheckIn: (input: CheckInInput) => Promise<CheckIn>;
   onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
+  onLoadCheckIn: (checkInId: string) => Promise<CheckIn>;
+  onLoadCheckIns: () => Promise<void>;
   onUpdateAppointment: (appointmentId: string, input: Partial<AppointmentInput>) => Promise<void>;
+  onUpdateCheckIn: (checkInId: string, input: CheckInUpdateInput) => Promise<CheckIn>;
   vehicles: Vehicle[];
 }) {
   const defaultDate = todayDateOnly();
@@ -1519,6 +1618,8 @@ function AgendaPanel({
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState(() => emptyAppointmentForm(defaultDate, customers, vehicles));
+  const [checkInSource, setCheckInSource] = useState<CheckInDraftSource | null>(null);
+  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [pendingCancel, setPendingCancel] = useState<Appointment | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [search, setSearch] = useState("");
@@ -1571,6 +1672,11 @@ function AgendaPanel({
       return;
     }
 
+    if (nextMode === "checkins") {
+      await onLoadCheckIns();
+      return;
+    }
+
     await onLoadAppointments({ weekOf: startOfBusinessWeek(date) });
   }
 
@@ -1597,6 +1703,29 @@ function AgendaPanel({
     });
     setSelectedAppointment(appointment);
     setError("");
+  }
+
+  function startAppointmentCheckIn(appointment: Appointment) {
+    setCheckInSource({ appointment, type: "appointment" });
+    setSelectedAppointment(appointment);
+    setSelectedCheckIn(null);
+    setError("");
+  }
+
+  function startDirectCheckIn() {
+    setCheckInSource({ type: "direct" });
+    setSelectedAppointment(null);
+    setSelectedCheckIn(null);
+    setError("");
+  }
+
+  async function consultCheckIn(checkIn: CheckIn) {
+    setError("");
+    try {
+      setSelectedCheckIn(await onLoadCheckIn(checkIn.id));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel consultar o check-in.");
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -1679,6 +1808,19 @@ function AgendaPanel({
             >
               Agenda semanal
             </button>
+            {canReadCheckIns ? (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeMode === "checkins"}
+                className={
+                  activeMode === "checkins" ? "stock-tab stock-tab--active" : "stock-tab"
+                }
+                onClick={() => void changeMode("checkins")}
+              >
+                Check-ins
+              </button>
+            ) : null}
           </div>
           {activeMode === "day" ? (
             <DailyAgendaTable
@@ -1686,13 +1828,18 @@ function AgendaPanel({
               canCancel={canCancel}
               canWrite={canWrite}
               onCancel={setPendingCancel}
+              onCheckIn={startAppointmentCheckIn}
               onEdit={editAppointment}
               onSelect={setSelectedAppointment}
             />
-          ) : (
+          ) : null}
+          {activeMode === "week" ? (
             <WeeklyAgenda appointments={filteredAppointments} />
-          )}
-          {filteredAppointments.length === 0 ? (
+          ) : null}
+          {activeMode === "checkins" ? (
+            <CheckInsTable checkIns={checkIns} onConsult={(checkIn) => void consultCheckIn(checkIn)} />
+          ) : null}
+          {activeMode !== "checkins" && filteredAppointments.length === 0 ? (
             <div className="empty-state">
               <strong>Nenhum agendamento encontrado</strong>
               <span>Crie um agendamento ou registre um check-in direto para iniciar a recepcao do veiculo.</span>
@@ -1740,9 +1887,25 @@ function AgendaPanel({
           <button type="button" className="button-secondary" onClick={() => void refreshCurrentMode()}>
             Atualizar agenda
           </button>
-          <button type="button" className="button-secondary">
+          <button
+            type="button"
+            className="button-secondary"
+            disabled={!canWriteCheckIns}
+            onClick={startDirectCheckIn}
+          >
             Registrar check-in direto
           </button>
+          {checkInSource && canWriteCheckIns ? (
+            <CheckInForm
+              customers={customers}
+              onCreate={async (input) => {
+                await onCreateCheckIn(input);
+                setCheckInSource(null);
+              }}
+              source={checkInSource}
+              vehicles={vehicles}
+            />
+          ) : null}
           {selectedAppointment ? (
             <section className="agenda-detail-panel" aria-label="Detalhes do agendamento">
               <div className="panel-heading panel-heading--compact">
@@ -1773,6 +1936,15 @@ function AgendaPanel({
                 </div>
               </dl>
             </section>
+          ) : null}
+          {selectedCheckIn ? (
+            <CheckInDetailPanel
+              checkIn={selectedCheckIn}
+              onUpdate={async (input) => {
+                const updated = await onUpdateCheckIn(selectedCheckIn.id, input);
+                setSelectedCheckIn(updated);
+              }}
+            />
           ) : null}
         </aside>
       </div>
@@ -1921,6 +2093,7 @@ function DailyAgendaTable({
   canCancel,
   canWrite,
   onCancel,
+  onCheckIn,
   onEdit,
   onSelect,
 }: {
@@ -1928,6 +2101,7 @@ function DailyAgendaTable({
   canCancel: boolean;
   canWrite: boolean;
   onCancel: (appointment: Appointment) => void;
+  onCheckIn: (appointment: Appointment) => void;
   onEdit: (appointment: Appointment) => void;
   onSelect: (appointment: Appointment) => void;
 }) {
@@ -1961,7 +2135,7 @@ function DailyAgendaTable({
               <td>
                 <div className="table-actions">
                   {canWrite ? (
-                    <button type="button" onClick={() => onSelect(appointment)}>
+                    <button type="button" onClick={() => onCheckIn(appointment)}>
                       Fazer check-in
                     </button>
                   ) : null}
@@ -1990,6 +2164,378 @@ function DailyAgendaTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+function CheckInsTable({
+  checkIns,
+  onConsult,
+}: {
+  checkIns: CheckIn[];
+  onConsult: (checkIn: CheckIn) => void;
+}) {
+  if (checkIns.length === 0) {
+    return <div className="empty-state">Nenhum check-in encontrado para os filtros atuais.</div>;
+  }
+
+  return (
+    <div className="table-wrap agenda-table-wrap">
+      <table aria-label="Check-ins recebidos">
+        <thead>
+          <tr>
+            <th scope="col">Entrada</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Veiculo</th>
+            <th scope="col">Placa</th>
+            <th scope="col">Status</th>
+            <th scope="col">Quilometragem</th>
+            <th scope="col">Combustivel</th>
+            <th scope="col">Anexos</th>
+            <th scope="col">Acoes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checkIns.map((checkIn) => (
+            <tr key={checkIn.id}>
+              <td>{formatAgendaDateTime(checkIn.enteredAt)}</td>
+              <td>{checkIn.customer.name}</td>
+              <td>{checkIn.vehicle.id}</td>
+              <td>{checkIn.vehicle.plateNormalized ?? "Sem placa"}</td>
+              <td>
+                <span className="status-badge">{checkIn.status}</span>
+              </td>
+              <td>{formatMileage(checkIn.mileage)}</td>
+              <td>{checkIn.fuelLevel}</td>
+              <td>0</td>
+              <td>
+                <button type="button" onClick={() => onConsult(checkIn)}>
+                  Consultar check-in
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CheckInForm({
+  customers,
+  onCreate,
+  source,
+  vehicles,
+}: {
+  customers: Customer[];
+  onCreate: (input: CheckInInput) => Promise<void>;
+  source: CheckInDraftSource;
+  vehicles: Vehicle[];
+}) {
+  const sourceAppointment = source.type === "appointment" ? source.appointment : null;
+  const [form, setForm] = useState(() => ({
+    checklist: false,
+    customerId: sourceAppointment?.customerId ?? customers[0]?.id ?? "",
+    damageNotes: "",
+    enteredAt: sourceAppointment
+      ? toDateTimeLocalValue(sourceAppointment.startsAt)
+      : toDateTimeLocalValue(new Date().toISOString()),
+    fuelLevel: "",
+    itemsLeft: "",
+    mileage: "",
+    vehicleId: sourceAppointment?.vehicleId ?? vehicles[0]?.id ?? "",
+  }));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const customer = customers.find((item) => item.id === form.customerId);
+  const vehicle = vehicles.find((item) => item.id === form.vehicleId);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    if (!form.checklist) {
+      setError("Informe ao menos um item de checklist.");
+      setSaving(false);
+      return;
+    }
+
+    try {
+      await onCreate({
+        ...(sourceAppointment
+          ? { appointmentId: sourceAppointment.id, expectedService: sourceAppointment.expectedService }
+          : {}),
+        checklistItems: [{ condition: "ok", label: "Lataria conferida" }],
+        customerId: form.customerId,
+        damageNotes: form.damageNotes,
+        enteredAt: toIsoDateTime(form.enteredAt),
+        fuelLevel: form.fuelLevel,
+        itemsLeft: form.itemsLeft,
+        mileage: toOptionalInt(form.mileage),
+        vehicleId: form.vehicleId,
+      });
+      setForm((current) => ({
+        ...current,
+        checklist: false,
+        damageNotes: "",
+        fuelLevel: "",
+        itemsLeft: "",
+        mileage: "",
+      }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel concluir o check-in.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="agenda-detail-panel check-in-form" aria-label="Check-in de recepcao" onSubmit={submit}>
+      <div className="panel-heading panel-heading--compact">
+        <div>
+          <p className="eyebrow">Recepcao</p>
+          <h2>{sourceAppointment ? "Fazer check-in" : "Check-in direto"}</h2>
+        </div>
+        <span className="pill">Aguardando diagnostico</span>
+      </div>
+      {sourceAppointment ? (
+        <p className="helper-text">
+          Origem do agendamento: {formatAgendaDateTime(sourceAppointment.startsAt)}
+        </p>
+      ) : null}
+      <label className="field">
+        <span>
+          Cliente
+          <RequiredMark />
+        </span>
+        <select
+          value={form.customerId}
+          onChange={(event) => setForm((current) => ({ ...current, customerId: event.target.value }))}
+          required
+        >
+          <option value="">Selecione</option>
+          {customers.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>
+          Veiculo
+          <RequiredMark />
+        </span>
+        <select
+          value={form.vehicleId}
+          onChange={(event) => setForm((current) => ({ ...current, vehicleId: event.target.value }))}
+          required
+        >
+          <option value="">Selecione</option>
+          {vehicles.map((item) => (
+            <option key={item.id} value={item.id}>
+              {[item.plate ?? "Sem placa", item.brand, item.model].filter(Boolean).join(" - ")}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="helper-text">
+        {[customer?.name, vehicle?.plateNormalized ?? vehicle?.plate].filter(Boolean).join(" - ")}
+      </p>
+      <label className="field">
+        <span>
+          Entrada
+          <RequiredMark />
+        </span>
+        <input
+          type="datetime-local"
+          value={form.enteredAt}
+          onChange={(event) => setForm((current) => ({ ...current, enteredAt: event.target.value }))}
+          required
+        />
+      </label>
+      <label className="field">
+        <span>Quilometragem</span>
+        <input
+          inputMode="numeric"
+          value={form.mileage}
+          onChange={(event) => setForm((current) => ({ ...current, mileage: event.target.value }))}
+        />
+      </label>
+      <label className="field">
+        <span>
+          Combustivel
+          <RequiredMark />
+        </span>
+        <select
+          value={form.fuelLevel}
+          onChange={(event) => setForm((current) => ({ ...current, fuelLevel: event.target.value }))}
+          required
+        >
+          <option value="">Selecione</option>
+          {["Reserva", "1/4", "1/2", "3/4", "Cheio"].map((fuel) => (
+            <option key={fuel} value={fuel}>
+              {fuel}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>
+          Avarias
+          <RequiredMark />
+        </span>
+        <textarea
+          value={form.damageNotes}
+          onChange={(event) => setForm((current) => ({ ...current, damageNotes: event.target.value }))}
+          required
+        />
+      </label>
+      <p className="helper-text">Descreva avarias visiveis antes do diagnostico.</p>
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={form.checklist}
+          onChange={(event) => setForm((current) => ({ ...current, checklist: event.target.checked }))}
+        />
+        <span>Lataria conferida</span>
+      </label>
+      <label className="field">
+        <span>Itens deixados</span>
+        <textarea
+          value={form.itemsLeft}
+          onChange={(event) => setForm((current) => ({ ...current, itemsLeft: event.target.value }))}
+        />
+      </label>
+      <button type="submit" disabled={saving || customers.length === 0 || vehicles.length === 0}>
+        {saving ? "Salvando..." : "Concluir check-in"}
+      </button>
+      {error ? (
+        <p className="callout callout--danger" role="status">
+          {error}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+function CheckInDetailPanel({
+  checkIn,
+  onUpdate,
+}: {
+  checkIn: CheckIn;
+  onUpdate: (input: CheckInUpdateInput) => Promise<void>;
+}) {
+  const [form, setForm] = useState(() => editableCheckInForm(checkIn));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm(editableCheckInForm(checkIn));
+  }, [checkIn]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!window.confirm("Confirmar edicao dos dados auditaveis deste check-in?")) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      await onUpdate({
+        checklistItems: checkIn.checklistItems.map((item) => ({
+          condition: item.condition,
+          label: item.label,
+          notes: item.notes ?? null,
+        })),
+        damageNotes: form.damageNotes,
+        fuelLevel: form.fuelLevel,
+        itemsLeft: form.itemsLeft,
+        mileage: toOptionalInt(form.mileage),
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o checklist.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="agenda-detail-panel" aria-label="Detalhe do check-in">
+      <div className="panel-heading panel-heading--compact">
+        <div>
+          <p className="eyebrow">Check-in</p>
+          <h2>{checkIn.customer.name}</h2>
+        </div>
+        <span className="status-badge">{checkIn.status}</span>
+      </div>
+      <dl className="agenda-detail-list">
+        <div>
+          <dt>Entrada</dt>
+          <dd>{formatAgendaDateTime(checkIn.enteredAt)}</dd>
+        </div>
+        <div>
+          <dt>Servico</dt>
+          <dd>{checkIn.appointment.expectedService}</dd>
+        </div>
+        <div>
+          <dt>Placa</dt>
+          <dd>{checkIn.vehicle.plateNormalized ?? "Sem placa"}</dd>
+        </div>
+        <div>
+          <dt>Checklist</dt>
+          <dd>{checkIn.checklistItems.map((item) => item.label).join(", ")}</dd>
+        </div>
+      </dl>
+      <form className="check-in-edit-form" onSubmit={submit}>
+        <label className="field">
+          <span>Quilometragem</span>
+          <input
+            inputMode="numeric"
+            value={form.mileage}
+            onChange={(event) => setForm((current) => ({ ...current, mileage: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Combustivel</span>
+          <select
+            value={form.fuelLevel}
+            onChange={(event) => setForm((current) => ({ ...current, fuelLevel: event.target.value }))}
+          >
+            {["Reserva", "1/4", "1/2", "3/4", "Cheio"].map((fuel) => (
+              <option key={fuel} value={fuel}>
+                {fuel}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Avarias</span>
+          <textarea
+            value={form.damageNotes}
+            onChange={(event) => setForm((current) => ({ ...current, damageNotes: event.target.value }))}
+          />
+        </label>
+        <label className="field">
+          <span>Itens deixados</span>
+          <textarea
+            value={form.itemsLeft}
+            onChange={(event) => setForm((current) => ({ ...current, itemsLeft: event.target.value }))}
+          />
+        </label>
+        <button type="submit" disabled={saving}>
+          Salvar checklist
+        </button>
+        {error ? (
+          <p className="callout callout--danger" role="status">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    </section>
   );
 }
 
@@ -2041,6 +2587,15 @@ function compareAppointments(left: Appointment, right: Appointment): number {
   return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
 }
 
+function editableCheckInForm(checkIn: CheckIn) {
+  return {
+    damageNotes: checkIn.damageNotes,
+    fuelLevel: checkIn.fuelLevel,
+    itemsLeft: checkIn.itemsLeft ?? "",
+    mileage: checkIn.mileage?.toString() ?? "",
+  };
+}
+
 function todayDateOnly(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -2077,6 +2632,10 @@ function formatAgendaDateTime(value: string): string {
     timeStyle: "short",
     timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function formatMileage(value: number | null): string {
+  return value === null ? "Nao informado" : `${value} km`;
 }
 
 function statusClassName(status: Appointment["status"]): string {

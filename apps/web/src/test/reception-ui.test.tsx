@@ -132,8 +132,8 @@ describe("JO.IA reception agenda UI", () => {
       ...adminRoutes(),
       ...customerVehicleRoutes(),
       route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
-      route("GET", "/reception/check-ins", { data: [] }),
       route("POST", "/reception/check-ins", { data: appointmentCheckIn }, 201),
+      route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
       route("PATCH", "/reception/check-ins/check-in-1", { data: editedCheckIn }),
@@ -208,7 +208,6 @@ describe("JO.IA reception agenda UI", () => {
       ...adminRoutes(),
       ...customerVehicleRoutes(),
       route("GET", "/reception/appointments?date=2026-07-24", { data: [] }),
-      route("GET", "/reception/check-ins", { data: [] }),
       route("POST", "/reception/check-ins", { data: directCheckIn }, 201),
       route("GET", "/reception/check-ins", { data: [directCheckIn] }),
       route("GET", "/reception/appointments?date=2026-07-24", {
@@ -239,7 +238,7 @@ describe("JO.IA reception agenda UI", () => {
     expect(
       await screen.findByText("Check-in concluido e status definido como Aguardando diagnostico."),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Convertido")).toBeInTheDocument();
+    expect((await screen.findAllByText("Convertido")).length).toBeGreaterThan(0);
     assertNoCommunicationLanguage();
   });
 
