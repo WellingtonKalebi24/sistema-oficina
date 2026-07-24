@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Agenda e Recepcao
 status: ready
-stopped_at: Completed 05-05-PLAN.md
-last_updated: "2026-07-24T13:46:07.335Z"
+stopped_at: Completed 05-06-PLAN.md
+last_updated: "2026-07-24T13:58:08.410Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 21
+  completed_plans: 22
   percent: 33
 ---
 
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-24T13:46:06.740Z
-**Stopped at:** Completed 05-05-PLAN.md
+**Last session:** 2026-07-24T13:58:08.349Z
+**Stopped at:** Completed 05-06-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -141,6 +141,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P03 | 6min | 2 tasks | 4 files |
 | Phase 05 P04 | 6min | 2 tasks | 6 files |
 | Phase 05 P05 | 8min | 2 tasks | 3 files |
+| Phase 05 P06 | 10min | 2 tasks | 5 files |
 
 ## Decisions
 
@@ -196,3 +197,6 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 04 keeps check-in status as persisted text with exact default Aguardando diagnostico and leaves attachments to the dedicated attachment plan. â€” Matches the existing Portuguese status pattern and avoids mixing REC-05 attachment storage into the check-in foundation migration.
 - [Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. â€” Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
 - [Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. â€” Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
+- [Phase 05]: Plan 06 loads check-ins lazily from the Check-ins tab and refreshes persisted check-ins after backend writes. — Keeps Agenda usable while still surfacing backend 403 as authoritative for check-in consultation.
+- [Phase 05]: Plan 06 refreshes the daily agenda after direct check-in creation so the generated converted trace appointment is visible without a full page reload. — Preserves D-04 traceability in the UI.
+- [Phase 05]: Plan 06 prompts before post-check-in edits to mileage, fuel, damage notes, items-left or checklist facts. — Reinforces audit-relevant edits while backend authorization and audit remain authoritative.
