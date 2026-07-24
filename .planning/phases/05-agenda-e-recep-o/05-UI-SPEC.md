@@ -142,6 +142,7 @@ Navigation:
 Screen structure:
 - Use finite mode controls or tabs for `Agenda diaria`, `Agenda semanal`, `Check-ins` and `Anexos`.
 - The agenda mode is the default first view.
+- The agenda timeline/table is the primary visual anchor on the first screen; filters, creation actions and check-in actions are secondary support controls.
 - Daily agenda shows a chronological timeline or table grouped by hour.
 - Weekly agenda shows one column per business day with compact appointment chips; horizontal scroll is allowed on narrow screens.
 - Check-ins view lists received vehicles and allows consultation after reception.
@@ -225,11 +226,11 @@ Accessibility:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS with focal-point recommendation applied
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved by gsd-ui-checker on 2026-07-24T07:03:48-03:00.
