@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Agenda e Recepcao
 status: ready
-stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-07-24T11:57:37.834Z"
+stopped_at: Completed 05-05-PLAN.md
+last_updated: "2026-07-24T13:46:07.335Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 20
-  percent: 77
+  completed_plans: 21
+  percent: 33
 ---
 
 # Project State: JO.IA
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-24T11:57:32.700Z
-**Stopped at:** Completed 05-04-PLAN.md
+**Last session:** 2026-07-24T13:46:06.740Z
+**Stopped at:** Completed 05-05-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -140,6 +140,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P02 | 5min | 2 tasks | 4 files |
 | Phase 05 P03 | 6min | 2 tasks | 4 files |
 | Phase 05 P04 | 6min | 2 tasks | 6 files |
+| Phase Phase 05 PP05 | 8min | 2 tasks tasks | 3 files files |
 
 ## Decisions
 
@@ -193,3 +194,5 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Daily Agenda keeps the time-ordered table as the primary anchor with only Fazer check-in, Editar and Cancelar row actions.
 - [Phase 05]: Plan 04 requires appointmentId on ReceptionCheckIn so direct check-in must create a converted trace appointment before persisting check-in. — Preserves D-04 traceability and keeps direct check-in compatible with the required appointmentId schema.
 - [Phase 05]: Plan 04 keeps check-in status as persisted text with exact default Aguardando diagnostico and leaves attachments to the dedicated attachment plan. — Matches the existing Portuguese status pattern and avoids mixing REC-05 attachment storage into the check-in foundation migration.
+- [Phase Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. — Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
+- [Phase Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. — Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
