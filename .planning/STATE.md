@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Agenda e Recepcao
 status: ready
-stopped_at: Completed 05-08-PLAN.md
-last_updated: "2026-07-28T02:52:00.320Z"
+stopped_at: Completed 05-09-PLAN.md
+last_updated: "2026-07-28T03:02:48.705Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 24
-  percent: 92
+  completed_plans: 25
+  percent: 33
 ---
 
 # Project State: JO.IA
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-28T02:51:59.328Z
-**Stopped at:** Completed 05-08-PLAN.md
+**Last session:** 2026-07-28T03:02:48.657Z
+**Stopped at:** Completed 05-09-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -144,6 +144,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P06 | 10min | 2 tasks | 5 files |
 | Phase 05 P07 | 18min | 2 tasks | 11 files |
 | Phase 05 P08 | 10min | 2 tasks | 6 files |
+| Phase 05 P09 | 9min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -208,3 +209,6 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 08 mounted /reception/check-ins/:checkInId/attachments as authenticated API routes only; no public static upload route was added.
 - [Phase 05]: Plan 08 requires attachment write permission before Multer parses multipart bodies.
 - [Phase 05]: Plan 08 uses generated server-side stored names and keeps original filenames as metadata only.
+- [Phase 05]: Plan 09 keeps attachment upload out of the check-in completion form so missing files never block D-08 check-in completion.
+- [Phase 05]: Plan 09 uses the backend D-09 categories `Avaria`, `Documento`, `Painel`, `Motor`, `Interior` and `Outro` as canonical UI options.
+- [Phase 05]: Plan 09 treats attachment 403/404 API responses as authoritative UI states and does not infer authorization from hidden controls.
