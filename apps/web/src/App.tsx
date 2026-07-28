@@ -869,7 +869,9 @@ function AuthAdminApp() {
             )
           }
           onLoadCheckIns={async () => {
-            await withAuthenticatedSession((currentSession) => loadReceptionCheckIns(currentSession));
+            await withAuthenticatedSession((currentSession) =>
+              loadReceptionCheckIns(currentSession),
+            );
           }}
           onLogout={handleLogout}
           onRefresh={() => loadAdminData(session)}
@@ -1913,9 +1915,7 @@ function AgendaPanel({
                 type="button"
                 role="tab"
                 aria-selected={activeMode === "checkins"}
-                className={
-                  activeMode === "checkins" ? "stock-tab stock-tab--active" : "stock-tab"
-                }
+                className={activeMode === "checkins" ? "stock-tab stock-tab--active" : "stock-tab"}
                 onClick={() => void changeMode("checkins")}
               >
                 Check-ins
@@ -1933,22 +1933,24 @@ function AgendaPanel({
               onSelect={setSelectedAppointment}
             />
           ) : null}
-          {activeMode === "week" ? (
-            <WeeklyAgenda appointments={filteredAppointments} />
-          ) : null}
+          {activeMode === "week" ? <WeeklyAgenda appointments={filteredAppointments} /> : null}
           {activeMode === "calendar" ? (
             <CalendarAgenda appointments={filteredAppointments} />
           ) : null}
-          {activeMode === "kanban" ? (
-            <KanbanAgenda appointments={filteredAppointments} />
-          ) : null}
+          {activeMode === "kanban" ? <KanbanAgenda appointments={filteredAppointments} /> : null}
           {activeMode === "checkins" ? (
-            <CheckInsTable checkIns={checkIns} onConsult={(checkIn) => void consultCheckIn(checkIn)} />
+            <CheckInsTable
+              checkIns={checkIns}
+              onConsult={(checkIn) => void consultCheckIn(checkIn)}
+            />
           ) : null}
           {activeMode !== "checkins" && filteredAppointments.length === 0 ? (
             <div className="empty-state">
               <strong>Nenhum agendamento encontrado</strong>
-              <span>Crie um agendamento ou registre um check-in direto para iniciar a recepcao do veiculo.</span>
+              <span>
+                Crie um agendamento ou registre um check-in direto para iniciar a recepcao do
+                veiculo.
+              </span>
             </div>
           ) : null}
         </section>
@@ -1980,17 +1982,18 @@ function AgendaPanel({
           </label>
           <label className="field">
             <span>Status</span>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="todos">Todos</option>
               <option value="Agendado">Agendado</option>
               <option value="Convertido">Convertido</option>
               <option value="Cancelado">Cancelado</option>
             </select>
           </label>
-          <button type="button" className="button-secondary" onClick={() => void refreshCurrentMode()}>
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={() => void refreshCurrentMode()}
+          >
             Atualizar agenda
           </button>
           <button
@@ -2143,7 +2146,9 @@ function AgendaPanel({
             </span>
             <input
               value={form.origin}
-              onChange={(event) => setForm((current) => ({ ...current, origin: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, origin: event.target.value }))
+              }
               required
             />
           </label>
@@ -2151,7 +2156,9 @@ function AgendaPanel({
             <span>Observacoes internas</span>
             <textarea
               value={form.notes}
-              onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, notes: event.target.value }))
+              }
             />
           </label>
         </div>
@@ -2373,7 +2380,10 @@ function CheckInForm({
     try {
       await onCreate({
         ...(sourceAppointment
-          ? { appointmentId: sourceAppointment.id, expectedService: sourceAppointment.expectedService }
+          ? {
+              appointmentId: sourceAppointment.id,
+              expectedService: sourceAppointment.expectedService,
+            }
           : {}),
         checklistItems: [{ condition: "ok", label: "Lataria conferida" }],
         customerId: form.customerId,
@@ -2400,7 +2410,11 @@ function CheckInForm({
   }
 
   return (
-    <form className="agenda-detail-panel check-in-form" aria-label="Check-in de recepcao" onSubmit={submit}>
+    <form
+      className="agenda-detail-panel check-in-form"
+      aria-label="Check-in de recepcao"
+      onSubmit={submit}
+    >
       <div className="panel-heading panel-heading--compact">
         <div>
           <p className="eyebrow">Recepcao</p>
@@ -2420,7 +2434,9 @@ function CheckInForm({
         </span>
         <select
           value={form.customerId}
-          onChange={(event) => setForm((current) => ({ ...current, customerId: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, customerId: event.target.value }))
+          }
           required
         >
           <option value="">Selecione</option>
@@ -2438,7 +2454,9 @@ function CheckInForm({
         </span>
         <select
           value={form.vehicleId}
-          onChange={(event) => setForm((current) => ({ ...current, vehicleId: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, vehicleId: event.target.value }))
+          }
           required
         >
           <option value="">Selecione</option>
@@ -2460,7 +2478,9 @@ function CheckInForm({
         <input
           type="datetime-local"
           value={form.enteredAt}
-          onChange={(event) => setForm((current) => ({ ...current, enteredAt: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, enteredAt: event.target.value }))
+          }
           required
         />
       </label>
@@ -2479,7 +2499,9 @@ function CheckInForm({
         </span>
         <select
           value={form.fuelLevel}
-          onChange={(event) => setForm((current) => ({ ...current, fuelLevel: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, fuelLevel: event.target.value }))
+          }
           required
         >
           <option value="">Selecione</option>
@@ -2497,7 +2519,9 @@ function CheckInForm({
         </span>
         <textarea
           value={form.damageNotes}
-          onChange={(event) => setForm((current) => ({ ...current, damageNotes: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, damageNotes: event.target.value }))
+          }
           required
         />
       </label>
@@ -2506,7 +2530,9 @@ function CheckInForm({
         <input
           type="checkbox"
           checked={form.checklist}
-          onChange={(event) => setForm((current) => ({ ...current, checklist: event.target.checked }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, checklist: event.target.checked }))
+          }
         />
         <span>Lataria conferida</span>
       </label>
@@ -2514,7 +2540,9 @@ function CheckInForm({
         <span>Itens deixados</span>
         <textarea
           value={form.itemsLeft}
-          onChange={(event) => setForm((current) => ({ ...current, itemsLeft: event.target.value }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, itemsLeft: event.target.value }))
+          }
         />
       </label>
       <button type="submit" disabled={saving || customers.length === 0 || vehicles.length === 0}>
@@ -2652,7 +2680,9 @@ function CheckInDetailPanel({
     try {
       await onDownloadAttachment(checkIn.id, attachment);
     } catch (caught) {
-      setAttachmentError(caught instanceof Error ? caught.message : "Nao foi possivel baixar o anexo.");
+      setAttachmentError(
+        caught instanceof Error ? caught.message : "Nao foi possivel baixar o anexo.",
+      );
     }
   }
 
@@ -2669,7 +2699,9 @@ function CheckInDetailPanel({
       await onDeleteAttachment(checkIn.id, attachment);
       setAttachments((current) => current.filter((item) => item.id !== attachment.id));
     } catch (caught) {
-      setAttachmentError(caught instanceof Error ? caught.message : "Nao foi possivel remover o anexo.");
+      setAttachmentError(
+        caught instanceof Error ? caught.message : "Nao foi possivel remover o anexo.",
+      );
     }
   }
 
@@ -2706,14 +2738,18 @@ function CheckInDetailPanel({
           <input
             inputMode="numeric"
             value={form.mileage}
-            onChange={(event) => setForm((current) => ({ ...current, mileage: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, mileage: event.target.value }))
+            }
           />
         </label>
         <label className="field">
           <span>Combustivel</span>
           <select
             value={form.fuelLevel}
-            onChange={(event) => setForm((current) => ({ ...current, fuelLevel: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, fuelLevel: event.target.value }))
+            }
           >
             {["Reserva", "1/4", "1/2", "3/4", "Cheio"].map((fuel) => (
               <option key={fuel} value={fuel}>
@@ -2726,14 +2762,18 @@ function CheckInDetailPanel({
           <span>Avarias</span>
           <textarea
             value={form.damageNotes}
-            onChange={(event) => setForm((current) => ({ ...current, damageNotes: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, damageNotes: event.target.value }))
+            }
           />
         </label>
         <label className="field">
           <span>Itens deixados</span>
           <textarea
             value={form.itemsLeft}
-            onChange={(event) => setForm((current) => ({ ...current, itemsLeft: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, itemsLeft: event.target.value }))
+            }
           />
         </label>
         <button type="submit" disabled={saving}>
@@ -2758,9 +2798,7 @@ function CheckInDetailPanel({
             <span>Tipo do anexo</span>
             <select
               value={attachmentCategory}
-              onChange={(event) =>
-                setAttachmentCategory(event.target.value as AttachmentCategory)
-              }
+              onChange={(event) => setAttachmentCategory(event.target.value as AttachmentCategory)}
             >
               {attachmentCategories.map((category) => (
                 <option key={category} value={category}>

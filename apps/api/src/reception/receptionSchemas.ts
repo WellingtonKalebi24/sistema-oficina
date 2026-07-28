@@ -80,17 +80,17 @@ export const checkInListSchema = z.object({
 });
 
 export const createCheckInSchema = z.object({
-    appointmentId: z.string().trim().min(1).optional(),
-    checklistItems: z.array(checklistItemSchema).min(1),
-    customerId: z.string().trim().min(1),
-    damageNotes: z.string().trim().min(1).max(4000),
-    enteredAt: appointmentDateTime,
-    expectedService: z.string().trim().min(1).max(240).optional(),
-    fuelLevel: z.string().trim().min(1).max(40),
-    itemsLeft: optionalText(2000),
-    mileage: z.number().int().nonnegative().optional().nullable(),
-    vehicleId: z.string().trim().min(1),
-  });
+  appointmentId: z.string().trim().min(1).optional(),
+  checklistItems: z.array(checklistItemSchema).min(1),
+  customerId: z.string().trim().min(1),
+  damageNotes: z.string().trim().min(1).max(4000),
+  enteredAt: appointmentDateTime,
+  expectedService: z.string().trim().min(1).max(240).optional(),
+  fuelLevel: z.string().trim().min(1).max(40),
+  itemsLeft: optionalText(2000),
+  mileage: z.number().int().nonnegative().optional().nullable(),
+  vehicleId: z.string().trim().min(1),
+});
 
 export const updateCheckInSchema = z
   .object({

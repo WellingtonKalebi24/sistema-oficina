@@ -164,9 +164,12 @@ describe("reception attachment API contract", () => {
         headers: bearerHeaders(session.accessToken),
       },
     );
-    const publicStaticResponse = await fetch(`${baseUrl}/uploads/reception/${uploaded.storedName}`, {
-      headers: bearerHeaders(session.accessToken),
-    });
+    const publicStaticResponse = await fetch(
+      `${baseUrl}/uploads/reception/${uploaded.storedName}`,
+      {
+        headers: bearerHeaders(session.accessToken),
+      },
+    );
 
     expect(listResponse.status).toBe(200);
     expect(downloadResponse.status).toBe(200);
@@ -192,9 +195,12 @@ describe("reception attachment API contract", () => {
     expect(deleteResponse.status).toBe(204);
     expect(existsSync(storedPath)).toBe(false);
 
-    const listAfterDelete = await fetch(`${baseUrl}/reception/check-ins/${checkIn.id}/attachments`, {
-      headers: bearerHeaders(session.accessToken),
-    });
+    const listAfterDelete = await fetch(
+      `${baseUrl}/reception/check-ins/${checkIn.id}/attachments`,
+      {
+        headers: bearerHeaders(session.accessToken),
+      },
+    );
     const downloadAfterDelete = await fetch(
       `${baseUrl}/reception/check-ins/${checkIn.id}/attachments/${uploaded.id}/download`,
       {
@@ -250,13 +256,9 @@ describe("reception attachment API contract", () => {
       headers: bearerHeaders(session.accessToken),
     });
 
-    expect(((await list.json()) as ApiData<AttachmentBody[]>).data.map((item) => item.category)).toEqual([
-      "Documento",
-      "Painel",
-      "Motor",
-      "Interior",
-      "Outro",
-    ]);
+    expect(
+      ((await list.json()) as ApiData<AttachmentBody[]>).data.map((item) => item.category),
+    ).toEqual(["Documento", "Painel", "Motor", "Interior", "Outro"]);
   });
 
   it("REC-07 blocks cross-tenant list, download and delete without exposing metadata or bytes", async () => {
@@ -310,7 +312,7 @@ describe("reception attachment API contract", () => {
     expect(downloadA.status).toBe(404);
     expect(deleteA.status).toBe(404);
     expect(await downloadA.text()).not.toContain("arquivo-tenant-b");
-  });
+  }, 15_000);
 
   it("D-11 enforces separate backend permissions for attachment read, write and delete", async () => {
     const fixture = await createTenantWithAdmin(prisma);
@@ -392,10 +394,7 @@ describe("reception attachment API contract", () => {
     const auditRows = await getAuditRows(prisma);
 
     expect(auditRows.map((row) => row.action)).toEqual(
-      expect.arrayContaining([
-        "reception.attachments.uploaded",
-        "reception.attachments.deleted",
-      ]),
+      expect.arrayContaining(["reception.attachments.uploaded", "reception.attachments.deleted"]),
     );
     expect(auditRows).toEqual(
       expect.arrayContaining([

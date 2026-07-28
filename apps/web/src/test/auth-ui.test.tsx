@@ -206,7 +206,7 @@ describe("JO.IA authenticated admin UI", () => {
       target: { value: "senha-alterada-123" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Alterar senha" }));
-    expect(await screen.findByText("Senha alterada para esta conta.")).toBeInTheDocument();
+    expect(await screen.findAllByText("Senha alterada para esta conta.")).toHaveLength(2);
 
     fireEvent.click(screen.getByRole("button", { name: "Sair" }));
     await waitFor(() =>

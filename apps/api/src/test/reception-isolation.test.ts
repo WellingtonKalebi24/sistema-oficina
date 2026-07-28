@@ -174,14 +174,11 @@ describe("reception tenant isolation hardening", () => {
     const listA = await fetch(`${baseUrl}/reception/appointments?date=2026-07-24`, {
       headers: bearerHeaders(sessionA.accessToken),
     });
-    const editForeign = await fetch(
-      `${baseUrl}/reception/appointments/${foreignAppointment.id}`,
-      {
-        method: "PATCH",
-        headers: headersA,
-        body: JSON.stringify({ expectedService: "Edicao indevida" }),
-      },
-    );
+    const editForeign = await fetch(`${baseUrl}/reception/appointments/${foreignAppointment.id}`, {
+      method: "PATCH",
+      headers: headersA,
+      body: JSON.stringify({ expectedService: "Edicao indevida" }),
+    });
     const cancelForeign = await fetch(
       `${baseUrl}/reception/appointments/${foreignAppointment.id}/cancel`,
       {
@@ -209,76 +206,72 @@ describe("reception tenant isolation hardening", () => {
     expect(convertForeign.status).toBe(404);
   });
 
-  it(
-    "REC-07 prevents tenant A from reading or editing tenant B check-in and checklist records",
-    async () => {
-      const tenantA = await createTenantWithAdmin(prisma, {
-        tenantName: "Oficina Check-in A",
-      });
-      const tenantB = await createTenantWithAdmin(prisma, {
-        tenantName: "Oficina Check-in B",
-      });
-      const customerB = await createCustomerFixture(prisma, tenantB.tenantId);
-      const vehicleB = await createVehicleFixture(prisma, tenantB.tenantId, customerB.customerId);
-      const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
-      const sessionB = await loginAs({ baseUrl }, tenantB.adminEmail, tenantB.adminPassword);
-      const headersA = authHeaders(sessionA.accessToken);
-      const headersB = authHeaders(sessionB.accessToken);
-      const foreignCheckIn = await createCheckInAndRead(headersB, {
-        checklistItems: [
-          {
-            condition: "avaria",
-            label: "Parachoque",
-            notes: "Risco visivel",
-          },
-        ],
-        customerId: customerB.customerId,
-        damageNotes: "Risco visivel no parachoque",
-        enteredAt: "2026-07-24T13:15:00.000Z",
-        fuelLevel: "3/4",
-        vehicleId: vehicleB.vehicleId,
-      });
+  it("REC-07 prevents tenant A from reading or editing tenant B check-in and checklist records", async () => {
+    const tenantA = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in A",
+    });
+    const tenantB = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Check-in B",
+    });
+    const customerB = await createCustomerFixture(prisma, tenantB.tenantId);
+    const vehicleB = await createVehicleFixture(prisma, tenantB.tenantId, customerB.customerId);
+    const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
+    const sessionB = await loginAs({ baseUrl }, tenantB.adminEmail, tenantB.adminPassword);
+    const headersA = authHeaders(sessionA.accessToken);
+    const headersB = authHeaders(sessionB.accessToken);
+    const foreignCheckIn = await createCheckInAndRead(headersB, {
+      checklistItems: [
+        {
+          condition: "avaria",
+          label: "Parachoque",
+          notes: "Risco visivel",
+        },
+      ],
+      customerId: customerB.customerId,
+      damageNotes: "Risco visivel no parachoque",
+      enteredAt: "2026-07-24T13:15:00.000Z",
+      fuelLevel: "3/4",
+      vehicleId: vehicleB.vehicleId,
+    });
 
-      const listA = await fetch(`${baseUrl}/reception/check-ins?date=2026-07-24`, {
-        headers: bearerHeaders(sessionA.accessToken),
-      });
-      const detailA = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
-        headers: bearerHeaders(sessionA.accessToken),
-      });
-      const editA = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
-        method: "PATCH",
-        headers: headersA,
-        body: JSON.stringify({
-          checklistItems: [{ condition: "ok", label: "Parachoque" }],
-          damageNotes: "Alteracao indevida",
-          mileage: 999,
+    const listA = await fetch(`${baseUrl}/reception/check-ins?date=2026-07-24`, {
+      headers: bearerHeaders(sessionA.accessToken),
+    });
+    const detailA = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
+      headers: bearerHeaders(sessionA.accessToken),
+    });
+    const editA = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
+      method: "PATCH",
+      headers: headersA,
+      body: JSON.stringify({
+        checklistItems: [{ condition: "ok", label: "Parachoque" }],
+        damageNotes: "Alteracao indevida",
+        mileage: 999,
+      }),
+    });
+
+    expect(listA.status).toBe(200);
+    expect(((await listA.json()) as ApiData<CheckInBody[]>).data).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: foreignCheckIn.id })]),
+    );
+    expect(detailA.status).toBe(404);
+    expect(editA.status).toBe(404);
+
+    const detailB = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
+      headers: bearerHeaders(sessionB.accessToken),
+    });
+    const bodyB = (await detailB.json()) as ApiData<CheckInBody>;
+
+    expect(detailB.status).toBe(200);
+    expect(bodyB.data.checklistItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          condition: "avaria",
+          label: "Parachoque",
         }),
-      });
-
-      expect(listA.status).toBe(200);
-      expect(((await listA.json()) as ApiData<CheckInBody[]>).data).not.toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: foreignCheckIn.id })]),
-      );
-      expect(detailA.status).toBe(404);
-      expect(editA.status).toBe(404);
-
-      const detailB = await fetch(`${baseUrl}/reception/check-ins/${foreignCheckIn.id}`, {
-        headers: bearerHeaders(sessionB.accessToken),
-      });
-      const bodyB = (await detailB.json()) as ApiData<CheckInBody>;
-
-      expect(detailB.status).toBe(200);
-      expect(bodyB.data.checklistItems).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            condition: "avaria",
-            label: "Parachoque",
-          }),
-        ]),
-      );
-    },
-    15_000,
-  );
+      ]),
+    );
+  }, 15_000);
 });
 
 function bearerHeaders(accessToken: string): Record<string, string> {

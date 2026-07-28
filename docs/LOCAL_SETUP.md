@@ -168,6 +168,41 @@ curl.exe http://localhost:3001/health
 curl.exe -I http://localhost:5173
 ```
 
+Phase 5 agenda and reception smoke:
+
+```powershell
+$env:DATABASE_URL="postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public"
+docker compose up --build -d db api web
+npm run db:migrate
+npm run db:seed
+```
+
+1. Open `http://localhost:5173`, log in with a tenant administrator, and confirm the `Agenda` menu is visible for reception permissions.
+2. Open `Oficina`, choose `Tabela por horario`, `Calendario visual` or `Kanban por status` in `Visualizacao da agenda`, save, and confirm the setting persists for the authenticated tenant.
+3. Open `Agenda`; the first visual anchor remains the daily time-ordered table. Create an appointment linked to a tenant customer and tenant vehicle, then edit and cancel an appointment when intended.
+4. Use `Fazer check-in` from an appointment. Confirm customer, vehicle, entry date/time, fuel level, damage notes and at least one checklist inspection item are required by the UI and backend; mileage and items left can stay empty.
+5. Use `Registrar check-in direto` for a walk-in vehicle. Confirm the completed check-in creates a converted trace appointment and the check-in status is `Aguardando diagnostico`.
+6. Open `Check-ins`, consult a persisted reception record, edit mileage, fuel, damage notes, items left or checklist data, and confirm the UI asks before saving audit-relevant changes.
+7. In the check-in detail, complete the flow without attachments to confirm missing files never block reception.
+8. Add optional attachments with categories `Avaria`, `Documento`, `Painel`, `Motor`, `Interior` and `Outro`; verify list, protected download and delete behavior from the detail panel.
+9. For permission checks, use a user lacking attachment access or a cross-tenant fixture and confirm the API returns backend-authoritative 403/404 behavior for upload, download and delete.
+10. Confirm there is no automatic customer contact action in the Phase 5 flow; operators only record agenda, reception and attachment facts.
+
+Phase 5 final validation:
+
+```powershell
+$env:DATABASE_URL="postgresql://joia:joia_dev_password@localhost:55432/joia_dev?schema=public"
+npm run db:migrate
+npm run test -w apps/api -- reception-contract reception-isolation reception-audit reception-attachments
+npm run test -w apps/web -- reception-ui
+npm run typecheck -w apps/api
+npm run typecheck -w apps/web
+npm run lint -w apps/api
+npm run lint -w apps/web
+npm run docker:config
+npm run verify
+```
+
 ## Troubleshooting
 
 - If Docker commands hang, verify the engine:

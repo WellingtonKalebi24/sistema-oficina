@@ -185,7 +185,9 @@ describe("JO.IA reception agenda UI", () => {
 
     const table = await screen.findByRole("table", { name: "Agenda diaria" });
     const actionsHeader = within(table).getByText("Acoes").closest("table") as HTMLTableElement;
-    const rowButtons = within(actionsHeader).getAllByRole("button").map((button) => button.textContent);
+    const rowButtons = within(actionsHeader)
+      .getAllByRole("button")
+      .map((button) => button.textContent);
 
     expect(rowButtons).toEqual(["Fazer check-in", "Editar", "Cancelar"]);
     assertNoCommunicationLanguage();
@@ -197,7 +199,12 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { error: { message: "Forbidden" } }, 403),
+      route(
+        "GET",
+        "/reception/appointments?date=2026-07-24",
+        { error: { message: "Forbidden" } },
+        403,
+      ),
     ]);
 
     render(<App />);
@@ -284,7 +291,9 @@ describe("JO.IA reception agenda UI", () => {
     expect(window.confirm).toHaveBeenCalledWith(
       "Confirmar edicao dos dados auditaveis deste check-in?",
     );
-    expect(await screen.findByText("Checklist atualizado com auditoria do backend.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Checklist atualizado com auditoria do backend."),
+    ).toBeInTheDocument();
     assertNoCommunicationLanguage();
   });
 
@@ -432,7 +441,9 @@ describe("JO.IA reception agenda UI", () => {
     expect(window.confirm).toHaveBeenCalledWith(
       "Remover anexo foto-avaria.jpg? O registro sera removido deste check-in conforme permissao do servidor.",
     );
-    expect(await within(detail).findByText("Anexo nao encontrado pelo servidor.")).toBeInTheDocument();
+    expect(
+      await within(detail).findByText("Anexo nao encontrado pelo servidor."),
+    ).toBeInTheDocument();
     assertNoCommunicationLanguage();
   });
 
@@ -549,7 +560,9 @@ function route(
 }
 
 type MockRoute = {
-  assert?: ((request: { init: RequestInit | undefined; input: RequestInfo | URL; path: string }) => void) | undefined;
+  assert?:
+    | ((request: { init: RequestInit | undefined; input: RequestInfo | URL; path: string }) => void)
+    | undefined;
   body: unknown;
   method: string;
   path: string;

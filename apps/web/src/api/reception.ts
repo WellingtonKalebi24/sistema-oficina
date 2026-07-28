@@ -128,7 +128,10 @@ export type CheckInInput = {
 };
 
 export type CheckInUpdateInput = Partial<
-  Pick<CheckInInput, "checklistItems" | "damageNotes" | "enteredAt" | "fuelLevel" | "itemsLeft" | "mileage">
+  Pick<
+    CheckInInput,
+    "checklistItems" | "damageNotes" | "enteredAt" | "fuelLevel" | "itemsLeft" | "mileage"
+  >
 >;
 
 export async function listAppointments(
@@ -181,10 +184,7 @@ export async function getCheckIn(accessToken: string, checkInId: string): Promis
   return request(`/reception/check-ins/${checkInId}`, accessToken);
 }
 
-export async function createCheckIn(
-  accessToken: string,
-  input: CheckInInput,
-): Promise<CheckIn> {
+export async function createCheckIn(accessToken: string, input: CheckInInput): Promise<CheckIn> {
   return request("/reception/check-ins", accessToken, {
     body: compactObject(input),
     method: "POST",

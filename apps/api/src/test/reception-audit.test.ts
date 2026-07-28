@@ -128,10 +128,7 @@ describe("reception check-in audit RED contract", () => {
 
     expect(checkIn.status).toBe("Aguardando diagnostico");
     expect(auditRows.map((row) => row.action)).toEqual(
-      expect.arrayContaining([
-        "reception.appointments.converted",
-        "reception.checkins.created",
-      ]),
+      expect.arrayContaining(["reception.appointments.converted", "reception.checkins.created"]),
     );
     expect(auditRows).toEqual(
       expect.arrayContaining([

@@ -285,7 +285,12 @@ async function convertExistingAppointment(
     },
   });
 
-  await writeAppointmentConversionAudit(prisma, actor, converted, "reception.appointments.converted");
+  await writeAppointmentConversionAudit(
+    prisma,
+    actor,
+    converted,
+    "reception.appointments.converted",
+  );
 
   return converted;
 }

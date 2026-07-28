@@ -175,7 +175,9 @@ export async function deleteCheckInAttachment(
     });
   });
 
-  await removeFileIfExists(resolveStoragePath(resolveUploadRoot(uploadRoot), attachment.relativePath));
+  await removeFileIfExists(
+    resolveStoragePath(resolveUploadRoot(uploadRoot), attachment.relativePath),
+  );
 }
 
 export function serializeAttachment(attachment: AttachmentRecord) {

@@ -1,6 +1,12 @@
 import path from "node:path";
 
-import { Router, type NextFunction, type Request, type RequestHandler, type Response } from "express";
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from "express";
 import multer, { diskStorage } from "multer";
 
 import type { PrismaDatabase } from "../../db/prisma.js";
