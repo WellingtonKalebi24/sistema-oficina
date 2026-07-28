@@ -1994,7 +1994,10 @@ function AgendaPanel({
               </dl>
               <div className="button-row">
                 {canWrite ? (
-                  <button type="button" onClick={() => startAppointmentCheckIn(selectedAppointment)}>
+                  <button
+                    type="button"
+                    onClick={() => startAppointmentCheckIn(selectedAppointment)}
+                  >
                     Fazer check-in
                   </button>
                 ) : null}
