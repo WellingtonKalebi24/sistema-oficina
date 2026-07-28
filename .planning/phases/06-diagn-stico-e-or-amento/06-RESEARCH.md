@@ -326,17 +326,15 @@ type QuoteVersionItemSnapshot = {
 | A3 | `@react-pdf/renderer` is a larger rendering model than `pdfkit` for this codebase. | Alternatives | Planner could choose it if user prefers React document templates. |
 | A4 | Warning signs listed for tests and implementation drift are inferred from standard failure modes. | Common Pitfalls | Planner should still create executable tests tailored to final route/model names. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Discount limit source**
    What we know: D-08 says above-limit discounts warn only. [VERIFIED: .planning/phases/06-diagn-stico-e-or-amento/06-CONTEXT.md]
-   What's unclear: There is no existing company setting for discount limit in `CompanySetting`. [VERIFIED: prisma/schema.prisma]
-   Recommendation: Add a nullable/default tenant setting or hardcoded MVP policy only if the plan records it clearly. [ASSUMED]
+   Resolution: Add `CompanySetting.quoteDiscountWarningPercent` as the tenant/company-level source for warning calculation, with an MVP default of `10.00`. Above-limit discounts create warning metadata and audit context only; they must not block save or publication. [DECIDED: plan-phase revision 2026-07-28]
 
 2. **Secure link token implementation**
    What we know: Phase 6 copies a secure approval link but does not implement public viewing/approval. [VERIFIED: .planning/phases/06-diagn-stico-e-or-amento/06-CONTEXT.md]
-   What's unclear: Whether the token should be fully usable in Phase 7 or only pre-created metadata in Phase 6. [ASSUMED]
-   Recommendation: Store an opaque token hash and link metadata now, but route public token validation/viewing to Phase 7. [ASSUMED]
+   Resolution: Phase 6 stores an opaque random token hash and manual-link metadata for each published quote version, and returns/copies the URL string only after publication. Public token validation, public viewing and approval decisions remain Phase 7. [DECIDED: plan-phase revision 2026-07-28]
 
 ## Environment Availability
 
