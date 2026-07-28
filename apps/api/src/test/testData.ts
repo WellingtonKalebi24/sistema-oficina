@@ -12,7 +12,7 @@ type DeleteManyDelegate = {
 type IdentityPrisma = PrismaClient & {
   appointment?: DeleteManyDelegate;
   checkInAttachment?: DeleteManyDelegate;
-  quotePublicLink?: DeleteManyDelegate;
+  quoteApprovalLink?: DeleteManyDelegate;
   quoteVersionItem?: DeleteManyDelegate;
   quoteVersion?: DeleteManyDelegate;
   quoteItem?: DeleteManyDelegate;
@@ -150,7 +150,7 @@ export type ReceptionCheckInFixture = {
 export async function resetIdentityTables(prisma: PrismaClient): Promise<void> {
   const db = prisma as IdentityPrisma;
 
-  await db.quotePublicLink?.deleteMany();
+  await db.quoteApprovalLink?.deleteMany();
   await db.quoteVersionItem?.deleteMany();
   await db.quoteVersion?.deleteMany();
   await db.quoteItem?.deleteMany();
