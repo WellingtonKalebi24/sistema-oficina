@@ -598,6 +598,7 @@ const allPermissions = [
 ];
 
 const tenantSettings = {
+  agendaViewMode: "table",
   currencyCode: "BRL",
   document: "00.000.000/0001-00",
   id: "settings-1",

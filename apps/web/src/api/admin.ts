@@ -7,6 +7,7 @@ type ApiEnvelope<T> = {
 };
 
 export type TenantSettings = {
+  agendaViewMode: "table" | "calendar" | "kanban";
   currencyCode: string;
   document: string | null;
   id: string;
@@ -62,7 +63,10 @@ export async function getTenantSettings(accessToken: string): Promise<TenantSett
 export async function updateTenantSettings(
   accessToken: string,
   input: Partial<
-    Pick<TenantSettings, "document" | "legalName" | "locale" | "timezone" | "tradeName">
+    Pick<
+      TenantSettings,
+      "agendaViewMode" | "document" | "legalName" | "locale" | "timezone" | "tradeName"
+    >
   >,
 ): Promise<TenantSettings> {
   return request("/tenant-settings", accessToken, {

@@ -1565,6 +1565,7 @@ function AdminShell(props: {
               onUpdateAppointment={props.onUpdateAppointment}
               onUpdateCheckIn={props.onUpdateCheckIn}
               onUploadCheckInAttachment={props.onUploadCheckInAttachment}
+              tenantAgendaViewMode={props.adminData.settings?.agendaViewMode ?? "table"}
               vehicles={props.adminData.vehicles}
             />
           ) : null}
@@ -1615,6 +1616,8 @@ function AdminShell(props: {
 }
 
 type AgendaMode = "checkins" | "day" | "week";
+type AgendaViewMode = TenantSettings["agendaViewMode"];
+type AgendaVisualMode = AgendaMode | "calendar" | "kanban";
 
 const attachmentCategories: AttachmentCategory[] = [
   "Avaria",
@@ -1655,6 +1658,7 @@ function AgendaPanel({
   onUpdateAppointment,
   onUpdateCheckIn,
   onUploadCheckInAttachment,
+  tenantAgendaViewMode,
   vehicles,
 }: {
   appointments: Appointment[];
@@ -1680,10 +1684,11 @@ function AgendaPanel({
     checkInId: string,
     input: { category: AttachmentCategory; file: File },
   ) => Promise<CheckInAttachment>;
+  tenantAgendaViewMode: AgendaViewMode;
   vehicles: Vehicle[];
 }) {
   const defaultDate = todayDateOnly();
-  const [activeMode, setActiveMode] = useState<AgendaMode>("day");
+  const [activeMode, setActiveMode] = useState<AgendaVisualMode>("day");
   const [date, setDate] = useState(defaultDate);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [error, setError] = useState("");
@@ -1733,7 +1738,7 @@ function AgendaPanel({
     })
     .sort(compareAppointments);
 
-  async function changeMode(nextMode: AgendaMode) {
+  async function changeMode(nextMode: AgendaVisualMode) {
     setActiveMode(nextMode);
     setError("");
 
@@ -1744,6 +1749,10 @@ function AgendaPanel({
 
     if (nextMode === "checkins") {
       await onLoadCheckIns();
+      return;
+    }
+
+    if (nextMode === "calendar" || nextMode === "kanban") {
       return;
     }
 
@@ -1855,9 +1864,12 @@ function AgendaPanel({
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Agenda</p>
-              <h2>{activeMode === "day" ? "Agenda diaria" : "Agenda semanal"}</h2>
+              <h2>{agendaModeTitle(activeMode)}</h2>
             </div>
-            <span className="pill">{filteredAppointments.length} agendamentos</span>
+            <span className="pill">
+              {filteredAppointments.length} agendamentos · Preferencia{" "}
+              {agendaViewModeLabel(tenantAgendaViewMode)}
+            </span>
           </div>
           <div className="agenda-tabs" role="tablist" aria-label="Modo da agenda">
             <button
@@ -1877,6 +1889,24 @@ function AgendaPanel({
               onClick={() => void changeMode("week")}
             >
               Agenda semanal
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMode === "calendar"}
+              className={activeMode === "calendar" ? "stock-tab stock-tab--active" : "stock-tab"}
+              onClick={() => void changeMode("calendar")}
+            >
+              Calendario visual
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMode === "kanban"}
+              className={activeMode === "kanban" ? "stock-tab stock-tab--active" : "stock-tab"}
+              onClick={() => void changeMode("kanban")}
+            >
+              Kanban por status
             </button>
             {canReadCheckIns ? (
               <button
@@ -1905,6 +1935,12 @@ function AgendaPanel({
           ) : null}
           {activeMode === "week" ? (
             <WeeklyAgenda appointments={filteredAppointments} />
+          ) : null}
+          {activeMode === "calendar" ? (
+            <CalendarAgenda appointments={filteredAppointments} />
+          ) : null}
+          {activeMode === "kanban" ? (
+            <KanbanAgenda appointments={filteredAppointments} />
           ) : null}
           {activeMode === "checkins" ? (
             <CheckInsTable checkIns={checkIns} onConsult={(checkIn) => void consultCheckIn(checkIn)} />
@@ -2832,6 +2868,44 @@ function WeeklyAgenda({ appointments }: { appointments: Appointment[] }) {
   );
 }
 
+function CalendarAgenda({ appointments }: { appointments: Appointment[] }) {
+  return (
+    <section className="weekly-agenda" aria-label="Calendario visual da agenda">
+      {appointments.map((appointment) => (
+        <article key={appointment.id} className="appointment-chip">
+          <strong>{formatAgendaTime(appointment.startsAt)}</strong>
+          <span>{appointment.customer.name}</span>
+          <span>{appointment.expectedService}</span>
+          <span>{appointment.vehicle.plateNormalized ?? "Sem placa"}</span>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function KanbanAgenda({ appointments }: { appointments: Appointment[] }) {
+  const statuses: Appointment["status"][] = ["Agendado", "Convertido", "Cancelado"];
+
+  return (
+    <section className="weekly-agenda" aria-label="Kanban da agenda por status">
+      {statuses.map((status) => (
+        <div key={status} className="weekly-column">
+          <h3>{status}</h3>
+          {appointments
+            .filter((appointment) => appointment.status === status)
+            .map((appointment) => (
+              <article key={appointment.id} className="appointment-chip">
+                <strong>{formatAgendaTime(appointment.startsAt)}</strong>
+                <span>{appointment.customer.name}</span>
+                <span>{appointment.expectedService}</span>
+              </article>
+            ))}
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function emptyAppointmentForm(date: string, customers: Customer[], vehicles: Vehicle[]) {
   return {
     customerId: customers[0]?.id ?? "",
@@ -2898,6 +2972,34 @@ function formatMileage(value: number | null): string {
   return value === null ? "Nao informado" : `${value} km`;
 }
 
+function agendaModeTitle(mode: AgendaVisualMode): string {
+  if (mode === "calendar") {
+    return "Calendario visual";
+  }
+
+  if (mode === "kanban") {
+    return "Kanban por status";
+  }
+
+  if (mode === "checkins") {
+    return "Check-ins";
+  }
+
+  return mode === "day" ? "Agenda diaria" : "Agenda semanal";
+}
+
+function agendaViewModeLabel(mode: AgendaViewMode): string {
+  if (mode === "calendar") {
+    return "calendario";
+  }
+
+  if (mode === "kanban") {
+    return "kanban";
+  }
+
+  return "tabela";
+}
+
 function statusClassName(status: Appointment["status"]): string {
   if (status === "Cancelado") {
     return "status-badge status-badge--danger";
@@ -2922,11 +3024,15 @@ function SettingsPanel({
   const [tradeName, setTradeName] = useState(settings?.tradeName ?? "");
   const [legalName, setLegalName] = useState(settings?.legalName ?? "");
   const [document, setDocument] = useState(settings?.document ?? "");
+  const [agendaViewMode, setAgendaViewMode] = useState<AgendaViewMode>(
+    settings?.agendaViewMode ?? "table",
+  );
 
   useEffect(() => {
     setTradeName(settings?.tradeName ?? "");
     setLegalName(settings?.legalName ?? "");
     setDocument(settings?.document ?? "");
+    setAgendaViewMode(settings?.agendaViewMode ?? "table");
   }, [settings]);
 
   if (blocked) {
@@ -2946,7 +3052,7 @@ function SettingsPanel({
         className="form-grid"
         onSubmit={(event) => {
           event.preventDefault();
-          void onUpdateSettings({ document, legalName, tradeName });
+          void onUpdateSettings({ agendaViewMode, document, legalName, tradeName });
         }}
       >
         <label className="field">
@@ -2967,6 +3073,17 @@ function SettingsPanel({
         <label className="field">
           <span>Documento</span>
           <input value={document} onChange={(event) => setDocument(event.target.value)} />
+        </label>
+        <label className="field">
+          <span>Visualizacao da agenda</span>
+          <select
+            value={agendaViewMode}
+            onChange={(event) => setAgendaViewMode(event.target.value as AgendaViewMode)}
+          >
+            <option value="table">Tabela por horario</option>
+            <option value="calendar">Calendario visual</option>
+            <option value="kanban">Kanban por status</option>
+          </select>
         </label>
         <button type="submit">Salvar oficina</button>
       </form>

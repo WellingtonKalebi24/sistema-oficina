@@ -59,6 +59,7 @@ model CompanySetting {
   timezone     String   @default("America/Sao_Paulo")
   locale       String   @default("pt-BR")
   currencyCode String   @default("BRL") @map("currency_code")
+  agendaViewMode String @default("table") @map("agenda_view_mode")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/requirePermission.js";
 import type { AuthenticatedRequest } from "../middleware/requireAuth.js";
 
 const updateSettingsSchema = z.object({
+  agendaViewMode: z.enum(["table", "calendar", "kanban"]).optional(),
   currencyCode: z.string().trim().min(3).max(3).optional(),
   document: z.string().trim().max(40).optional().nullable(),
   legalName: z.string().trim().max(180).optional().nullable(),
@@ -89,6 +90,7 @@ export function createTenantSettingsRouter(prisma: PrismaDatabase): Router {
 }
 
 function serializeSettings(settings: {
+  agendaViewMode: string;
   currencyCode: string;
   document: string | null;
   id: string;
@@ -100,6 +102,7 @@ function serializeSettings(settings: {
   updatedAt: Date;
 }) {
   return {
+    agendaViewMode: settings.agendaViewMode,
     currencyCode: settings.currencyCode,
     document: settings.document,
     id: settings.id,
