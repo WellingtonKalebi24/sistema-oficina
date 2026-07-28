@@ -5,6 +5,12 @@ export const PERMISSIONS = {
   customersRead: "customers.read",
   customersUpdate: "customers.update",
   permissionsManage: "permissions.manage",
+  quotesLink: "quotes.link",
+  quotesPdf: "quotes.pdf",
+  quotesPublish: "quotes.publish",
+  quotesRead: "quotes.read",
+  quotesStatus: "quotes.status",
+  quotesWrite: "quotes.write",
   receptionAppointmentsCancel: "reception.appointments.cancel",
   receptionAppointmentsRead: "reception.appointments.read",
   receptionAppointmentsWrite: "reception.appointments.write",
@@ -63,6 +69,12 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.stockAdjustmentsCreate,
   PERMISSIONS.stockReservationsCreate,
   PERMISSIONS.stockReservationsCancel,
+  PERMISSIONS.quotesRead,
+  PERMISSIONS.quotesWrite,
+  PERMISSIONS.quotesPublish,
+  PERMISSIONS.quotesPdf,
+  PERMISSIONS.quotesLink,
+  PERMISSIONS.quotesStatus,
   PERMISSIONS.receptionAppointmentsRead,
   PERMISSIONS.receptionAppointmentsWrite,
   PERMISSIONS.receptionAppointmentsCancel,
@@ -181,6 +193,30 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.stockReservationsCancel]: {
     description: "Permite cancelar reservas de pecas e restaurar disponibilidade operacional.",
     name: "Cancelar reservas de pecas",
+  },
+  [PERMISSIONS.quotesRead]: {
+    description: "Permite consultar diagnosticos e orcamentos do tenant autenticado.",
+    name: "Ler orcamentos",
+  },
+  [PERMISSIONS.quotesWrite]: {
+    description: "Permite criar e editar diagnosticos, rascunhos e itens de orcamento.",
+    name: "Gerenciar rascunhos de orcamento",
+  },
+  [PERMISSIONS.quotesPublish]: {
+    description: "Permite publicar versoes imutaveis de orcamentos.",
+    name: "Publicar orcamentos",
+  },
+  [PERMISSIONS.quotesPdf]: {
+    description: "Permite gerar e imprimir PDFs de versoes publicadas de orcamentos.",
+    name: "Gerar PDF de orcamento",
+  },
+  [PERMISSIONS.quotesLink]: {
+    description: "Permite gerar e copiar manualmente links seguros de orcamentos publicados.",
+    name: "Copiar link de orcamento",
+  },
+  [PERMISSIONS.quotesStatus]: {
+    description: "Permite alterar status operacionais manuais de orcamentos sem envio automatico.",
+    name: "Alterar status de orcamento",
   },
   [PERMISSIONS.receptionAppointmentsRead]: {
     description: "Permite consultar agenda diaria e semanal do tenant autenticado.",
