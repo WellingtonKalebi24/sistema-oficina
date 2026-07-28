@@ -1,17 +1,17 @@
----
+﻿---
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Agenda e Recepcao
 status: ready
-stopped_at: Completed 05-06-PLAN.md
-last_updated: "2026-07-24T13:58:08.410Z"
+stopped_at: Completed 05-07-PLAN.md
+last_updated: "2026-07-28T02:38:16.866Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 22
-  percent: 33
+  completed_plans: 23
+  percent: 88
 ---
 
 # Project State: JO.IA
@@ -24,7 +24,7 @@ progress:
 
 See: `.planning/PROJECT.md` (updated 2026-07-14)
 
-**Core value:** Uma oficina consegue executar e auditar todo o ciclo de atendimento de um veículo, da entrada ao pagamento, com isolamento seguro por tenant e sem depender de comunicações automáticas com o cliente.
+**Core value:** Uma oficina consegue executar e auditar todo o ciclo de atendimento de um veÃ­culo, da entrada ao pagamento, com isolamento seguro por tenant e sem depender de comunicaÃ§Ãµes automÃ¡ticas com o cliente.
 **Current focus:** Continuar agenda e recepcao com check-in, checklist, anexos, auditoria e isolamento por tenant.
 
 ## Completed
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-24T13:58:08.349Z
-**Stopped at:** Completed 05-06-PLAN.md
+**Last session:** 2026-07-28T02:38:16.816Z
+**Stopped at:** Completed 05-07-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -142,6 +142,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P04 | 6min | 2 tasks | 6 files |
 | Phase 05 P05 | 8min | 2 tasks | 3 files |
 | Phase 05 P06 | 10min | 2 tasks | 5 files |
+| Phase 05 P07 | 18min | 2 tasks | 11 files |
 
 ## Decisions
 
@@ -153,18 +154,18 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 01]: Plan 03 completed the full walking skeleton and established docs/VISUAL_CONTRACT.md as the UI contract for later operational screens.
 - [Phase 02]: Plan 01 installed only exact approved auth/admin package names after the SUS package checkpoint: nodemailer, express-rate-limit and react-router.
 - [Phase 02]: Nodemailer remains scoped to authentication password recovery only; no customer communication or notification capability was introduced.
-- [Phase 02]: Modeled Phase 2 identity data in one Prisma migration so later auth/admin plans can implement routes and services without schema churn. — Keeps later Phase 2 plans focused on auth/admin service behavior instead of repeated schema churn.
-- [Phase 02]: Seeded only stable permission keys and default role metadata; no tenant-specific roles or business entities are created by the seed. — Preserves deterministic seed behavior while avoiding out-of-scope tenant/business data.
-- [Phase 02]: Configured API Vitest file execution serially because integration tests share one PostgreSQL schema and perform table cleanup. — Prevents false failures from concurrent cleanup in shared-database integration tests.
+- [Phase 02]: Modeled Phase 2 identity data in one Prisma migration so later auth/admin plans can implement routes and services without schema churn. â€” Keeps later Phase 2 plans focused on auth/admin service behavior instead of repeated schema churn.
+- [Phase 02]: Seeded only stable permission keys and default role metadata; no tenant-specific roles or business entities are created by the seed. â€” Preserves deterministic seed behavior while avoiding out-of-scope tenant/business data.
+- [Phase 02]: Configured API Vitest file execution serially because integration tests share one PostgreSQL schema and perform table cleanup. â€” Prevents false failures from concurrent cleanup in shared-database integration tests.
 - [Phase 02]: Implemented refresh sessions as opaque browser-managed tokens submitted in JSON, not cookies, matching the resolved research contract.
 - [Phase 02]: Kept /auth/bootstrap compatibility with the previous RED test contract while also exposing /bootstrap/status and /bootstrap/create-first-admin.
 - [Phase 02]: Root verification now delegates to workspace test scripts so API PostgreSQL integration tests preserve their serial Vitest config.
-- [Phase 02]: Kept EmailSender narrowly scoped to authentication password recovery; no customer notification, communication module, queue or delivery/read tracking was introduced. — Preserves the project communication prohibition while allowing the locked auth recovery exception.
-- [Phase 02]: Centralized auth audit redaction in writeAuditLog by dropping metadata keys shaped like passwords, tokens, reset codes, hashes or secrets before persistence. — Makes D-13 audit secrecy enforceable from auth routes and future protected routes.
-- [Phase 02]: Added a local narrow Nodemailer declaration instead of installing another package during execution, avoiding an unplanned package-legitimacy gate. — Typecheck needed declarations, but adding an unplanned package would exceed 02-04 scope.
-- [Phase 02]: Plan 05 centralized permission keys in apps/api/src/permissions/permissions.ts for seed, bootstrap, auth serialization and admin route validation. — Prevents permission key drift across backend enforcement and fixtures.
-- [Phase 02]: Plan 05 mounted protected admin APIs after existing public health/bootstrap/auth/foundation/test routes. — Preserves existing diagnostics while enforcing backend authorization on admin routes.
-- [Phase 02]: Plan 05 requires users.createAdmin for admin-level role permission grants and allow overrides. — Implements D-03 and prevents privilege escalation by users who can create only regular users.
+- [Phase 02]: Kept EmailSender narrowly scoped to authentication password recovery; no customer notification, communication module, queue or delivery/read tracking was introduced. â€” Preserves the project communication prohibition while allowing the locked auth recovery exception.
+- [Phase 02]: Centralized auth audit redaction in writeAuditLog by dropping metadata keys shaped like passwords, tokens, reset codes, hashes or secrets before persistence. â€” Makes D-13 audit secrecy enforceable from auth routes and future protected routes.
+- [Phase 02]: Added a local narrow Nodemailer declaration instead of installing another package during execution, avoiding an unplanned package-legitimacy gate. â€” Typecheck needed declarations, but adding an unplanned package would exceed 02-04 scope.
+- [Phase 02]: Plan 05 centralized permission keys in apps/api/src/permissions/permissions.ts for seed, bootstrap, auth serialization and admin route validation. â€” Prevents permission key drift across backend enforcement and fixtures.
+- [Phase 02]: Plan 05 mounted protected admin APIs after existing public health/bootstrap/auth/foundation/test routes. â€” Preserves existing diagnostics while enforcing backend authorization on admin routes.
+- [Phase 02]: Plan 05 requires users.createAdmin for admin-level role permission grants and allow overrides. â€” Implements D-03 and prevents privilege escalation by users who can create only regular users.
 - [Phase 02]: Used react-router for the authenticated web shell while keeping backend authorization authoritative and displaying API 403 as a server-permission blocked state.
 - [Phase 02]: Browser session storage is limited to access token, opaque refresh token, session id, tenant id, user profile and effective permissions.
 - [Phase 03]: Plan 01 uses PostgreSQL partial unique indexes for active-only customer document, vehicle plate and vehicle VIN uniqueness; Prisma @@unique is not used for soft-delete predicates.
@@ -193,10 +194,14 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 02 filters appointment audit metadata to changed fields and linked IDs, excluding raw notes.
 - [Phase 05]: Agenda data loads from /reception/appointments only when reception.appointments.read is present; backend 403 remains authoritative.
 - [Phase 05]: Daily Agenda keeps the time-ordered table as the primary anchor with only Fazer check-in, Editar and Cancelar row actions.
-- [Phase 05]: Plan 04 requires appointmentId on ReceptionCheckIn so direct check-in must create a converted trace appointment before persisting check-in. — Preserves D-04 traceability and keeps direct check-in compatible with the required appointmentId schema.
-- [Phase 05]: Plan 04 keeps check-in status as persisted text with exact default Aguardando diagnostico and leaves attachments to the dedicated attachment plan. — Matches the existing Portuguese status pattern and avoids mixing REC-05 attachment storage into the check-in foundation migration.
-- [Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. — Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
-- [Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. — Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
-- [Phase 05]: Plan 06 loads check-ins lazily from the Check-ins tab and refreshes persisted check-ins after backend writes. � Keeps Agenda usable while still surfacing backend 403 as authoritative for check-in consultation.
-- [Phase 05]: Plan 06 refreshes the daily agenda after direct check-in creation so the generated converted trace appointment is visible without a full page reload. � Preserves D-04 traceability in the UI.
-- [Phase 05]: Plan 06 prompts before post-check-in edits to mileage, fuel, damage notes, items-left or checklist facts. � Reinforces audit-relevant edits while backend authorization and audit remain authoritative.
+- [Phase 05]: Plan 04 requires appointmentId on ReceptionCheckIn so direct check-in must create a converted trace appointment before persisting check-in. â€” Preserves D-04 traceability and keeps direct check-in compatible with the required appointmentId schema.
+- [Phase 05]: Plan 04 keeps check-in status as persisted text with exact default Aguardando diagnostico and leaves attachments to the dedicated attachment plan. â€” Matches the existing Portuguese status pattern and avoids mixing REC-05 attachment storage into the check-in foundation migration.
+- [Phase 05]: Plan 05 direct check-in creates a converted trace appointment with origin direct-check-in and startsAt from enteredAt, using Check-in direto when expectedService is omitted. â€” Preserves D-01 and D-04 while keeping direct reception usable without a pre-existing appointment.
+- [Phase 05]: Plan 05 check-in audit payloads record linked IDs and changed fields while excluding raw damage notes and long operational text. â€” Meets REC-08 without storing large or sensitive operational note dumps in audit payloads.
+- [Phase 05]: Plan 06 loads check-ins lazily from the Check-ins tab and refreshes persisted check-ins after backend writes. ï¿½ Keeps Agenda usable while still surfacing backend 403 as authoritative for check-in consultation.
+- [Phase 05]: Plan 06 refreshes the daily agenda after direct check-in creation so the generated converted trace appointment is visible without a full page reload. ï¿½ Preserves D-04 traceability in the UI.
+- [Phase 05]: Plan 06 prompts before post-check-in edits to mileage, fuel, damage notes, items-left or checklist facts. ï¿½ Reinforces audit-relevant edits while backend authorization and audit remain authoritative.
+- [Phase 05]: Plan 07 installed only the approved `multer` runtime dependency and used a local narrow declaration instead of the SUS `@types/multer` package.
+- [Phase 05]: Plan 07 configured `RECEPTION_UPLOAD_ROOT=uploads/reception` as a private API filesystem root with Docker volume wiring and no public static serving.
+- [Phase 05]: Plan 07 stores attachment categories as text plus a PostgreSQL check constraint for the D-09 canonical values.
+
