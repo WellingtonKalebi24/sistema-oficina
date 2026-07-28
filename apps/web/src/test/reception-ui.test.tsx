@@ -3,16 +3,22 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App.js";
 
 const originalFetch = globalThis.fetch;
 
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date("2026-07-24T12:00:00.000Z"));
+});
+
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
   window.localStorage.clear();
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -136,6 +142,7 @@ describe("JO.IA reception agenda UI", () => {
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
+      route("GET", "/reception/check-ins/check-in-1/attachments", { data: [] }),
       route("PATCH", "/reception/check-ins/check-in-1", { data: editedCheckIn }),
       route("GET", "/reception/check-ins", { data: [editedCheckIn] }),
     ]);
@@ -185,6 +192,7 @@ describe("JO.IA reception agenda UI", () => {
     const detail = await screen.findByRole("region", { name: "Detalhe do check-in" });
     expect(detail).toHaveTextContent("Recepcao para diagnostico");
     expect(detail).toHaveTextContent("Lataria conferida");
+    expect(detail).toHaveTextContent("Nenhum anexo registrado para este check-in.");
 
     fireEvent.change(within(detail).getByLabelText(/Quilometragem/), {
       target: { value: "45200" },
@@ -198,6 +206,154 @@ describe("JO.IA reception agenda UI", () => {
       "Confirmar edicao dos dados auditaveis deste check-in?",
     );
     expect(await screen.findByText("Checklist atualizado com auditoria do backend.")).toBeInTheDocument();
+    assertNoCommunicationLanguage();
+  });
+
+  it("D-08 completes check-in with no selected attachment files", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("POST", "/reception/check-ins", { data: appointmentCheckIn }, 201, ({ init }) => {
+        expect(init?.body).not.toBeInstanceOf(FormData);
+      }),
+      route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
+    ]);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+
+    const table = await screen.findByRole("table", { name: "Agenda diaria" });
+    fireEvent.click(within(table).getByRole("button", { name: "Fazer check-in" }));
+
+    const form = await screen.findByRole("form", { name: "Check-in de recepcao" });
+    expect(within(form).queryByLabelText(/Arquivo/)).not.toBeInTheDocument();
+    fireEvent.change(within(form).getByLabelText(/Combustivel/), {
+      target: { value: "1/2" },
+    });
+    fireEvent.change(within(form).getByLabelText(/Avarias/), {
+      target: { value: "Risco no parachoque" },
+    });
+    fireEvent.click(within(form).getByLabelText("Lataria conferida"));
+    fireEvent.click(within(form).getByRole("button", { name: "Concluir check-in" }));
+
+    expect(
+      await screen.findByText("Check-in concluido e status definido como Aguardando diagnostico."),
+    ).toBeInTheDocument();
+    assertNoCommunicationLanguage();
+  });
+
+  it("D-09 lists and uploads optional check-in attachments with canonical categories", async () => {
+    const uploadAssert = vi.fn(({ init }: { init?: RequestInit }) => {
+      expect(init?.body).toBeInstanceOf(FormData);
+      expect((init?.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
+      const body = init?.body as FormData;
+      expect(body.get("category")).toBe("Avaria");
+      expect((body.get("file") as File).name).toBe("foto-avaria.jpg");
+    });
+
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
+      route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
+      route("GET", "/reception/check-ins/check-in-1/attachments", { data: [damageAttachment] }),
+      route(
+        "POST",
+        "/reception/check-ins/check-in-1/attachments",
+        { data: documentAttachment },
+        201,
+        uploadAssert,
+      ),
+    ]);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+
+    const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
+    fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
+
+    const detail = await screen.findByRole("region", { name: "Detalhe do check-in" });
+    expect(detail).toHaveTextContent("foto-avaria.jpg");
+    expect(detail).toHaveTextContent("Avaria");
+    expect(detail).toHaveTextContent("12 KB");
+    expect(detail).toHaveTextContent("Enviado");
+
+    const category = within(detail).getByLabelText("Tipo do anexo");
+    expect(category).toHaveTextContent("Avaria");
+    expect(category).toHaveTextContent("Documento");
+    expect(category).toHaveTextContent("Painel");
+    expect(category).toHaveTextContent("Motor");
+    expect(category).toHaveTextContent("Interior");
+    expect(category).toHaveTextContent("Outro");
+
+    fireEvent.change(category, { target: { value: "Avaria" } });
+    fireEvent.change(within(detail).getByLabelText("Arquivo do anexo"), {
+      target: {
+        files: [new File(["imagem"], "foto-avaria.jpg", { type: "image/jpeg" })],
+      },
+    });
+    expect(detail).toHaveTextContent("foto-avaria.jpg");
+    expect(detail).toHaveTextContent("Pendente");
+    fireEvent.click(within(detail).getByRole("button", { name: "Anexar arquivo" }));
+
+    expect(await screen.findByText("documento-crlv.pdf")).toBeInTheDocument();
+    expect(uploadAssert).toHaveBeenCalledTimes(1);
+    assertNoCommunicationLanguage();
+  });
+
+  it("D-11 treats backend 403 and 404 on attachment delete/download as authoritative states", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes(),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
+      route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
+      route("GET", "/reception/check-ins/check-in-1/attachments", { data: [damageAttachment] }),
+      route(
+        "GET",
+        "/reception/check-ins/check-in-1/attachments/attachment-1/download",
+        { error: { message: "Forbidden" } },
+        403,
+      ),
+      route(
+        "DELETE",
+        "/reception/check-ins/check-in-1/attachments/attachment-1",
+        { error: { message: "Not found" } },
+        404,
+      ),
+    ]);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+
+    const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
+    fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
+
+    const detail = await screen.findByRole("region", { name: "Detalhe do check-in" });
+    fireEvent.click(await within(detail).findByRole("button", { name: "Baixar foto-avaria.jpg" }));
+    expect(
+      await within(detail).findByText("Acesso bloqueado pela permissao do servidor."),
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(detail).getByRole("button", { name: "Remover foto-avaria.jpg" }));
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Remover anexo foto-avaria.jpg? O registro sera removido deste check-in conforme permissao do servidor.",
+    );
+    expect(await within(detail).findByText("Anexo nao encontrado pelo servidor.")).toBeInTheDocument();
     assertNoCommunicationLanguage();
   });
 
@@ -298,15 +454,23 @@ function createFetchMock(routes: MockRoute[]) {
       throw new Error(`Unexpected fetch ${method} ${path}`);
     }
 
+    found.assert?.({ init, input, path });
     return jsonResponse(found.body, found.status);
   });
 }
 
-function route(method: string, path: string, body: unknown, status = 200): MockRoute {
-  return { body, method, path, status };
+function route(
+  method: string,
+  path: string,
+  body: unknown,
+  status = 200,
+  assert?: MockRoute["assert"],
+): MockRoute {
+  return { assert, body, method, path, status };
 }
 
 type MockRoute = {
+  assert?: (request: { init?: RequestInit; input: RequestInfo | URL; path: string }) => void;
   body: unknown;
   method: string;
   path: string;
@@ -347,6 +511,9 @@ const allPermissions = [
   "reception.appointments.read",
   "reception.appointments.write",
   "reception.appointments.cancel",
+  "reception.attachments.delete",
+  "reception.attachments.read",
+  "reception.attachments.write",
   "reception.checkins.read",
   "reception.checkins.write",
 ];
@@ -549,6 +716,30 @@ const directCheckIn = {
   fuelLevel: "3/4",
   id: "check-in-direct-1",
   mileage: null,
+};
+
+const damageAttachment = {
+  category: "Avaria",
+  checkInId: "check-in-1",
+  createdAt: "2026-07-24T11:36:00.000Z",
+  deletedAt: null,
+  id: "attachment-1",
+  mimeType: "image/jpeg",
+  originalName: "foto-avaria.jpg",
+  sizeBytes: 12_288,
+  storedName: "tenant-1-check-in-1-avaria.jpg",
+  tenantId: "tenant-1",
+  uploadedByUserId: "admin-1",
+};
+
+const documentAttachment = {
+  ...damageAttachment,
+  category: "Documento",
+  id: "attachment-2",
+  mimeType: "application/pdf",
+  originalName: "documento-crlv.pdf",
+  sizeBytes: 35_840,
+  storedName: "tenant-1-check-in-1-documento.pdf",
 };
 
 const weeklyAppointments = [
