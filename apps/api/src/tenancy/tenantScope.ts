@@ -162,6 +162,7 @@ export async function requireTenantCustomerVehicleLink(
     }),
     prisma.vehicle.findFirst({
       select: {
+        customerId: true,
         id: true,
       },
       where: {
@@ -174,5 +175,9 @@ export async function requireTenantCustomerVehicleLink(
 
   if (!customer || !vehicle) {
     throw badRequest("Customer and vehicle IDs must belong to the authenticated tenant.");
+  }
+
+  if (vehicle.customerId !== customer.id) {
+    throw badRequest("Vehicle must belong to the informed customer.");
   }
 }

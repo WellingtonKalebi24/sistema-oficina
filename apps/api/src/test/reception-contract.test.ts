@@ -333,6 +333,29 @@ describe("reception appointment API contract", () => {
     expect(foreignVehicleResponse.status).toBe(400);
   });
 
+  it("D-05 rejects appointment creation when the vehicle belongs to another customer in the same tenant", async () => {
+    const fixture = await createTenantWithAdmin(prisma);
+    const customerA = await createCustomerFixture(prisma, fixture.tenantId);
+    const customerB = await createCustomerFixture(prisma, fixture.tenantId);
+    const vehicleB = await createVehicleFixture(prisma, fixture.tenantId, customerB.customerId);
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+
+    const response = await fetch(`${baseUrl}/reception/appointments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        customerId: customerA.customerId,
+        expectedService: "Vinculo cliente veiculo incorreto",
+        origin: "counter",
+        startsAt: "2026-07-24T13:30:00.000Z",
+        vehicleId: vehicleB.vehicleId,
+      }),
+    });
+
+    expect(response.status).toBe(400);
+  });
+
   it("REC-08 audits create, update and cancel appointment changes without raw notes", async () => {
     const fixture = await createTenantWithAdmin(prisma);
     const customer = await createCustomerFixture(prisma, fixture.tenantId);
@@ -544,6 +567,31 @@ describe("reception check-in RED API contract", () => {
     expect(missingFuel.status).toBe(400);
     expect(missingChecklist.status).toBe(400);
     expect(foreignCustomerVehicle.status).toBe(400);
+  });
+
+  it("D-05 rejects direct check-in when the vehicle belongs to another customer in the same tenant", async () => {
+    const fixture = await createTenantWithAdmin(prisma);
+    const customerA = await createCustomerFixture(prisma, fixture.tenantId);
+    const customerB = await createCustomerFixture(prisma, fixture.tenantId);
+    const vehicleB = await createVehicleFixture(prisma, fixture.tenantId, customerB.customerId);
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+
+    const response = await createCheckIn(headers, {
+      checklistItems: [
+        {
+          condition: "ok",
+          label: "Lataria",
+        },
+      ],
+      customerId: customerA.customerId,
+      damageNotes: "Sem avarias",
+      enteredAt: "2026-07-24T14:30:00.000Z",
+      fuelLevel: "1/2",
+      vehicleId: vehicleB.vehicleId,
+    });
+
+    expect(response.status).toBe(400);
   });
 });
 

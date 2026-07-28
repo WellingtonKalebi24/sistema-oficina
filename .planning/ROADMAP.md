@@ -12,7 +12,7 @@
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
 | 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
 | 4 | Serviços, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
-| 5 | Agenda e Recepção | 10/10 | Complete   | 2026-07-28 |
+| 5 | Agenda e Recepção | 10/10 | Complete    | 2026-07-28 |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
 | 7 | Aprovação Pública Segura | Permitir decisão do cliente por token vinculado à versão exata | QTE-12..QTE-18 | yes |
 | 8 | Ordem de Serviço | Converter orçamento aprovado em OS auditável e transacional | WOP-01..WOP-08, WOP-12..WOP-14 | yes |
