@@ -81,10 +81,10 @@
 - [x] **QTE-05**: System calculates quote subtotal, discounts, surcharges and total correctly.
 - [x] **QTE-06**: Discount above configured limits requires permission.
 - [x] **QTE-07**: User can define quote validity and estimated delivery deadline.
-- [ ] **QTE-08**: User can publish a quote version that preserves commercial data immutably.
-- [ ] **QTE-09**: User can create a new quote version without altering prior versions.
-- [ ] **QTE-10**: User can generate and inspect a PDF for a quote version.
-- [ ] **QTE-11**: User can print or manually copy a secure approval link for a quote version.
+- [x] **QTE-08**: User can publish a quote version that preserves commercial data immutably.
+- [x] **QTE-09**: User can create a new quote version without altering prior versions.
+- [x] **QTE-10**: User can generate and inspect a PDF for a quote version.
+- [x] **QTE-11**: User can print or manually copy a secure approval link for a quote version.
 - [ ] **QTE-12**: Public visitor can view only authorized quote data through a valid token.
 - [ ] **QTE-13**: Invalid, expired or unrelated public tokens do not reveal protected information.
 - [ ] **QTE-14**: Public visitor can approve all items, approve selected items, reject selected items or reject the quote.
@@ -238,10 +238,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QTE-05 | Phase 6 | Complete |
 | QTE-06 | Phase 6 | Complete |
 | QTE-07 | Phase 6 | Complete |
-| QTE-08 | Phase 6 | Pending |
-| QTE-09 | Phase 6 | Pending |
-| QTE-10 | Phase 6 | Pending |
-| QTE-11 | Phase 6 | Pending |
+| QTE-08 | Phase 6 | Complete |
+| QTE-09 | Phase 6 | Complete |
+| QTE-10 | Phase 6 | Complete |
+| QTE-11 | Phase 6 | Complete |
 | QTE-12 | Phase 7 | Pending |
 | QTE-13 | Phase 7 | Pending |
 | QTE-14 | Phase 7 | Pending |

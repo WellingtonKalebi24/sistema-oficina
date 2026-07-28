@@ -13,7 +13,7 @@
 | 3 | Clientes e VeÃ­culos | 3/3 | Complete   | 2026-07-21 |
 | 4 | ServiÃ§os, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
 | 5 | Agenda e RecepÃ§Ã£o | 10/10 | Complete    | 2026-07-28 |
-| 6 | DiagnÃ³stico e OrÃ§amento | 2/4 | In Progress|  |
+| 6 | DiagnÃ³stico e OrÃ§amento | 3/4 | In Progress|  |
 | 7 | AprovaÃ§Ã£o PÃºblica Segura | Permitir decisÃ£o do cliente por token vinculado Ã  versÃ£o exata | QTE-12..QTE-18 | yes |
 | 8 | Ordem de ServiÃ§o | Converter orÃ§amento aprovado em OS auditÃ¡vel e transacional | WOP-01..WOP-08, WOP-12..WOP-14 | yes |
 | 9 | ProduÃ§Ã£o e Tarefas | Organizar execuÃ§Ã£o operacional em quadro de tarefas | WOP-09..WOP-11 | yes |
@@ -307,7 +307,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** QTE-01, QTE-02, QTE-03, QTE-04, QTE-05, QTE-06, QTE-07, QTE-08, QTE-09, QTE-10, QTE-11
 **UI hint:** yes
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -320,7 +320,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-03-PLAN.md — Publicacao imutavel, nova versao, PDF e link manual a partir de snapshot.
+- [x] 06-03-PLAN.md — Publicacao imutavel, nova versao, PDF e link manual a partir de snapshot.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

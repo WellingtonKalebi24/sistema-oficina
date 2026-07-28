@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-07-28T21:07:33.578Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-07-28T21:25:50.447Z"
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 30
-  completed_plans: 28
-  percent: 93
+  completed_plans: 29
+  percent: 97
 ---
 
 # Project State: JO.IA
@@ -77,7 +77,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 6 with 06-03 quote publication and versioning.
+Continue Phase 6 with 06-04 authenticated quote UI.
 
 ### Quick Tasks Completed
 
@@ -112,8 +112,8 @@ Continue Phase 6 with 06-03 quote publication and versioning.
 
 ## Session
 
-**Last session:** 2026-07-28T21:07:33.511Z
-**Stopped at:** Completed 06-02-PLAN.md
+**Last session:** 2026-07-28T21:25:50.379Z
+**Stopped at:** Completed 06-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -148,6 +148,7 @@ Continue Phase 6 with 06-03 quote publication and versioning.
 | Phase 05 P10 | 22min | 2 tasks | 17 files |
 | Phase 06 P01 | 7 min | 2 tasks | 7 files |
 | Phase 06 P02 | 15 min | 2 tasks | 8 files |
+| Phase 06 P03 | 14 min | 3 tasks | 9 files |
 
 ## Decisions
 
@@ -222,3 +223,5 @@ Continue Phase 6 with 06-03 quote publication and versioning.
 - [Phase 06]: Discount limit handling starts as warning metadata, not a blocking permission rule, matching D-08.
 - [Phase 06]: The draft quote API serializes check-in-origin quotes as sourceKind check_in while persisting the 06-01 database-constrained value check-in.
 - [Phase 06]: Draft quote totals store aggregate discount and surcharge values, with quote-level adjustment details recalculated from submitted payloads during this MVP slice.
+- [Phase 06]: Published quote versions preserve persisted draft aggregate totals from 06-02 because the MVP draft schema stores aggregate quote-level adjustments, not separate quote-level adjustment components.
+- [Phase 06]: Quote approval links use SHA-256 token hashes in storage and expose the plaintext token only as part of the authenticated manual-copy URL response.
