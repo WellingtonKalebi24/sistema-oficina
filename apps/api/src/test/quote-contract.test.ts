@@ -315,6 +315,7 @@ describe("quote draft API contract", () => {
       headers: bearerHeaders(sessionA.accessToken),
     });
 
+    expect(vehicleA.tenantId).toBe(tenantA.tenantId);
     expect(foreignCreate.status).toBe(400);
     expect(mismatchedVehicle.status).toBe(400);
     expect(foreignRead.status).toBe(404);

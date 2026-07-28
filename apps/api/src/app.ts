@@ -14,6 +14,7 @@ import { createCustomersRouter } from "./http/routes/customers.js";
 import { createFoundationChecksRouter } from "./http/routes/foundationChecks.js";
 import { createHealthRouter } from "./http/routes/health.js";
 import { createRolesRouter } from "./http/routes/roles.js";
+import { createQuotesRouter } from "./http/routes/quotes.js";
 import { createReceptionAttachmentsRouter } from "./http/routes/receptionAttachments.js";
 import { createReceptionRouter } from "./http/routes/reception.js";
 import { createStockCatalogRouter } from "./http/routes/stockCatalog.js";
@@ -77,6 +78,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use(createStockMovementsRouter(prisma));
   app.use(createReceptionRouter(prisma));
   app.use(createReceptionAttachmentsRouter(prisma, env.receptionUploadRoot));
+  app.use(createQuotesRouter(prisma));
   app.use(createTenantSettingsRouter(prisma));
   app.use(createUsersRouter(prisma));
   app.use(createRolesRouter(prisma));
