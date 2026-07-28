@@ -23,6 +23,85 @@ afterEach(() => {
 });
 
 describe("JO.IA reception agenda UI", () => {
+  it("D-13/D-14 renders the tenant agenda view mode and persists changes through company settings", async () => {
+    const updateSettings = vi.fn(({ init }: { init: RequestInit | undefined }) => {
+      expect(JSON.parse(init?.body as string)).toMatchObject({
+        agendaViewMode: "calendar",
+        tradeName: "Oficina Joia",
+      });
+    });
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes({
+        ...tenantSettings,
+        agendaViewMode: "kanban",
+      }),
+      ...customerVehicleRoutes(),
+      route(
+        "PUT",
+        "/tenant-settings",
+        {
+          data: {
+            ...tenantSettings,
+            agendaViewMode: "calendar",
+          },
+        },
+        200,
+        updateSettings,
+      ),
+    ]);
+
+    render(<App />);
+    await login();
+
+    fireEvent.click(screen.getByRole("button", { name: "Oficina" }));
+
+    const viewMode = await screen.findByLabelText("Visualizacao da agenda");
+    expect(viewMode).toHaveValue("kanban");
+    expect(viewMode).toHaveTextContent("Tabela por horario");
+    expect(viewMode).toHaveTextContent("Calendario visual");
+    expect(viewMode).toHaveTextContent("Kanban por status");
+
+    fireEvent.change(viewMode, { target: { value: "calendar" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar oficina" }));
+
+    expect(await screen.findByText("Configuracoes da oficina atualizadas.")).toBeInTheDocument();
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    assertNoCommunicationLanguage();
+  });
+
+  it("D-13 keeps the agenda table as the default anchor and renders tenant mode alternatives from real appointments", async () => {
+    globalThis.fetch = createFetchMock([
+      route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
+      route("POST", "/auth/login", sessionPayload()),
+      ...adminRoutes({
+        ...tenantSettings,
+        agendaViewMode: "calendar",
+      }),
+      ...customerVehicleRoutes(),
+      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+    ]);
+
+    render(<App />);
+    await login();
+    fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+
+    const table = await screen.findByRole("table", { name: "Agenda diaria" });
+    expect(table).toHaveTextContent("Maria Oliveira");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Calendario visual" }));
+    const calendar = await screen.findByLabelText("Calendario visual da agenda");
+    expect(calendar).toHaveTextContent("Maria Oliveira");
+    expect(calendar).toHaveTextContent("Troca de oleo");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Kanban por status" }));
+    const kanban = await screen.findByLabelText("Kanban da agenda por status");
+    expect(kanban).toHaveTextContent("Agendado");
+    expect(kanban).toHaveTextContent("Maria Oliveira");
+    assertNoCommunicationLanguage();
+  });
+
   it("D-12/D-17 exposes Agenda navigation and renders daily appointments as the primary table", async () => {
     globalThis.fetch = createFetchMock([
       route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
@@ -485,9 +564,9 @@ function jsonResponse(body: unknown, status = 200): Response {
   } as Response;
 }
 
-function adminRoutes() {
+function adminRoutes(settings = tenantSettings) {
   return [
-    route("GET", "/tenant-settings", { data: tenantSettings }),
+    route("GET", "/tenant-settings", { data: settings }),
     route("GET", "/users", { data: users }),
     route("GET", "/roles", { data: roles }),
     route("GET", "/permissions", { data: permissionCatalog }),

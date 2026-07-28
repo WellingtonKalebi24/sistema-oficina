@@ -81,6 +81,13 @@ type CheckInBody = {
   vehicleId: string;
 };
 
+type TenantSettingsBody = {
+  agendaViewMode: "table" | "calendar" | "kanban";
+  id: string;
+  tenantId: string;
+  tradeName: string;
+};
+
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
 
@@ -126,6 +133,48 @@ afterAll(async () => {
 });
 
 describe("reception appointment API contract", () => {
+  it("D-13 reads, updates and validates the tenant agenda visualization mode", async () => {
+    const fixture = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Modo Agenda",
+    });
+    const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
+    const headers = authHeaders(session.accessToken);
+
+    const initialResponse = await fetch(`${baseUrl}/tenant-settings`, {
+      headers: bearerHeaders(session.accessToken),
+    });
+    const updateResponse = await fetch(`${baseUrl}/tenant-settings`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        agendaViewMode: "calendar",
+      }),
+    });
+    const invalidResponse = await fetch(`${baseUrl}/tenant-settings`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        agendaViewMode: "timeline",
+      }),
+    });
+
+    expect(initialResponse.status).toBe(200);
+    expect(updateResponse.status).toBe(200);
+    expect(invalidResponse.status).toBe(400);
+
+    const initial = (await initialResponse.json()) as ApiData<TenantSettingsBody>;
+    const updated = (await updateResponse.json()) as ApiData<TenantSettingsBody>;
+
+    expect(initial.data).toMatchObject({
+      agendaViewMode: "table",
+      tenantId: fixture.tenantId,
+    });
+    expect(updated.data).toMatchObject({
+      agendaViewMode: "calendar",
+      tenantId: fixture.tenantId,
+    });
+  });
+
   it("REC-01/REC-02 creates, edits, cancels and lists daily appointments ordered by time", async () => {
     const fixture = await createTenantWithAdmin(prisma, {
       tenantName: "Oficina Agenda",

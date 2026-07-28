@@ -57,6 +57,11 @@ type CheckInBody = {
   vehicleId: string;
 };
 
+type TenantSettingsBody = {
+  agendaViewMode: "table" | "calendar" | "kanban";
+  tenantId: string;
+};
+
 beforeAll(async () => {
   process.env.DATABASE_URL = connectionString;
 
@@ -102,6 +107,47 @@ afterAll(async () => {
 });
 
 describe("reception tenant isolation hardening", () => {
+  it("D-14 stores agenda visualization mode per authenticated tenant settings", async () => {
+    const tenantA = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Visual A",
+    });
+    const tenantB = await createTenantWithAdmin(prisma, {
+      tenantName: "Oficina Visual B",
+    });
+    const sessionA = await loginAs({ baseUrl }, tenantA.adminEmail, tenantA.adminPassword);
+    const sessionB = await loginAs({ baseUrl }, tenantB.adminEmail, tenantB.adminPassword);
+
+    const updateA = await fetch(`${baseUrl}/tenant-settings`, {
+      method: "PUT",
+      headers: authHeaders(sessionA.accessToken),
+      body: JSON.stringify({
+        agendaViewMode: "kanban",
+      }),
+    });
+    const readA = await fetch(`${baseUrl}/tenant-settings`, {
+      headers: bearerHeaders(sessionA.accessToken),
+    });
+    const readB = await fetch(`${baseUrl}/tenant-settings`, {
+      headers: bearerHeaders(sessionB.accessToken),
+    });
+
+    expect(updateA.status).toBe(200);
+    expect(readA.status).toBe(200);
+    expect(readB.status).toBe(200);
+
+    const bodyA = (await readA.json()) as ApiData<TenantSettingsBody>;
+    const bodyB = (await readB.json()) as ApiData<TenantSettingsBody>;
+
+    expect(bodyA.data).toMatchObject({
+      agendaViewMode: "kanban",
+      tenantId: tenantA.tenantId,
+    });
+    expect(bodyB.data).toMatchObject({
+      agendaViewMode: "table",
+      tenantId: tenantB.tenantId,
+    });
+  });
+
   it("REC-07 prevents tenant A from reading, editing, cancelling or converting tenant B appointments", async () => {
     const tenantA = await createTenantWithAdmin(prisma, {
       tenantName: "Oficina Isolamento A",
