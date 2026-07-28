@@ -307,6 +307,20 @@ Plans:
 **Mode:** mvp
 **Requirements:** QTE-01, QTE-02, QTE-03, QTE-04, QTE-05, QTE-06, QTE-07, QTE-08, QTE-09, QTE-10, QTE-11
 **UI hint:** yes
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — Diagnóstico e orçamento em rascunho com itens e totais backend-authoritative.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 06-02-PLAN.md — Publicação imutável, nova versão, PDF e link manual a partir de snapshot.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 06-03-PLAN.md — UI autenticada de Orçamentos com criação, publicação, PDF e cópia manual.
 
 **Scope**
 
@@ -332,7 +346,7 @@ Plans:
 
 1. Usuário cria diagnóstico e orçamento com serviços e peças.
 2. Totais, descontos e acréscimos são calculados corretamente.
-3. Desconto acima do limite exige permissão.
+3. Desconto acima do limite exibe alerta e permanece permitido, conforme decisão D-08.
 4. Versão publicada fica imutável e nova versão preserva a anterior.
 5. PDF e link podem ser gerados para entrega manual, sem envio automático.
 
