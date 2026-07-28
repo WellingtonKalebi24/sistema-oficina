@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-07-28T20:47:28.181Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-07-28T21:07:33.578Z"
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 30
-  completed_plans: 27
-  percent: 90
+  completed_plans: 28
+  percent: 93
 ---
 
 # Project State: JO.IA
@@ -77,7 +77,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 6 with 06-02 draft quote API implementation.
+Continue Phase 6 with 06-03 quote publication and versioning.
 
 ### Quick Tasks Completed
 
@@ -112,8 +112,8 @@ Continue Phase 6 with 06-02 draft quote API implementation.
 
 ## Session
 
-**Last session:** 2026-07-28T20:47:28.140Z
-**Stopped at:** Completed 06-01-PLAN.md
+**Last session:** 2026-07-28T21:07:33.511Z
+**Stopped at:** Completed 06-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -147,6 +147,7 @@ Continue Phase 6 with 06-02 draft quote API implementation.
 | Phase 05 P09 | 9min | 2 tasks | 4 files |
 | Phase 05 P10 | 22min | 2 tasks | 17 files |
 | Phase 06 P01 | 7 min | 2 tasks | 7 files |
+| Phase 06 P02 | 15 min | 2 tasks | 8 files |
 
 ## Decisions
 
@@ -219,3 +220,5 @@ Continue Phase 6 with 06-02 draft quote API implementation.
 - [Phase 05]: Plan 10 applied Prettier only to Phase 5 files reported by the final verify gate so close-out quality passed without broad unrelated cleanup.
 - [Phase 06]: Phase 6 stores quote status as text with the agreed values Rascunho, Publicado, Enviado, Expirado and Cancelado, guarded by migration check constraints.
 - [Phase 06]: Discount limit handling starts as warning metadata, not a blocking permission rule, matching D-08.
+- [Phase 06]: The draft quote API serializes check-in-origin quotes as sourceKind check_in while persisting the 06-01 database-constrained value check-in.
+- [Phase 06]: Draft quote totals store aggregate discount and surcharge values, with quote-level adjustment details recalculated from submitted payloads during this MVP slice.
