@@ -9,6 +9,7 @@ import {
   faBoxesStacked,
   faFolderOpen,
   faKey,
+  faFileInvoiceDollar,
   faRightFromBracket,
   faRotateRight,
   faShieldHalved,
@@ -87,6 +88,22 @@ import {
   uploadCheckInAttachment as uploadReceptionCheckInAttachment,
 } from "./api/reception.js";
 import {
+  type Quote,
+  type QuoteInput,
+  type QuoteItemInput,
+  type QuoteStatus,
+  type QuoteUpdateInput,
+  cancelQuote,
+  createNewQuoteVersion,
+  createQuote,
+  createQuoteApprovalLink,
+  fetchQuotePdf,
+  listQuotes,
+  markQuoteSent,
+  publishQuoteVersion,
+  updateQuoteDraft,
+} from "./api/quotes.js";
+import {
   type Product,
   type ProductCategory,
   type Purchase,
@@ -139,6 +156,7 @@ type View =
   | "clientes"
   | "estoque"
   | "oficina"
+  | "orcamentos"
   | "papeis"
   | "permissoes"
   | "seguranca"
@@ -155,6 +173,7 @@ type AdminData = {
   productCategories: ProductCategory[];
   products: Product[];
   purchases: Purchase[];
+  quotes: Quote[];
   roles: Role[];
   services: ServiceCatalogEntry[];
   settings: TenantSettings | null;
@@ -170,6 +189,7 @@ type BlockedState = Partial<
   Record<
     | "customers"
     | "permissions"
+    | "quotes"
     | "reception"
     | "roles"
     | "settings"
@@ -189,6 +209,7 @@ const initialAdminData: AdminData = {
   productCategories: [],
   products: [],
   purchases: [],
+  quotes: [],
   roles: [],
   services: [],
   settings: null,
@@ -356,6 +377,16 @@ function AuthAdminApp() {
 
     loads.push(...stockLoaders(usableSession));
 
+    if (hasPermission(usableSession, "quotes.read")) {
+      loads.push(
+        loadResource(
+          "quotes",
+          () => listQuotes(usableSession.accessToken),
+          (quotes) => setAdminData((current) => ({ ...current, quotes })),
+        ),
+      );
+    }
+
     await Promise.all(loads);
   }
 
@@ -407,6 +438,18 @@ function AuthAdminApp() {
 
   async function refreshStockData(currentSession: StoredSession) {
     await Promise.all(stockLoaders(currentSession));
+  }
+
+  async function refreshQuoteData(currentSession: StoredSession) {
+    if (!hasPermission(currentSession, "quotes.read")) {
+      return;
+    }
+
+    await loadResource(
+      "quotes",
+      () => listQuotes(currentSession.accessToken),
+      (quotes) => setAdminData((current) => ({ ...current, quotes })),
+    );
   }
 
   async function loadReceptionAppointments(
@@ -654,6 +697,81 @@ function AuthAdminApp() {
             }));
             setStatusMessage("Check-in concluido e status definido como Aguardando diagnostico.");
             return checkIn;
+          }}
+          onCreateQuote={async (input) => {
+            const quote = await withAuthenticatedSession(async (currentSession) => {
+              const created = await createQuote(currentSession.accessToken, input);
+              await refreshQuoteData(currentSession);
+              return created;
+            });
+            setStatusMessage("Orcamento criado em rascunho.");
+            return quote;
+          }}
+          onUpdateQuoteDraft={async (quoteId, input) => {
+            const quote = await withAuthenticatedSession(async (currentSession) => {
+              const updated = await updateQuoteDraft(currentSession.accessToken, quoteId, input);
+              await refreshQuoteData(currentSession);
+              return updated;
+            });
+            setStatusMessage("Rascunho salvo com totais calculados pela API.");
+            return quote;
+          }}
+          onPublishQuote={async (quoteId) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await publishQuoteVersion(currentSession.accessToken, quoteId);
+              await refreshQuoteData(currentSession);
+            });
+            setStatusMessage("Versao publicada com bloqueio comercial.");
+          }}
+          onCreateQuoteVersion={async (quoteId) => {
+            const quote = await withAuthenticatedSession(async (currentSession) => {
+              const created = await createNewQuoteVersion(currentSession.accessToken, quoteId);
+              await refreshQuoteData(currentSession);
+              return created;
+            });
+            setStatusMessage("Nova versao em rascunho criada a partir da publicada.");
+            return quote;
+          }}
+          onCopyQuoteLink={async (quote) => {
+            const versionId = quote.currentVersionId;
+
+            if (!versionId) {
+              throw new ApiError(409, "Publique a versao para copiar o link seguro.");
+            }
+
+            const link = await withAuthenticatedSession((currentSession) =>
+              createQuoteApprovalLink(currentSession.accessToken, quote.id, versionId),
+            );
+            await navigator.clipboard.writeText(link.approvalUrl);
+            setStatusMessage("Link copiado para entrega manual.");
+          }}
+          onOpenQuotePdf={async (quote) => {
+            const versionId = quote.currentVersionId;
+
+            if (!versionId) {
+              throw new ApiError(409, "Publique a versao para gerar PDF.");
+            }
+
+            const blob = await withAuthenticatedSession((currentSession) =>
+              fetchQuotePdf(currentSession.accessToken, quote.id, versionId),
+            );
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, "_blank", "noopener");
+            setStatusMessage("PDF carregado a partir da versao publicada.");
+          }}
+          onMarkQuoteSent={async (quoteId) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await markQuoteSent(currentSession.accessToken, quoteId);
+              await refreshQuoteData(currentSession);
+            });
+            setStatusMessage("Orcamento marcado como enviado manualmente.");
+          }}
+          onCancelQuote={async (quoteId) => {
+            await withAuthenticatedSession(async (currentSession) => {
+              await cancelQuote(currentSession.accessToken, quoteId);
+              await refreshQuoteData(currentSession);
+            });
+            setStatusMessage("Orcamento cancelado com historico auditavel.");
           }}
           onCreateUser={async (input) => {
             const user = await withAuthenticatedSession((currentSession) =>
@@ -1300,6 +1418,14 @@ function AdminShell(props: {
     name: string;
     permissionKeys: string[];
   }) => Promise<void>;
+  onCreateQuote: (input: QuoteInput) => Promise<Quote>;
+  onUpdateQuoteDraft: (quoteId: string, input: QuoteUpdateInput) => Promise<Quote>;
+  onPublishQuote: (quoteId: string) => Promise<void>;
+  onCreateQuoteVersion: (quoteId: string) => Promise<Quote>;
+  onCopyQuoteLink: (quote: Quote) => Promise<void>;
+  onOpenQuotePdf: (quote: Quote) => Promise<void>;
+  onMarkQuoteSent: (quoteId: string) => Promise<void>;
+  onCancelQuote: (quoteId: string) => Promise<void>;
   onCreateUser: (input: {
     email: string;
     name: string;
@@ -1397,6 +1523,12 @@ function AdminShell(props: {
           label: "Estoque",
           permission: "stock.catalog.read",
           view: "estoque" as const,
+        },
+        {
+          icon: faFileInvoiceDollar,
+          label: "Orcamentos",
+          permission: "quotes.read",
+          view: "orcamentos" as const,
         },
       ].filter((item) => hasPermission(props.session, item.permission)),
     [props.session],
@@ -1611,6 +1743,31 @@ function AdminShell(props: {
               reservations={props.adminData.stockReservations}
               services={props.adminData.services}
               suppliers={props.adminData.suppliers}
+            />
+          ) : null}
+          {props.activeView === "orcamentos" ? (
+            <QuotesPanel
+              blocked={props.blocked.quotes}
+              canLink={hasPermission(props.session, "quotes.link")}
+              canPdf={hasPermission(props.session, "quotes.pdf")}
+              canPublish={hasPermission(props.session, "quotes.publish")}
+              canStatus={hasPermission(props.session, "quotes.status")}
+              canWrite={hasPermission(props.session, "quotes.write")}
+              checkIns={props.adminData.checkIns}
+              customers={props.adminData.customers}
+              onCancelQuote={props.onCancelQuote}
+              onCopyLink={props.onCopyQuoteLink}
+              onCreateQuote={props.onCreateQuote}
+              onCreateVersion={props.onCreateQuoteVersion}
+              onLoadCheckIns={props.onLoadCheckIns}
+              onMarkSent={props.onMarkQuoteSent}
+              onOpenPdf={props.onOpenQuotePdf}
+              onPublish={props.onPublishQuote}
+              onUpdateDraft={props.onUpdateQuoteDraft}
+              products={props.adminData.products}
+              quotes={props.adminData.quotes}
+              services={props.adminData.services}
+              vehicles={props.adminData.vehicles}
             />
           ) : null}
           {props.activeView === "seguranca" ? (
@@ -3049,6 +3206,945 @@ function SettingsPanel({
       </form>
     </section>
   );
+}
+
+type QuoteSourceMode = "check_in" | "direct";
+
+function QuotesPanel({
+  blocked,
+  canLink,
+  canPdf,
+  canPublish,
+  canStatus,
+  canWrite,
+  checkIns,
+  customers,
+  onCancelQuote,
+  onCopyLink,
+  onCreateQuote,
+  onCreateVersion,
+  onLoadCheckIns,
+  onMarkSent,
+  onOpenPdf,
+  onPublish,
+  onUpdateDraft,
+  products,
+  quotes,
+  services,
+  vehicles,
+}: {
+  blocked: string | undefined;
+  canLink: boolean;
+  canPdf: boolean;
+  canPublish: boolean;
+  canStatus: boolean;
+  canWrite: boolean;
+  checkIns: CheckIn[];
+  customers: Customer[];
+  onCancelQuote: (quoteId: string) => Promise<void>;
+  onCopyLink: (quote: Quote) => Promise<void>;
+  onCreateQuote: (input: QuoteInput) => Promise<Quote>;
+  onCreateVersion: (quoteId: string) => Promise<Quote>;
+  onLoadCheckIns: () => Promise<void>;
+  onMarkSent: (quoteId: string) => Promise<void>;
+  onOpenPdf: (quote: Quote) => Promise<void>;
+  onPublish: (quoteId: string) => Promise<void>;
+  onUpdateDraft: (quoteId: string, input: QuoteUpdateInput) => Promise<Quote>;
+  products: Product[];
+  quotes: Quote[];
+  services: ServiceCatalogEntry[];
+  vehicles: Vehicle[];
+}) {
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    checkInId: "",
+    customerId: customers[0]?.id ?? "",
+    source: "check_in" as QuoteSourceMode,
+    vehicleId: vehicles[0]?.id ?? "",
+  });
+  const [draftForm, setDraftForm] = useState({
+    causa: "",
+    customerNotes: "",
+    estimatedDeliveryAt: "",
+    internalNotes: "",
+    problema: "",
+    quoteDiscountAmount: "0.00",
+    quoteSurchargeAmount: "0.00",
+    recomendacao: "",
+    validUntil: "",
+  });
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState({ search: "", source: "", status: "" });
+  const [pendingCancel, setPendingCancel] = useState<Quote | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(quotes[0]?.id ?? null);
+  const [serviceId, setServiceId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [itemDrafts, setItemDrafts] = useState<QuoteItemInput[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const firstCustomerId = customers[0]?.id ?? "";
+    const firstVehicleId = vehicles.find((vehicle) => vehicle.customerId === firstCustomerId)?.id ?? "";
+
+    setCreateForm((current) => ({
+      ...current,
+      customerId: current.customerId || firstCustomerId,
+      vehicleId: current.vehicleId || firstVehicleId || vehicles[0]?.id || "",
+    }));
+  }, [customers, vehicles]);
+
+  const selectedQuote = quotes.find((quote) => quote.id === selectedId) ?? quotes[0] ?? null;
+
+  useEffect(() => {
+    if (!selectedQuote) {
+      return;
+    }
+
+    setSelectedId(selectedQuote.id);
+    setDraftForm({
+      causa: selectedQuote.diagnosis.causa ?? "",
+      customerNotes: selectedQuote.customerNotes ?? "",
+      estimatedDeliveryAt: toDateInputValue(selectedQuote.estimatedDeliveryAt),
+      internalNotes: selectedQuote.internalNotes ?? "",
+      problema: selectedQuote.diagnosis.problema ?? "",
+      quoteDiscountAmount: estimateQuoteLevelDiscount(selectedQuote),
+      quoteSurchargeAmount: estimateQuoteLevelSurcharge(selectedQuote),
+      recomendacao: selectedQuote.diagnosis.recomendacao ?? "",
+      validUntil: toDateInputValue(selectedQuote.validUntil),
+    });
+    setItemDrafts([]);
+  }, [selectedQuote?.id, selectedQuote?.status, selectedQuote?.updatedAt]);
+
+  useEffect(() => {
+    if (!serviceId && services[0]?.id) {
+      setServiceId(services[0].id);
+    }
+    if (!productId && products[0]?.id) {
+      setProductId(products[0].id);
+    }
+  }, [productId, products, serviceId, services]);
+
+  if (blocked) {
+    return <BlockedPanel message={blocked} />;
+  }
+
+  const filteredQuotes = quotes.filter((quote) => {
+    const haystack =
+      `${quote.customer.name} ${quote.vehicle.plateNormalized ?? ""} ${quote.status}`.toLowerCase();
+
+    return (
+      (!filter.search || haystack.includes(filter.search.toLowerCase())) &&
+      (!filter.status || quote.status === filter.status) &&
+      (!filter.source || quote.sourceKind === filter.source)
+    );
+  });
+  const servicesItems = selectedQuote?.items.filter((item) => item.kind === "service") ?? [];
+  const productItems = selectedQuote?.items.filter((item) => item.kind === "product") ?? [];
+  const isPublished = selectedQuote?.status !== "Rascunho";
+  const canUsePublishedArtifacts = Boolean(selectedQuote?.currentVersionId && isPublished);
+
+  async function runQuoteAction(action: () => Promise<void>) {
+    setSaving(true);
+    setError("");
+
+    try {
+      await action();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Nao foi possivel sincronizar o orcamento.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await runQuoteAction(async () => {
+      const checkIn = checkIns.find((item) => item.id === createForm.checkInId);
+      const customerId =
+        createForm.source === "check_in" ? checkIn?.customerId : createForm.customerId;
+      const vehicleId = createForm.source === "check_in" ? checkIn?.vehicleId : createForm.vehicleId;
+
+      if (!customerId || !vehicleId) {
+        throw new Error("Selecione cliente e veiculo para criar o orcamento.");
+      }
+
+      const input: QuoteInput = {
+        ...(createForm.source === "check_in" && createForm.checkInId
+          ? { checkInId: createForm.checkInId }
+          : {}),
+        customerId,
+        vehicleId,
+      };
+
+      if (createForm.source === "check_in" && checkIn) {
+        input.diagnosis = {
+          causa: null,
+          problema: checkIn.damageNotes,
+          recomendacao: checkIn.appointment.expectedService,
+        };
+      }
+
+      const quote = await onCreateQuote(input);
+      setSelectedId(quote.id);
+      setCreating(false);
+    });
+  }
+
+  function addServiceItem() {
+    const service = services.find((item) => item.id === serviceId);
+
+    if (!service) {
+      return;
+    }
+
+    setItemDrafts((current) => [
+      ...current,
+      {
+        description: service.name,
+        discountAmount: "0.00",
+        kind: "service",
+        quantity: "1.000",
+        serviceCatalogEntryId: service.id,
+        surchargeAmount: "0.00",
+        unitPrice: service.basePrice,
+      },
+    ]);
+  }
+
+  function addProductItem() {
+    const product = products.find((item) => item.id === productId);
+
+    const salePrice = product?.salePrice;
+
+    if (!product || !salePrice) {
+      return;
+    }
+
+    setItemDrafts((current) => [
+      ...current,
+      {
+        description: product.name,
+        discountAmount: "0.00",
+        kind: "product",
+        productId: product.id,
+        quantity: "1.000",
+        surchargeAmount: "0.00",
+        unitPrice: salePrice,
+      },
+    ]);
+  }
+
+  function draftItemsForSubmit(): QuoteItemInput[] {
+    const existing =
+      selectedQuote?.items.map((item) => {
+        const input: QuoteItemInput = {
+          description: item.description,
+          discountAmount: item.discountAmount,
+          kind: item.kind,
+          quantity: item.quantity,
+          surchargeAmount: item.surchargeAmount,
+          unitPrice: item.unitPrice,
+        };
+
+        if (item.productId) {
+          input.productId = item.productId;
+        }
+
+        if (item.serviceCatalogEntryId) {
+          input.serviceCatalogEntryId = item.serviceCatalogEntryId;
+        }
+
+        return input;
+      }) ?? [];
+
+    return [...existing, ...itemDrafts];
+  }
+
+  async function saveDraft() {
+    if (!selectedQuote) {
+      return;
+    }
+
+    await onUpdateDraft(selectedQuote.id, {
+      customerNotes: draftForm.customerNotes,
+      diagnosis: {
+        causa: draftForm.causa,
+        problema: draftForm.problema,
+        recomendacao: draftForm.recomendacao,
+      },
+      estimatedDeliveryAt: fromDateInputValue(draftForm.estimatedDeliveryAt),
+      internalNotes: draftForm.internalNotes,
+      items: draftItemsForSubmit(),
+      quoteDiscountAmount: draftForm.quoteDiscountAmount,
+      quoteSurchargeAmount: draftForm.quoteSurchargeAmount,
+      validUntil: fromDateInputValue(draftForm.validUntil),
+    });
+    setItemDrafts([]);
+  }
+
+  return (
+    <section className="quotes-workspace" aria-label="Orcamentos">
+      <section className="panel quote-controls" aria-label="Filtros de orcamento">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Orcamentos</p>
+            <h2>Propostas comerciais</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCreating((current) => !current);
+              if (checkIns.length === 0) {
+                void onLoadCheckIns();
+              }
+            }}
+            disabled={!canWrite}
+          >
+            Criar orcamento
+          </button>
+        </div>
+        <div className="form-grid quote-filter-grid">
+          <label className="field">
+            <span>Buscar</span>
+            <input
+              value={filter.search}
+              onChange={(event) =>
+                setFilter((current) => ({ ...current, search: event.target.value }))
+              }
+              placeholder="Cliente, placa ou status"
+            />
+          </label>
+          <label className="field">
+            <span>Status</span>
+            <select
+              value={filter.status}
+              onChange={(event) =>
+                setFilter((current) => ({ ...current, status: event.target.value }))
+              }
+            >
+              <option value="">Todos</option>
+              {(["Rascunho", "Publicado", "Enviado", "Expirado", "Cancelado"] as QuoteStatus[]).map(
+                (status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+          <label className="field">
+            <span>Origem</span>
+            <select
+              value={filter.source}
+              onChange={(event) =>
+                setFilter((current) => ({ ...current, source: event.target.value }))
+              }
+            >
+              <option value="">Todas</option>
+              <option value="check_in">Check-in</option>
+              <option value="direct">Direto</option>
+            </select>
+          </label>
+        </div>
+        {creating ? (
+          <form
+            className="quote-create-form"
+            aria-label="Orcamento"
+            onSubmit={(event) => void submitCreate(event)}
+          >
+            <label className="field">
+              <span>Origem do orcamento</span>
+              <select
+                value={createForm.source}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    source: event.target.value as QuoteSourceMode,
+                  }))
+                }
+              >
+                <option value="check_in">Check-in</option>
+                <option value="direct">Direto</option>
+              </select>
+            </label>
+            {createForm.source === "check_in" ? (
+              <label className="field">
+                <span>Check-in de origem</span>
+                <select
+                  value={createForm.checkInId}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({ ...current, checkInId: event.target.value }))
+                  }
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {checkIns.map((checkIn) => (
+                    <option key={checkIn.id} value={checkIn.id}>
+                      {checkIn.customer.name} - {checkIn.vehicle.plateNormalized ?? "sem placa"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <label className="field">
+                  <span>Cliente</span>
+                  <select
+                    value={createForm.customerId}
+                    onChange={(event) =>
+                      setCreateForm((current) => ({ ...current, customerId: event.target.value }))
+                    }
+                    required
+                  >
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Veiculo</span>
+                  <select
+                    value={createForm.vehicleId}
+                    onChange={(event) =>
+                      setCreateForm((current) => ({ ...current, vehicleId: event.target.value }))
+                    }
+                    required
+                  >
+                    {vehicles
+                      .filter(
+                        (vehicle) =>
+                          !createForm.customerId || vehicle.customerId === createForm.customerId,
+                      )
+                      .map((vehicle) => (
+                        <option key={vehicle.id} value={vehicle.id}>
+                          {vehicle.plateNormalized ?? vehicle.id}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </>
+            )}
+            <button type="submit" disabled={saving || !canWrite}>
+              Criar orcamento
+            </button>
+          </form>
+        ) : null}
+      </section>
+
+      <section className="panel">
+        <PanelTitle
+          eyebrow="Tabela"
+          title="Orcamentos recentes"
+          countLabel={`${filteredQuotes.length} itens`}
+        />
+        {filteredQuotes.length === 0 ? (
+          <div className="empty-state">
+            <strong>Nenhum orcamento encontrado</strong>
+            <span>
+              Crie um orcamento a partir de um check-in ou selecione cliente e veiculo para
+              iniciar direto.
+            </span>
+          </div>
+        ) : (
+          <div className="table-wrap quote-table-wrap">
+            <table aria-label="Orcamentos recentes">
+              <thead>
+                <tr>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Veiculo</th>
+                  <th scope="col">Origem</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Versao</th>
+                  <th scope="col">Validade</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredQuotes.map((quote) => (
+                  <tr
+                    key={quote.id}
+                    className={selectedQuote?.id === quote.id ? "quote-row--selected" : ""}
+                  >
+                    <td>{quote.customer.name}</td>
+                    <td>{quote.vehicle.plateNormalized ?? quote.vehicle.id}</td>
+                    <td>{quote.sourceKind === "check_in" ? "Check-in" : "Direto"}</td>
+                    <td>
+                      <span className="pill">{quote.status}</span>
+                    </td>
+                    <td>{quote.currentVersionId ? "Publicada" : "Rascunho"}</td>
+                    <td>{quote.validUntil ? formatDateOnly(quote.validUntil) : "Sem validade"}</td>
+                    <td>{formatCurrency(Number(quote.totals.totalAmount))}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() => setSelectedId(quote.id)}
+                      >
+                        Abrir orcamento
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {selectedQuote ? (
+        <section className="quote-detail-grid" aria-label="Detalhe do orcamento">
+          <section className="panel quote-diagnosis-panel">
+            <PanelTitle
+              eyebrow="Diagnostico"
+              title={selectedQuote.customer.name}
+              countLabel={selectedQuote.status}
+            />
+            <p className="helper-text">
+              {selectedQuote.sourceKind === "check_in"
+                ? "Origem Check-in: problema, causa e recomendacao sao exigidos antes de publicar."
+                : "Origem Direto: diagnostico opcional para orcamento comercial simples."}
+            </p>
+            <label className="field">
+              <span>Problema</span>
+              <textarea
+                disabled={isPublished}
+                value={draftForm.problema}
+                onChange={(event) =>
+                  setDraftForm((current) => ({ ...current, problema: event.target.value }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Causa</span>
+              <textarea
+                disabled={isPublished}
+                value={draftForm.causa}
+                onChange={(event) =>
+                  setDraftForm((current) => ({ ...current, causa: event.target.value }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Recomendacao</span>
+              <textarea
+                disabled={isPublished}
+                value={draftForm.recomendacao}
+                onChange={(event) =>
+                  setDraftForm((current) => ({ ...current, recomendacao: event.target.value }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Observacoes Interno</span>
+              <textarea
+                disabled={isPublished}
+                value={draftForm.internalNotes}
+                onChange={(event) =>
+                  setDraftForm((current) => ({ ...current, internalNotes: event.target.value }))
+                }
+              />
+            </label>
+          </section>
+
+          <section className="panel quote-commercial-panel">
+            <PanelTitle
+              eyebrow="Comercial"
+              title="Itens e totais"
+              countLabel={`${selectedQuote.items.length + itemDrafts.length} itens`}
+            />
+            {isPublished ? (
+              <p className="callout quote-lock" role="status">
+                Versao publicada: valores comerciais ficam bloqueados. Crie nova versao para
+                alterar itens ou totais.
+              </p>
+            ) : null}
+            <div className="quote-item-adders">
+              <label className="field">
+                <span>Servico</span>
+                <select
+                  value={serviceId}
+                  onChange={(event) => setServiceId(event.target.value)}
+                  disabled={isPublished}
+                >
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={addServiceItem}
+                disabled={isPublished || !canWrite}
+              >
+                Adicionar servico
+              </button>
+              <label className="field">
+                <span>Produto/peca</span>
+                <select
+                  value={productId}
+                  onChange={(event) => setProductId(event.target.value)}
+                  disabled={isPublished}
+                >
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} - disponivel {product.availableQuantity}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={addProductItem}
+                disabled={isPublished || !canWrite}
+              >
+                Adicionar produto
+              </button>
+            </div>
+            <QuoteItemGroup
+              items={servicesItems}
+              pending={itemDrafts.filter((item) => item.kind === "service")}
+              title="Servicos"
+            />
+            <QuoteItemGroup
+              items={productItems}
+              pending={itemDrafts.filter((item) => item.kind === "product")}
+              title="Produtos/pecas"
+            />
+            <div className="quote-date-grid">
+              <label className="field">
+                <span>Validade da proposta</span>
+                <input
+                  disabled={isPublished}
+                  type="date"
+                  value={draftForm.validUntil}
+                  onChange={(event) =>
+                    setDraftForm((current) => ({ ...current, validUntil: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Entrega estimada</span>
+                <input
+                  disabled={isPublished}
+                  type="date"
+                  value={draftForm.estimatedDeliveryAt}
+                  onChange={(event) =>
+                    setDraftForm((current) => ({
+                      ...current,
+                      estimatedDeliveryAt: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="quote-adjustment-grid">
+              <label className="field">
+                <span>Desconto do orcamento</span>
+                <input
+                  disabled={isPublished}
+                  inputMode="decimal"
+                  value={draftForm.quoteDiscountAmount}
+                  onChange={(event) =>
+                    setDraftForm((current) => ({
+                      ...current,
+                      quoteDiscountAmount: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Acrescimo do orcamento</span>
+                <input
+                  disabled={isPublished}
+                  inputMode="decimal"
+                  value={draftForm.quoteSurchargeAmount}
+                  onChange={(event) =>
+                    setDraftForm((current) => ({
+                      ...current,
+                      quoteSurchargeAmount: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <QuoteTotalsSummary pending={itemDrafts} quote={selectedQuote} />
+            {selectedQuote.discountWarning.triggered ? (
+              <p className="callout quote-warning" role="status">
+                {selectedQuote.discountWarning.message ??
+                  "Desconto acima do limite configurado. O sistema permite continuar, mas registra o alerta para auditoria."}
+              </p>
+            ) : null}
+            {!canUsePublishedArtifacts ? (
+              <p className="callout quote-manual-guard" role="status">
+                Publique a versao para copiar o link seguro ou gerar PDF.
+              </p>
+            ) : (
+              <p className="callout quote-manual-guard" role="status">
+                Entrega manual fora do sistema. JO.IA nao envia mensagens automaticamente.
+              </p>
+            )}
+            <div className="button-row quote-action-row">
+              {!isPublished ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void runQuoteAction(saveDraft)}
+                    disabled={saving || !canWrite}
+                  >
+                    Salvar rascunho
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void runQuoteAction(() => onPublish(selectedQuote.id))}
+                    disabled={saving || !canPublish}
+                  >
+                    Publicar versao
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void runQuoteAction(() =>
+                        onCreateVersion(selectedQuote.id).then((quote) => setSelectedId(quote.id)),
+                      )
+                    }
+                    disabled={saving || !canWrite}
+                  >
+                    Criar nova versao
+                  </button>
+                  {canLink && canUsePublishedArtifacts ? (
+                    <button
+                      type="button"
+                      onClick={() => void runQuoteAction(() => onCopyLink(selectedQuote))}
+                      disabled={saving}
+                    >
+                      Copiar link
+                    </button>
+                  ) : null}
+                  {canPdf && canUsePublishedArtifacts ? (
+                    <button
+                      type="button"
+                      onClick={() => void runQuoteAction(() => onOpenPdf(selectedQuote))}
+                      disabled={saving}
+                    >
+                      Imprimir/Gerar PDF
+                    </button>
+                  ) : null}
+                  {canStatus && selectedQuote.status === "Publicado" ? (
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      onClick={() => void runQuoteAction(() => onMarkSent(selectedQuote.id))}
+                      disabled={saving}
+                    >
+                      Marcar como enviado
+                    </button>
+                  ) : null}
+                </>
+              )}
+              {canStatus && selectedQuote.status !== "Cancelado" ? (
+                <button
+                  type="button"
+                  className="button-danger"
+                  onClick={() => setPendingCancel(selectedQuote)}
+                  disabled={saving}
+                >
+                  Cancelar orcamento
+                </button>
+              ) : null}
+            </div>
+            {pendingCancel ? (
+              <div className="confirm-strip" role="alert">
+                <span>
+                  Cancelar orcamento: Confirmar cancelamento deste orcamento? A acao fica registrada
+                  no historico.
+                </span>
+                <button
+                  type="button"
+                  className="button-danger"
+                  onClick={() => {
+                    const quote = pendingCancel;
+                    setPendingCancel(null);
+                    void runQuoteAction(() => onCancelQuote(quote.id));
+                  }}
+                >
+                  Confirmar cancelamento
+                </button>
+              </div>
+            ) : null}
+            <section className="history-panel" aria-label="Historico de versoes">
+              <div className="panel-heading panel-heading--compact">
+                <div>
+                  <p className="eyebrow">Versoes</p>
+                  <h2>Historico de versoes</h2>
+                </div>
+                <span className="pill">
+                  {selectedQuote.currentVersionId ? "1 publicada" : "Sem versao"}
+                </span>
+              </div>
+              <div className="history-row">
+                <span>
+                  {selectedQuote.currentVersionId ? "Versao publicada preservada" : "Rascunho atual"}
+                </span>
+                <strong>{selectedQuote.status}</strong>
+                <span>{formatUpdatedAt(selectedQuote.updatedAt)}</span>
+              </div>
+            </section>
+            {error ? (
+              <p className="callout callout--danger" role="status">
+                {error}
+              </p>
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function QuoteItemGroup({
+  items,
+  pending,
+  title,
+}: {
+  items: Quote["items"];
+  pending: QuoteItemInput[];
+  title: string;
+}) {
+  const rows = [
+    ...items.map((item) => ({
+      description: item.description ?? "Item",
+      quantity: item.quantity,
+      totalAmount: item.totalAmount,
+      unitPrice: item.unitPrice,
+    })),
+    ...pending.map((item) => ({
+      description: item.description ?? "Novo item",
+      quantity: item.quantity,
+      totalAmount: calculatePendingItemTotal(item),
+      unitPrice: item.unitPrice ?? "0.00",
+    })),
+  ];
+
+  return (
+    <section className="quote-item-group" aria-label={title}>
+      <div className="panel-heading panel-heading--compact">
+        <div>
+          <p className="eyebrow">{title}</p>
+          <h2>{title}</h2>
+        </div>
+        <span className="pill">{rows.length} itens</span>
+      </div>
+      {rows.length === 0 ? (
+        <div className="empty-state empty-state--compact">Nenhum item neste grupo.</div>
+      ) : (
+        <div className="table-wrap">
+          <table aria-label={title}>
+            <thead>
+              <tr>
+                <th scope="col">Descricao</th>
+                <th scope="col">Qtd</th>
+                <th scope="col">Unitario</th>
+                <th scope="col">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((item, index) => (
+                <tr key={`${item.description}-${index}`}>
+                  <td>{item.description}</td>
+                  <td>{Number(item.quantity).toLocaleString("pt-BR")}</td>
+                  <td>{formatCurrency(Number(item.unitPrice))}</td>
+                  <td>{formatCurrency(Number(item.totalAmount))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function QuoteTotalsSummary({ pending, quote }: { pending: QuoteItemInput[]; quote: Quote }) {
+  const pendingSubtotal = pending.reduce(
+    (sum, item) => sum + Number(calculatePendingItemTotal(item)),
+    0,
+  );
+  const subtotal = Number(quote.totals.subtotalAmount) + pendingSubtotal;
+
+  return (
+    <dl className="quote-summary" aria-label="Resumo financeiro do orcamento">
+      <div>
+        <dt>Subtotal</dt>
+        <dd>{formatCurrency(subtotal)}</dd>
+      </div>
+      <div>
+        <dt>Descontos dos itens</dt>
+        <dd>{formatCurrency(sumItemAmounts(quote.items, "discountAmount"))}</dd>
+      </div>
+      <div>
+        <dt>Acrescimos dos itens</dt>
+        <dd>{formatCurrency(sumItemAmounts(quote.items, "surchargeAmount"))}</dd>
+      </div>
+      <div>
+        <dt>Desconto do orcamento</dt>
+        <dd>{formatCurrency(Number(estimateQuoteLevelDiscount(quote)))}</dd>
+      </div>
+      <div>
+        <dt>Acrescimo do orcamento</dt>
+        <dd>{formatCurrency(Number(estimateQuoteLevelSurcharge(quote)))}</dd>
+      </div>
+      <div className="quote-summary-total">
+        <dt>Total final</dt>
+        <dd>{formatCurrency(Number(quote.totals.totalAmount) + pendingSubtotal)}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function estimateQuoteLevelDiscount(quote: Quote): string {
+  const itemDiscounts = sumItemAmounts(quote.items, "discountAmount");
+  return Math.max(Number(quote.totals.discountAmount) - itemDiscounts, 0).toFixed(2);
+}
+
+function estimateQuoteLevelSurcharge(quote: Quote): string {
+  const itemSurcharges = sumItemAmounts(quote.items, "surchargeAmount");
+  return Math.max(Number(quote.totals.surchargeAmount) - itemSurcharges, 0).toFixed(2);
+}
+
+function sumItemAmounts(items: Quote["items"], key: "discountAmount" | "surchargeAmount"): number {
+  return items.reduce((sum, item) => sum + Number(item[key]), 0);
+}
+
+function calculatePendingItemTotal(item: QuoteItemInput): string {
+  const total =
+    Number(item.quantity) * Number(item.unitPrice ?? "0.00") -
+    Number(item.discountAmount ?? "0.00") +
+    Number(item.surchargeAmount ?? "0.00");
+  return Math.max(total, 0).toFixed(2);
+}
+
+function toDateInputValue(value: string | null | undefined): string {
+  return value ? value.slice(0, 10) : "";
+}
+
+function fromDateInputValue(value: string): string | null {
+  return value ? `${value}T00:00:00.000Z` : null;
+}
+
+function formatDateOnly(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(new Date(value));
 }
 
 type StockTab =

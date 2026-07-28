@@ -579,6 +579,7 @@ export function serializeQuote(quote: QuoteWithRelations) {
     checkInId: quote.checkInId,
     createdAt: quote.createdAt.toISOString(),
     createdByUserId: quote.createdByUserId,
+    currentVersionId: quote.currentVersionId,
     customer: quote.customer,
     customerId: quote.customerId,
     customerNotes: quote.customerNotes,

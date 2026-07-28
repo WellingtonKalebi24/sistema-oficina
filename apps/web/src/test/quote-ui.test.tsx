@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App.js";
@@ -80,6 +80,7 @@ describe("JO.IA quote UI", () => {
       route("POST", "/quotes", { data: draftQuote }, 201, createAssert),
       route("PATCH", "/quotes/quote-1", { data: warningDraftQuote }, 200, updateAssert),
       route("GET", "/quotes", { data: [warningDraftQuote] }),
+      route("GET", "/quotes", { data: [warningDraftQuote] }),
       route("POST", "/quotes/quote-1/publish", { data: publishedVersion }),
       route("GET", "/quotes", { data: [publishedQuote] }),
     ]);
@@ -101,7 +102,7 @@ describe("JO.IA quote UI", () => {
       target: { value: "check-in-1" },
     });
     fireEvent.click(within(form).getByRole("button", { name: "Criar orcamento" }));
-    expect(createAssert).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(createAssert).toHaveBeenCalledTimes(1));
 
     const workspace = await screen.findByRole("region", { name: "Detalhe do orcamento" });
     expect(workspace).toHaveTextContent("Servicos");
@@ -196,7 +197,13 @@ describe("JO.IA quote UI", () => {
     expect(clipboardSpy).toHaveBeenCalledWith("http://localhost:3001/quote-approval/token-publico");
 
     fireEvent.click(within(workspace).getByRole("button", { name: "Imprimir/Gerar PDF" }));
-    expect(window.open).toHaveBeenCalledWith("blob:http://localhost/orcamento-pdf", "_blank", "noopener");
+    await waitFor(() =>
+      expect(window.open).toHaveBeenCalledWith(
+        "blob:http://localhost/orcamento-pdf",
+        "_blank",
+        "noopener",
+      ),
+    );
 
     fireEvent.click(within(workspace).getByRole("button", { name: "Marcar como enviado" }));
     expect(await screen.findByText("Orcamento marcado como enviado manualmente.")).toBeInTheDocument();
