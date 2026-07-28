@@ -51,8 +51,9 @@ const requiredStockMovementModels = [
   "StockReservation",
 ] as const;
 
+const requiredQuoteModels = ["Quote", "QuoteItem"] as const;
+
 const forbiddenBusinessOrCommunicationModels = [
-  "Quote",
   "WorkOrder",
   "Payment",
   "Notification",
@@ -136,6 +137,26 @@ describe("Prisma schema baseline", () => {
     expect(schema).toMatch(/balanceAfterPhysical\s+Int\s+@map\("balance_after_physical"\)/);
     expect(schema).toMatch(/balanceAfterReserved\s+Int\s+@map\("balance_after_reserved"\)/);
     expect(schema).toMatch(/balanceAfterAvailable\s+Int\s+@map\("balance_after_available"\)/);
+  });
+
+  it("contains the Phase 6 draft quote schema foundation", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+
+    for (const model of requiredQuoteModels) {
+      expect(schema).toMatch(new RegExp(`model\\s+${model}\\b`));
+    }
+
+    expect(schema).toMatch(
+      /quoteDiscountWarningPercent\s+Decimal\s+@default\(10\.00\)\s+@map\("quote_discount_warning_percent"\)/,
+    );
+    expect(schema).toMatch(/sourceKind\s+String\s+@map\("source_kind"\)/);
+    expect(schema).toMatch(/status\s+String\s+@default\("Rascunho"\)/);
+    expect(schema).toMatch(/diagnosisProblema\s+String\?\s+@map\("diagnosis_problema"\)/);
+    expect(schema).toMatch(/diagnosisCausa\s+String\?\s+@map\("diagnosis_causa"\)/);
+    expect(schema).toMatch(/diagnosisRecomendacao\s+String\?\s+@map\("diagnosis_recomendacao"\)/);
+    expect(schema).toMatch(/validUntil\s+DateTime\?\s+@map\("valid_until"\)/);
+    expect(schema).toMatch(/estimatedDeliveryAt\s+DateTime\?\s+@map\("estimated_delivery_at"\)/);
+    expect(schema).toMatch(/discountWarningTriggered\s+Boolean\s+@default\(false\)/);
   });
 
   it("keeps out-of-scope business and communication entities out of the schema", async () => {
