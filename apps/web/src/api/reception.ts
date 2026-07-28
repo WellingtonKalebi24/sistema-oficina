@@ -30,6 +30,22 @@ export type Appointment = {
 
 export type CheckInStatus = "Aguardando diagnostico";
 
+export type AttachmentCategory = "Avaria" | "Documento" | "Painel" | "Motor" | "Interior" | "Outro";
+
+export type CheckInAttachment = {
+  category: AttachmentCategory;
+  checkInId: string;
+  createdAt: string;
+  deletedAt: string | null;
+  id: string;
+  mimeType: string;
+  originalName: string;
+  sizeBytes: number;
+  storedName: string;
+  tenantId: string;
+  uploadedByUserId: string | null;
+};
+
 export type CheckInChecklistItem = {
   condition: string;
   id?: string;
@@ -186,6 +202,63 @@ export async function updateCheckIn(
   });
 }
 
+export async function listCheckInAttachments(
+  accessToken: string,
+  checkInId: string,
+): Promise<CheckInAttachment[]> {
+  return request(`/reception/check-ins/${checkInId}/attachments`, accessToken);
+}
+
+export async function uploadCheckInAttachment(
+  accessToken: string,
+  checkInId: string,
+  input: { category: AttachmentCategory; file: File },
+): Promise<CheckInAttachment> {
+  const body = new FormData();
+  body.append("category", input.category);
+  body.append("file", input.file);
+
+  return request(`/reception/check-ins/${checkInId}/attachments`, accessToken, {
+    body,
+    method: "POST",
+  });
+}
+
+export async function downloadCheckInAttachment(
+  accessToken: string,
+  checkInId: string,
+  attachmentId: string,
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_BASE_URL}/reception/check-ins/${checkInId}/attachments/${attachmentId}/download`,
+    {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      method: "GET",
+    },
+  );
+
+  if (!response.ok) {
+    const body = (await readErrorBody(response)) as { error?: { message?: string } } | null;
+    throw new ApiError(response.status, toErrorMessage(response.status, body?.error?.message));
+  }
+
+  return response.blob();
+}
+
+export async function deleteCheckInAttachment(
+  accessToken: string,
+  checkInId: string,
+  attachmentId: string,
+): Promise<void> {
+  return request(`/reception/check-ins/${checkInId}/attachments/${attachmentId}`, accessToken, {
+    method: "DELETE",
+  });
+}
+
 function toQuery(filters: AppointmentListFilters): string {
   const query = new URLSearchParams();
 
@@ -225,20 +298,21 @@ function compactObject<T extends Record<string, unknown>>(input: T): T {
 async function request<T>(
   path: string,
   accessToken: string,
-  options: { body?: unknown; method?: string } = {},
+  options: { body?: FormData | unknown; method?: string } = {},
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
   const init: RequestInit = {
     cache: "no-store",
     headers: {
       "Cache-Control": "no-cache",
-      ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(options.body === undefined || isFormData ? {} : { "Content-Type": "application/json" }),
       Authorization: `Bearer ${accessToken}`,
     },
     method: options.method ?? "GET",
   };
 
   if (options.body !== undefined) {
-    init.body = JSON.stringify(options.body);
+    init.body = isFormData ? (options.body as BodyInit) : JSON.stringify(options.body);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, init);
@@ -271,6 +345,10 @@ function toErrorMessage(status: number, apiMessage?: string): string {
 
   if (status === 403) {
     return "Acesso bloqueado pela permissao do servidor.";
+  }
+
+  if (status === 404) {
+    return "Anexo nao encontrado pelo servidor.";
   }
 
   if (status === 400) {

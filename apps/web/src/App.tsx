@@ -68,17 +68,23 @@ import {
 import {
   type Appointment,
   type AppointmentInput,
+  type AttachmentCategory,
   type CheckIn,
+  type CheckInAttachment,
   type CheckInInput,
   type CheckInUpdateInput,
   cancelAppointment as cancelReceptionAppointment,
   createCheckIn as createReceptionCheckIn,
   createAppointment as createReceptionAppointment,
+  deleteCheckInAttachment as deleteReceptionCheckInAttachment,
+  downloadCheckInAttachment as downloadReceptionCheckInAttachment,
   getCheckIn as getReceptionCheckIn,
+  listCheckInAttachments as listReceptionCheckInAttachments,
   listCheckIns as listReceptionCheckIns,
   listAppointments as listReceptionAppointments,
   updateCheckIn as updateReceptionCheckIn,
   updateAppointment as updateReceptionAppointment,
+  uploadCheckInAttachment as uploadReceptionCheckInAttachment,
 } from "./api/reception.js";
 import {
   type Product,
@@ -812,6 +818,27 @@ function AuthAdminApp() {
             }));
             setStatusMessage("Veiculo excluido logicamente da lista ativa.");
           }}
+          onDeleteCheckInAttachment={async (checkInId, attachment) => {
+            await withAuthenticatedSession((currentSession) =>
+              deleteReceptionCheckInAttachment(
+                currentSession.accessToken,
+                checkInId,
+                attachment.id,
+              ),
+            );
+            setStatusMessage("Anexo removido conforme permissao do servidor.");
+          }}
+          onDownloadCheckInAttachment={async (checkInId, attachment) => {
+            const blob = await withAuthenticatedSession((currentSession) =>
+              downloadReceptionCheckInAttachment(
+                currentSession.accessToken,
+                checkInId,
+                attachment.id,
+              ),
+            );
+            triggerAttachmentDownload(blob, attachment.originalName);
+            setStatusMessage("Anexo baixado pela API protegida.");
+          }}
           onLoadCustomerHistory={async (customerId) => {
             const customerHistory = await withAuthenticatedSession((currentSession) =>
               listCustomerHistory(currentSession.accessToken, customerId),
@@ -834,6 +861,11 @@ function AuthAdminApp() {
           onLoadCheckIn={async (checkInId) =>
             withAuthenticatedSession((currentSession) =>
               getReceptionCheckIn(currentSession.accessToken, checkInId),
+            )
+          }
+          onLoadCheckInAttachments={async (checkInId) =>
+            withAuthenticatedSession((currentSession) =>
+              listReceptionCheckInAttachments(currentSession.accessToken, checkInId),
             )
           }
           onLoadCheckIns={async () => {
@@ -892,6 +924,13 @@ function AuthAdminApp() {
             });
             setStatusMessage("Checklist atualizado com auditoria do backend.");
             return checkIn;
+          }}
+          onUploadCheckInAttachment={async (checkInId, input) => {
+            const attachment = await withAuthenticatedSession((currentSession) =>
+              uploadReceptionCheckInAttachment(currentSession.accessToken, checkInId, input),
+            );
+            setStatusMessage("Anexo enviado pela API protegida.");
+            return attachment;
           }}
           onUpdateOverrides={async (userId, overrides) => {
             const user = await withAuthenticatedSession((currentSession) =>
@@ -1273,11 +1312,14 @@ function AdminShell(props: {
   onDeactivateStockProduct: (product: Product) => Promise<void>;
   onDeactivateStockService: (service: ServiceCatalogEntry) => Promise<void>;
   onDeactivateStockSupplier: (supplier: Supplier) => Promise<void>;
+  onDeleteCheckInAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
   onDeleteCustomer: (customer: Customer) => Promise<void>;
   onDeleteVehicle: (vehicle: Vehicle) => Promise<void>;
+  onDownloadCheckInAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
   onLoadCustomerHistory: (customerId: string) => Promise<void>;
   onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
   onLoadCheckIn: (checkInId: string) => Promise<CheckIn>;
+  onLoadCheckInAttachments: (checkInId: string) => Promise<CheckInAttachment[]>;
   onLoadCheckIns: () => Promise<void>;
   onLoadVehicleHistory: (vehicleId: string) => Promise<void>;
   onLogout: () => Promise<void>;
@@ -1291,6 +1333,10 @@ function AdminShell(props: {
   onUpdateOverrides: (userId: string, overrides: PermissionOverride[]) => Promise<void>;
   onUpdateSettings: (input: Partial<TenantSettings>) => Promise<void>;
   onUpdateVehicle: (vehicleId: string, input: VehicleInput) => Promise<void>;
+  onUploadCheckInAttachment: (
+    checkInId: string,
+    input: { category: AttachmentCategory; file: File },
+  ) => Promise<CheckInAttachment>;
   session: StoredSession;
   statusMessage: string;
 }) {
@@ -1507,14 +1553,18 @@ function AdminShell(props: {
               canWriteCheckIns={hasPermission(props.session, "reception.checkins.write")}
               checkIns={props.adminData.checkIns}
               customers={props.adminData.customers}
+              onDeleteCheckInAttachment={props.onDeleteCheckInAttachment}
+              onDownloadCheckInAttachment={props.onDownloadCheckInAttachment}
               onCancelAppointment={props.onCancelAppointment}
               onCreateAppointment={props.onCreateAppointment}
               onCreateCheckIn={props.onCreateCheckIn}
               onLoadAppointments={props.onLoadAppointments}
               onLoadCheckIn={props.onLoadCheckIn}
+              onLoadCheckInAttachments={props.onLoadCheckInAttachments}
               onLoadCheckIns={props.onLoadCheckIns}
               onUpdateAppointment={props.onUpdateAppointment}
               onUpdateCheckIn={props.onUpdateCheckIn}
+              onUploadCheckInAttachment={props.onUploadCheckInAttachment}
               vehicles={props.adminData.vehicles}
             />
           ) : null}
@@ -1566,6 +1616,15 @@ function AdminShell(props: {
 
 type AgendaMode = "checkins" | "day" | "week";
 
+const attachmentCategories: AttachmentCategory[] = [
+  "Avaria",
+  "Documento",
+  "Painel",
+  "Motor",
+  "Interior",
+  "Outro",
+];
+
 type CheckInDraftSource =
   | {
       appointment: Appointment;
@@ -1584,14 +1643,18 @@ function AgendaPanel({
   canWriteCheckIns,
   checkIns,
   customers,
+  onDeleteCheckInAttachment,
+  onDownloadCheckInAttachment,
   onCancelAppointment,
   onCreateAppointment,
   onCreateCheckIn,
   onLoadAppointments,
   onLoadCheckIn,
+  onLoadCheckInAttachments,
   onLoadCheckIns,
   onUpdateAppointment,
   onUpdateCheckIn,
+  onUploadCheckInAttachment,
   vehicles,
 }: {
   appointments: Appointment[];
@@ -1602,14 +1665,21 @@ function AgendaPanel({
   canWriteCheckIns: boolean;
   checkIns: CheckIn[];
   customers: Customer[];
+  onDeleteCheckInAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
+  onDownloadCheckInAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
   onCancelAppointment: (appointment: Appointment, reason: string) => Promise<void>;
   onCreateAppointment: (input: AppointmentInput) => Promise<void>;
   onCreateCheckIn: (input: CheckInInput) => Promise<CheckIn>;
   onLoadAppointments: (filters: { date: string } | { weekOf: string }) => Promise<void>;
   onLoadCheckIn: (checkInId: string) => Promise<CheckIn>;
+  onLoadCheckInAttachments: (checkInId: string) => Promise<CheckInAttachment[]>;
   onLoadCheckIns: () => Promise<void>;
   onUpdateAppointment: (appointmentId: string, input: Partial<AppointmentInput>) => Promise<void>;
   onUpdateCheckIn: (checkInId: string, input: CheckInUpdateInput) => Promise<CheckIn>;
+  onUploadCheckInAttachment: (
+    checkInId: string,
+    input: { category: AttachmentCategory; file: File },
+  ) => Promise<CheckInAttachment>;
   vehicles: Vehicle[];
 }) {
   const defaultDate = todayDateOnly();
@@ -1940,10 +2010,14 @@ function AgendaPanel({
           {selectedCheckIn ? (
             <CheckInDetailPanel
               checkIn={selectedCheckIn}
+              onDeleteAttachment={onDeleteCheckInAttachment}
+              onDownloadAttachment={onDownloadCheckInAttachment}
+              onLoadAttachments={onLoadCheckInAttachments}
               onUpdate={async (input) => {
                 const updated = await onUpdateCheckIn(selectedCheckIn.id, input);
                 setSelectedCheckIn(updated);
               }}
+              onUploadAttachment={onUploadCheckInAttachment}
             />
           ) : null}
         </aside>
@@ -2421,11 +2495,28 @@ function CheckInForm({
 
 function CheckInDetailPanel({
   checkIn,
+  onDeleteAttachment,
+  onDownloadAttachment,
+  onLoadAttachments,
   onUpdate,
+  onUploadAttachment,
 }: {
   checkIn: CheckIn;
+  onDeleteAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
+  onDownloadAttachment: (checkInId: string, attachment: CheckInAttachment) => Promise<void>;
+  onLoadAttachments: (checkInId: string) => Promise<CheckInAttachment[]>;
   onUpdate: (input: CheckInUpdateInput) => Promise<void>;
+  onUploadAttachment: (
+    checkInId: string,
+    input: { category: AttachmentCategory; file: File },
+  ) => Promise<CheckInAttachment>;
 }) {
+  const [attachments, setAttachments] = useState<CheckInAttachment[]>([]);
+  const [attachmentCategory, setAttachmentCategory] = useState<AttachmentCategory>("Avaria");
+  const [attachmentError, setAttachmentError] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPendingName, setAttachmentPendingName] = useState("");
+  const [attachmentSaving, setAttachmentSaving] = useState(false);
   const [form, setForm] = useState(() => editableCheckInForm(checkIn));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -2433,6 +2524,32 @@ function CheckInDetailPanel({
   useEffect(() => {
     setForm(editableCheckInForm(checkIn));
   }, [checkIn]);
+
+  useEffect(() => {
+    let active = true;
+    setAttachmentError("");
+    setAttachments([]);
+    setAttachmentFile(null);
+    setAttachmentPendingName("");
+
+    onLoadAttachments(checkIn.id)
+      .then((items) => {
+        if (active) {
+          setAttachments(items);
+        }
+      })
+      .catch((caught) => {
+        if (active) {
+          setAttachmentError(
+            caught instanceof Error ? caught.message : "Nao foi possivel listar anexos.",
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [checkIn.id, onLoadAttachments]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2460,6 +2577,63 @@ function CheckInDetailPanel({
       setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o checklist.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadAttachment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!attachmentFile) {
+      setAttachmentError("Selecione um arquivo para anexar.");
+      return;
+    }
+
+    setAttachmentSaving(true);
+    setAttachmentError("");
+
+    try {
+      const attachment = await onUploadAttachment(checkIn.id, {
+        category: attachmentCategory,
+        file: attachmentFile,
+      });
+      setAttachments((current) => [...current, attachment]);
+      setAttachmentFile(null);
+      setAttachmentPendingName("");
+    } catch (caught) {
+      setAttachmentError(
+        caught instanceof Error
+          ? caught.message
+          : "Nao foi possivel anexar o arquivo. Tente novamente ou remova o item da lista.",
+      );
+    } finally {
+      setAttachmentSaving(false);
+    }
+  }
+
+  async function downloadAttachment(attachment: CheckInAttachment) {
+    setAttachmentError("");
+
+    try {
+      await onDownloadAttachment(checkIn.id, attachment);
+    } catch (caught) {
+      setAttachmentError(caught instanceof Error ? caught.message : "Nao foi possivel baixar o anexo.");
+    }
+  }
+
+  async function deleteAttachment(attachment: CheckInAttachment) {
+    const confirmation = `Remover anexo ${attachment.originalName}? O registro sera removido deste check-in conforme permissao do servidor.`;
+
+    if (!window.confirm(confirmation)) {
+      return;
+    }
+
+    setAttachmentError("");
+
+    try {
+      await onDeleteAttachment(checkIn.id, attachment);
+      setAttachments((current) => current.filter((item) => item.id !== attachment.id));
+    } catch (caught) {
+      setAttachmentError(caught instanceof Error ? caught.message : "Nao foi possivel remover o anexo.");
     }
   }
 
@@ -2535,6 +2709,92 @@ function CheckInDetailPanel({
           </p>
         ) : null}
       </form>
+      <section className="attachment-panel" aria-label="Anexos do check-in">
+        <div className="panel-heading panel-heading--compact">
+          <div>
+            <p className="eyebrow">Anexos</p>
+            <h2>Arquivos do check-in</h2>
+          </div>
+          <span className="pill">{attachments.length} arquivos</span>
+        </div>
+        <form className="attachment-form" onSubmit={uploadAttachment}>
+          <label className="field">
+            <span>Tipo do anexo</span>
+            <select
+              value={attachmentCategory}
+              onChange={(event) =>
+                setAttachmentCategory(event.target.value as AttachmentCategory)
+              }
+            >
+              {attachmentCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>Arquivo do anexo</span>
+            <input
+              type="file"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setAttachmentFile(file);
+                setAttachmentPendingName(file?.name ?? "");
+                setAttachmentError("");
+              }}
+            />
+          </label>
+          {attachmentPendingName ? (
+            <div className="attachment-row attachment-row--pending">
+              <strong>{attachmentPendingName}</strong>
+              <span>{attachmentCategory}</span>
+              <span>{attachmentFile ? formatFileSize(attachmentFile.size) : "0 B"}</span>
+              <span className="status-badge status-badge--warning">Pendente</span>
+            </div>
+          ) : null}
+          <button type="submit" disabled={attachmentSaving || !attachmentFile}>
+            {attachmentSaving ? "Anexando..." : "Anexar arquivo"}
+          </button>
+        </form>
+        {attachments.length === 0 ? (
+          <div className="empty-state empty-state--compact">
+            Nenhum anexo registrado para este check-in.
+          </div>
+        ) : (
+          <div className="attachment-list">
+            {attachments.map((attachment) => (
+              <div key={attachment.id} className="attachment-row">
+                <strong>{attachment.originalName}</strong>
+                <span>{attachment.category}</span>
+                <span>{formatFileSize(attachment.sizeBytes)}</span>
+                <span className="status-badge">Enviado</span>
+                <div className="table-actions">
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => void downloadAttachment(attachment)}
+                  >
+                    Baixar {attachment.originalName}
+                  </button>
+                  <button
+                    type="button"
+                    className="button-danger"
+                    onClick={() => void deleteAttachment(attachment)}
+                  >
+                    Remover {attachment.originalName}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {attachmentError ? (
+          <p className="callout callout--danger" role="status">
+            {attachmentError}
+          </p>
+        ) : null}
+      </section>
     </section>
   );
 }
@@ -4904,6 +5164,32 @@ function BlockedPanel({ message }: { message: string }) {
 
 export function formatUpdatedAt(value: string | undefined): string {
   return value ? formatDateTime(value) : "Nao sincronizado";
+}
+
+function formatFileSize(sizeBytes: number): string {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  const sizeKb = Math.round(sizeBytes / 1024);
+
+  if (sizeKb < 1024) {
+    return `${sizeKb} KB`;
+  }
+
+  return `${(sizeKb / 1024).toFixed(1)} MB`;
+}
+
+function triggerAttachmentDownload(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 function toOptionalInt(value: string): number | null {

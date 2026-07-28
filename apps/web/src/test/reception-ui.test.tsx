@@ -247,7 +247,7 @@ describe("JO.IA reception agenda UI", () => {
   });
 
   it("D-09 lists and uploads optional check-in attachments with canonical categories", async () => {
-    const uploadAssert = vi.fn(({ init }: { init?: RequestInit }) => {
+    const uploadAssert = vi.fn(({ init }: { init: RequestInit | undefined }) => {
       expect(init?.body).toBeInstanceOf(FormData);
       expect((init?.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
       const body = init?.body as FormData;
@@ -282,7 +282,7 @@ describe("JO.IA reception agenda UI", () => {
     fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
 
     const detail = await screen.findByRole("region", { name: "Detalhe do check-in" });
-    expect(detail).toHaveTextContent("foto-avaria.jpg");
+    expect(await within(detail).findByText("foto-avaria.jpg")).toBeInTheDocument();
     expect(detail).toHaveTextContent("Avaria");
     expect(detail).toHaveTextContent("12 KB");
     expect(detail).toHaveTextContent("Enviado");
@@ -470,7 +470,7 @@ function route(
 }
 
 type MockRoute = {
-  assert?: (request: { init?: RequestInit; input: RequestInfo | URL; path: string }) => void;
+  assert?: ((request: { init: RequestInit | undefined; input: RequestInfo | URL; path: string }) => void) | undefined;
   body: unknown;
   method: string;
   path: string;
