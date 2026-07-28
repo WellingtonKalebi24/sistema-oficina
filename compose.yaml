@@ -24,11 +24,14 @@ services:
       API_PORT: 3000
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
       DATABASE_URL: postgresql://${POSTGRES_USER:-joia}:${POSTGRES_PASSWORD:-joia_dev_password}@db:5432/${POSTGRES_DB:-joia_dev}?schema=public
+      RECEPTION_UPLOAD_ROOT: ${RECEPTION_UPLOAD_ROOT:-uploads/reception}
     ports:
       - "${API_HOST_PORT:-3001}:3000"
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - joia_reception_uploads:/app/uploads/reception
 
   web:
     build:
@@ -43,3 +46,4 @@ services:
 
 volumes:
   joia_postgres_data:
+  joia_reception_uploads:

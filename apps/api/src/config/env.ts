@@ -10,6 +10,7 @@ export type ApiEnv = {
   passwordResetTtlMinutes: number;
   port: number;
   refreshTokenTtlDays: number;
+  receptionUploadRoot: string;
   smtp: SmtpEnv | null;
   webOrigin: string;
 };
@@ -32,6 +33,7 @@ const DEFAULT_REFRESH_TOKEN_TTL_DAYS = 30;
 const DEFAULT_PASSWORD_RESET_TTL_MINUTES = 15;
 const DEFAULT_AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_AUTH_RATE_LIMIT_MAX = 20;
+const DEFAULT_RECEPTION_UPLOAD_ROOT = "uploads/reception";
 const DEVELOPMENT_JWT_SECRET = "joia-development-access-token-secret-change-before-production";
 
 export function readApiEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
@@ -83,6 +85,11 @@ export function readApiEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
       "PASSWORD_RESET_TTL_MINUTES",
     ),
     port,
+    receptionUploadRoot: parseNonEmptyString(
+      source.RECEPTION_UPLOAD_ROOT,
+      DEFAULT_RECEPTION_UPLOAD_ROOT,
+      "RECEPTION_UPLOAD_ROOT",
+    ),
     refreshTokenTtlDays: parsePositiveInteger(
       source.REFRESH_TOKEN_TTL_DAYS,
       DEFAULT_REFRESH_TOKEN_TTL_DAYS,
@@ -110,6 +117,16 @@ function parsePositiveInteger(value: string | undefined, fallback: number, name:
 
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer.`);
+  }
+
+  return parsed;
+}
+
+function parseNonEmptyString(value: string | undefined, fallback: string, name: string): string {
+  const parsed = value?.trim() ?? fallback;
+
+  if (!parsed) {
+    throw new Error(`${name} must not be empty.`);
   }
 
   return parsed;
