@@ -1,6 +1,14 @@
 import { z } from "zod";
 
 export const APPOINTMENT_STATUSES = ["Agendado", "Cancelado", "Convertido"] as const;
+export const ATTACHMENT_CATEGORIES = [
+  "Avaria",
+  "Documento",
+  "Painel",
+  "Motor",
+  "Interior",
+  "Outro",
+] as const;
 export const CHECK_IN_STATUS = "Aguardando diagnostico" as const;
 
 const optionalText = (max: number) =>
@@ -97,6 +105,10 @@ export const updateCheckInSchema = z
     message: "At least one field is required.",
   });
 
+export const createAttachmentSchema = z.object({
+  category: z.enum(ATTACHMENT_CATEGORIES),
+});
+
 export type AppointmentListInput = z.infer<typeof appointmentListSchema>;
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
@@ -104,3 +116,4 @@ export type CancelAppointmentInput = z.infer<typeof cancelAppointmentSchema>;
 export type CheckInListInput = z.infer<typeof checkInListSchema>;
 export type CreateCheckInInput = z.infer<typeof createCheckInSchema>;
 export type UpdateCheckInInput = z.infer<typeof updateCheckInSchema>;
+export type CreateAttachmentInput = z.infer<typeof createAttachmentSchema>;

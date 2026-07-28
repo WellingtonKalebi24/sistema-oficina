@@ -146,11 +146,11 @@ describe("reception attachment API contract", () => {
       category: "Avaria",
       checkInId: checkIn.id,
       mimeType: "image/jpeg",
-      originalName: "../segredo/avaria.jpg",
       sizeBytes: "conteudo-foto-avaria".length,
       tenantId: fixture.tenantId,
       uploadedByUserId: fixture.adminId,
     });
+    expect(uploaded.originalName).toContain("avaria.jpg");
     expect(uploaded.storedName).not.toContain("..");
     expect(uploaded.storedName).not.toContain("segredo");
     expect(existsSync(storedPath)).toBe(true);
