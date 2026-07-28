@@ -126,6 +126,27 @@ export type VehicleFixture = {
   vinNormalized: string | null;
 };
 
+export type ServiceCatalogFixture = {
+  basePrice: string;
+  id: string;
+  name: string;
+  tenantId: string;
+};
+
+export type ProductFixture = {
+  id: string;
+  name: string;
+  salePrice: string | null;
+  tenantId: string;
+};
+
+export type ReceptionCheckInFixture = {
+  customerId: string;
+  id: string;
+  tenantId: string;
+  vehicleId: string;
+};
+
 export async function resetIdentityTables(prisma: PrismaClient): Promise<void> {
   const db = prisma as IdentityPrisma;
 
@@ -354,6 +375,112 @@ export async function createVehicleFixture(
     tenantId: vehicle.tenantId,
     vehicleId: vehicle.id,
     vinNormalized: vehicle.vinNormalized,
+  };
+}
+
+export async function createServiceCatalogFixture(
+  prisma: PrismaClient,
+  tenantId: string,
+  overrides: Partial<{
+    basePrice: string;
+    name: string;
+  }> = {},
+): Promise<ServiceCatalogFixture> {
+  const db = prisma as IdentityPrisma;
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  const service = await db.serviceCatalogEntry!.create({
+    data: {
+      basePrice: overrides.basePrice ?? "150.00",
+      name: overrides.name ?? `Servico ${suffix}`,
+      tenantId,
+    },
+  });
+
+  return {
+    basePrice: service.basePrice.toFixed(2),
+    id: service.id,
+    name: service.name,
+    tenantId: service.tenantId,
+  };
+}
+
+export async function createProductFixture(
+  prisma: PrismaClient,
+  tenantId: string,
+  overrides: Partial<{
+    categoryName: string;
+    name: string;
+    physicalQuantity: number;
+    salePrice: string;
+  }> = {},
+): Promise<ProductFixture> {
+  const db = prisma as IdentityPrisma;
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  const category = await db.productCategory!.create({
+    data: {
+      name: overrides.categoryName ?? `Categoria ${suffix}`,
+      tenantId,
+    },
+  });
+  const product = await db.product!.create({
+    data: {
+      categoryId: category.id,
+      name: overrides.name ?? `Produto ${suffix}`,
+      salePrice: overrides.salePrice ?? "80.00",
+      stock: {
+        create: {
+          physicalQuantity: overrides.physicalQuantity ?? 10,
+          tenantId,
+        },
+      },
+      tenantId,
+    },
+  });
+
+  return {
+    id: product.id,
+    name: product.name,
+    salePrice: product.salePrice?.toFixed(2) ?? null,
+    tenantId: product.tenantId,
+  };
+}
+
+export async function createReceptionCheckInFixture(
+  prisma: PrismaClient,
+  tenantId: string,
+  customerId: string,
+  vehicleId: string,
+): Promise<ReceptionCheckInFixture> {
+  const db = prisma as IdentityPrisma;
+  const appointment = await db.appointment!.create({
+    data: {
+      customerId,
+      expectedService: "Diagnostico inicial",
+      origin: "counter",
+      startsAt: new Date("2026-07-28T12:00:00.000Z"),
+      status: "Convertido",
+      tenantId,
+      vehicleId,
+    },
+  });
+  const checkIn = await db.receptionCheckIn!.create({
+    data: {
+      appointmentId: appointment.id,
+      customerId,
+      damageNotes: "Sem avarias aparentes",
+      enteredAt: new Date("2026-07-28T12:10:00.000Z"),
+      fuelLevel: "1/2",
+      status: "Aguardando diagnostico",
+      tenantId,
+      vehicleId,
+    },
+  });
+
+  return {
+    customerId: checkIn.customerId,
+    id: checkIn.id,
+    tenantId: checkIn.tenantId,
+    vehicleId: checkIn.vehicleId,
   };
 }
 
