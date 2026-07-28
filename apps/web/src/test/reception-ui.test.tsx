@@ -59,7 +59,7 @@ describe("JO.IA reception agenda UI", () => {
 
     const viewMode = await screen.findByLabelText("Visualizacao da agenda");
     expect(viewMode).toHaveValue("kanban");
-    expect(viewMode).toHaveTextContent("Tabela por horario");
+    expect(viewMode).toHaveTextContent("Agenda semanal");
     expect(viewMode).toHaveTextContent("Calendario visual");
     expect(viewMode).toHaveTextContent("Kanban por status");
 
@@ -71,7 +71,7 @@ describe("JO.IA reception agenda UI", () => {
     assertNoCommunicationLanguage();
   });
 
-  it("D-13 keeps the agenda table as the default anchor and renders tenant mode alternatives from real appointments", async () => {
+  it("D-13 renders only the configured agenda mode and keeps mode selection in settings", async () => {
     globalThis.fetch = createFetchMock([
       route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
       route("POST", "/auth/login", sessionPayload()),
@@ -80,35 +80,30 @@ describe("JO.IA reception agenda UI", () => {
         agendaViewMode: "calendar",
       }),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
     ]);
 
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
 
-    const table = await screen.findByRole("table", { name: "Agenda diaria" });
-    expect(table).toHaveTextContent("Maria Oliveira");
-
-    fireEvent.click(screen.getByRole("tab", { name: "Calendario visual" }));
     const calendar = await screen.findByLabelText("Calendario visual da agenda");
-    expect(calendar).toHaveTextContent("Maria Oliveira");
-    expect(calendar).toHaveTextContent("Troca de oleo");
+    expect(calendar).toHaveTextContent("Joao Santos");
+    expect(calendar).toHaveTextContent("Higienizacao interna");
 
-    fireEvent.click(screen.getByRole("tab", { name: "Kanban por status" }));
-    const kanban = await screen.findByLabelText("Kanban da agenda por status");
-    expect(kanban).toHaveTextContent("Agendado");
-    expect(kanban).toHaveTextContent("Maria Oliveira");
+    expect(screen.queryByRole("tab", { name: "Agenda diaria" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Agenda semanal" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Kanban por status" })).not.toBeInTheDocument();
     assertNoCommunicationLanguage();
   });
 
-  it("D-12/D-17 exposes Agenda navigation and renders daily appointments as the primary table", async () => {
+  it("D-12/D-17 exposes Agenda navigation and renders weekly appointments as the configured agenda", async () => {
     globalThis.fetch = createFetchMock([
       route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
     ]);
 
     render(<App />);
@@ -116,30 +111,17 @@ describe("JO.IA reception agenda UI", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
 
-    const table = await screen.findByRole("table", { name: "Agenda diaria" });
-    expect(table).toHaveTextContent("Horario");
-    expect(table).toHaveTextContent("Cliente");
-    expect(table).toHaveTextContent("Veiculo");
-    expect(table).toHaveTextContent("Placa");
-    expect(table).toHaveTextContent("Servico previsto");
-    expect(table).toHaveTextContent("Status");
-    expect(table).toHaveTextContent("Origem");
-    expect(table).toHaveTextContent("Acoes");
-    expect(table).toHaveTextContent("08:30");
-    expect(table).toHaveTextContent("Maria Oliveira");
-    expect(table).toHaveTextContent("ABC1D23");
+    const weekly = await screen.findByLabelText("Agenda semanal");
+    expect(weekly).toHaveTextContent("Segunda");
+    expect(weekly).toHaveTextContent("Quarta");
+    expect(weekly).toHaveTextContent("Joao Santos");
+    expect(weekly).toHaveTextContent("Higienizacao interna");
 
-    const firstRow = within(table).getByText("Maria Oliveira").closest("tr");
-    expect(firstRow).not.toBeNull();
-    expect(
-      within(firstRow as HTMLTableRowElement).getByRole("button", { name: "Fazer check-in" }),
-    ).toBeInTheDocument();
-    expect(
-      within(firstRow as HTMLTableRowElement).getByRole("button", { name: "Editar" }),
-    ).toBeInTheDocument();
-    expect(
-      within(firstRow as HTMLTableRowElement).getByRole("button", { name: "Cancelar" }),
-    ).toBeInTheDocument();
+    fireEvent.click(within(weekly).getByRole("button", { name: /Joao Santos/i }));
+    expect(await screen.findByRole("form", { name: "Agendamento" })).toHaveTextContent(
+      "Editar agendamento",
+    );
+    expect(screen.getByLabelText(/Servico previsto/)).toHaveValue("Higienizacao interna");
 
     assertNoCommunicationLanguage();
   });
@@ -150,16 +132,13 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
     ]);
 
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
-
-    await screen.findByRole("table", { name: "Agenda diaria" });
-    fireEvent.click(screen.getByRole("tab", { name: "Agenda semanal" }));
 
     const weekly = await screen.findByLabelText("Agenda semanal");
     expect(weekly).toHaveTextContent("Segunda");
@@ -176,16 +155,16 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
     ]);
 
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
 
-    const table = await screen.findByRole("table", { name: "Agenda diaria" });
-    const actionsHeader = within(table).getByText("Acoes").closest("table") as HTMLTableElement;
-    const rowButtons = within(actionsHeader)
+    await openWeeklyAppointment();
+    const detail = await screen.findByRole("region", { name: "Detalhes do agendamento" });
+    const rowButtons = within(detail)
       .getAllByRole("button")
       .map((button) => button.textContent);
 
@@ -201,7 +180,7 @@ describe("JO.IA reception agenda UI", () => {
       ...customerVehicleRoutes(),
       route(
         "GET",
-        "/reception/appointments?date=2026-07-24",
+        "/reception/appointments?weekOf=2026-07-20",
         { error: { message: "Forbidden" } },
         403,
       ),
@@ -223,7 +202,7 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("POST", "/reception/check-ins", { data: appointmentCheckIn }, 201),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
@@ -238,13 +217,12 @@ describe("JO.IA reception agenda UI", () => {
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
 
-    const table = await screen.findByRole("table", { name: "Agenda diaria" });
-    fireEvent.click(within(table).getByRole("button", { name: "Fazer check-in" }));
+    await startSelectedAppointmentCheckIn();
 
     const form = await screen.findByRole("form", { name: "Check-in de recepcao" });
-    expect(form).toHaveTextContent("Maria Oliveira");
-    expect(form).toHaveTextContent("ABC1D23");
-    expect(form).toHaveTextContent("24/07/2026");
+    expect(form).toHaveTextContent("Joao Santos");
+    expect(form).toHaveTextContent("XYZ9A88");
+    expect(form).toHaveTextContent("20/07/2026");
     expect(within(form).getByLabelText(/Cliente/)).toBeRequired();
     expect(within(form).getByLabelText(/Veiculo/)).toBeRequired();
     expect(within(form).getByLabelText(/Entrada/)).toBeRequired();
@@ -268,7 +246,7 @@ describe("JO.IA reception agenda UI", () => {
       await screen.findByText("Check-in concluido e status definido como Aguardando diagnostico."),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: "Check-ins" }));
+    await openCheckIns();
 
     const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
     expect(checkInsTable).toHaveTextContent("Aguardando diagnostico");
@@ -303,7 +281,7 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("POST", "/reception/check-ins", { data: appointmentCheckIn }, 201, ({ init }) => {
         expect(init?.body).not.toBeInstanceOf(FormData);
       }),
@@ -314,8 +292,7 @@ describe("JO.IA reception agenda UI", () => {
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
 
-    const table = await screen.findByRole("table", { name: "Agenda diaria" });
-    fireEvent.click(within(table).getByRole("button", { name: "Fazer check-in" }));
+    await startSelectedAppointmentCheckIn();
 
     const form = await screen.findByRole("form", { name: "Check-in de recepcao" });
     expect(within(form).queryByLabelText(/Arquivo/)).not.toBeInTheDocument();
@@ -348,7 +325,7 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
       route("GET", "/reception/check-ins/check-in-1/attachments", { data: [damageAttachment] }),
@@ -364,7 +341,7 @@ describe("JO.IA reception agenda UI", () => {
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+    await openCheckIns();
 
     const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
     fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
@@ -404,7 +381,7 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("GET", "/reception/check-ins", { data: [appointmentCheckIn] }),
       route("GET", "/reception/check-ins/check-in-1", { data: appointmentCheckIn }),
       route("GET", "/reception/check-ins/check-in-1/attachments", { data: [damageAttachment] }),
@@ -426,7 +403,7 @@ describe("JO.IA reception agenda UI", () => {
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+    await openCheckIns();
 
     const checkInsTable = await screen.findByRole("table", { name: "Check-ins recebidos" });
     fireEvent.click(within(checkInsTable).getByRole("button", { name: "Consultar check-in" }));
@@ -453,10 +430,10 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: [] }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: [] }),
       route("POST", "/reception/check-ins", { data: directCheckIn }, 201),
       route("GET", "/reception/check-ins", { data: [directCheckIn] }),
-      route("GET", "/reception/appointments?date=2026-07-24", {
+      route("GET", "/reception/appointments?weekOf=2026-07-20", {
         data: [directConvertedAppointment],
       }),
     ]);
@@ -494,14 +471,14 @@ describe("JO.IA reception agenda UI", () => {
       route("POST", "/auth/login", sessionPayload()),
       ...adminRoutes(),
       ...customerVehicleRoutes(),
-      route("GET", "/reception/appointments?date=2026-07-24", { data: dailyAppointments }),
+      route("GET", "/reception/appointments?weekOf=2026-07-20", { data: weeklyAppointments }),
       route("GET", "/reception/check-ins", { error: { message: "Forbidden" } }, 403),
     ]);
 
     render(<App />);
     await login();
     fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Check-ins" }));
+    await openCheckIns();
 
     expect(
       await screen.findByText("Acesso bloqueado pela permissao do servidor."),
@@ -517,6 +494,22 @@ async function login() {
   fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "senha-segura-123" } });
   fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
   await screen.findByRole("heading", { name: "Administracao" });
+}
+
+async function openWeeklyAppointment() {
+  const weekly = await screen.findByLabelText("Agenda semanal");
+  fireEvent.click(within(weekly).getByRole("button", { name: /Joao Santos/i }));
+  return weekly;
+}
+
+async function startSelectedAppointmentCheckIn() {
+  await openWeeklyAppointment();
+  const detail = await screen.findByRole("region", { name: "Detalhes do agendamento" });
+  fireEvent.click(within(detail).getByRole("button", { name: "Fazer check-in" }));
+}
+
+async function openCheckIns() {
+  fireEvent.click(await screen.findByRole("button", { name: "Ver check-ins" }));
 }
 
 function assertNoCommunicationLanguage() {
@@ -674,6 +667,21 @@ const customers = [
     tenantId: "tenant-1",
     updatedAt: "2026-07-20T12:00:00.000Z",
   },
+  {
+    createdAt: "2026-07-20T12:00:00.000Z",
+    deletedAt: null,
+    document: "987.654.321-00",
+    documentNormalized: "98765432100",
+    documentType: "cpf",
+    email: "joao@example.test",
+    id: "customer-2",
+    name: "Joao Santos",
+    notes: null,
+    phone: "(11) 98888-0000",
+    phoneNormalized: "11988880000",
+    tenantId: "tenant-1",
+    updatedAt: "2026-07-20T12:00:00.000Z",
+  },
 ];
 
 const vehicles = [
@@ -696,6 +704,25 @@ const vehicles = [
     vinNormalized: "9BWZZZ377VT004251",
     year: 2022,
   },
+  {
+    brand: "Honda",
+    color: "Prata",
+    createdAt: "2026-07-20T12:00:00.000Z",
+    customer: { id: "customer-2", name: "Joao Santos" },
+    customerId: "customer-2",
+    deletedAt: null,
+    id: "vehicle-2",
+    mileage: 38000,
+    model: "Fit",
+    notes: null,
+    plate: "XYZ9A88",
+    plateNormalized: "XYZ9A88",
+    tenantId: "tenant-1",
+    updatedAt: "2026-07-20T12:00:00.000Z",
+    vin: "9BWZZZ377VT004252",
+    vinNormalized: "9BWZZZ377VT004252",
+    year: 2020,
+  },
 ];
 
 const baseAppointment = {
@@ -717,18 +744,6 @@ const baseAppointment = {
   vehicle: { id: "vehicle-1", plateNormalized: "ABC1D23" },
   vehicleId: "vehicle-1",
 };
-
-const dailyAppointments = [
-  appointmentFixture({
-    customer: { id: "customer-1", name: "Maria Oliveira" },
-    customerId: "customer-1",
-    expectedService: "Troca de oleo",
-    id: "appointment-1",
-    startsAt: "2026-07-24T11:30:00.000Z",
-    vehicle: { id: "vehicle-1", plateNormalized: "ABC1D23" },
-    vehicleId: "vehicle-1",
-  }),
-];
 
 const convertedAppointment = appointmentFixture({
   customer: { id: "customer-1", name: "Maria Oliveira" },

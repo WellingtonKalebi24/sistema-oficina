@@ -595,6 +595,19 @@ th {
   font-size: 0.82rem;
 }
 
+.appointment-chip--button {
+  width: 100%;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.appointment-chip--button:hover,
+.appointment-chip--button:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(23, 107, 91, 0.14);
+}
+
 .agenda-detail-panel {
   display: grid;
   gap: var(--space-3);

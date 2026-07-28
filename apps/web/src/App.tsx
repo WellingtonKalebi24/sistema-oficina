@@ -345,7 +345,10 @@ function AuthAdminApp() {
       loads.push(
         loadResource(
           "reception",
-          () => listReceptionAppointments(usableSession.accessToken, { date: todayDateOnly() }),
+          () =>
+            listReceptionAppointments(usableSession.accessToken, {
+              weekOf: startOfBusinessWeek(todayDateOnly()),
+            }),
           (appointments) => setAdminData((current) => ({ ...current, appointments })),
         ),
       );
@@ -629,7 +632,9 @@ function AuthAdminApp() {
               await loadReceptionCheckIns(currentSession);
 
               if (!input.appointmentId) {
-                await loadReceptionAppointments(currentSession, { date: todayDateOnly() });
+                await loadReceptionAppointments(currentSession, {
+                  weekOf: startOfBusinessWeek(todayDateOnly()),
+                });
               }
 
               return created;
@@ -1617,9 +1622,8 @@ function AdminShell(props: {
   );
 }
 
-type AgendaMode = "checkins" | "day" | "week";
+type AgendaMode = "agenda" | "checkins";
 type AgendaViewMode = TenantSettings["agendaViewMode"];
-type AgendaVisualMode = AgendaMode | "calendar" | "kanban";
 
 const attachmentCategories: AttachmentCategory[] = [
   "Avaria",
@@ -1690,7 +1694,7 @@ function AgendaPanel({
   vehicles: Vehicle[];
 }) {
   const defaultDate = todayDateOnly();
-  const [activeMode, setActiveMode] = useState<AgendaVisualMode>("day");
+  const [activeMode, setActiveMode] = useState<AgendaMode>("agenda");
   const [date, setDate] = useState(defaultDate);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [error, setError] = useState("");
@@ -1740,21 +1744,12 @@ function AgendaPanel({
     })
     .sort(compareAppointments);
 
-  async function changeMode(nextMode: AgendaVisualMode) {
+  async function changeMode(nextMode: AgendaMode) {
     setActiveMode(nextMode);
     setError("");
 
-    if (nextMode === "day") {
-      await onLoadAppointments({ date });
-      return;
-    }
-
     if (nextMode === "checkins") {
       await onLoadCheckIns();
-      return;
-    }
-
-    if (nextMode === "calendar" || nextMode === "kanban") {
       return;
     }
 
@@ -1764,8 +1759,8 @@ function AgendaPanel({
   async function refreshCurrentMode(nextDate = date) {
     setError("");
 
-    if (activeMode === "day") {
-      await onLoadAppointments({ date: nextDate });
+    if (activeMode === "checkins") {
+      await onLoadCheckIns();
       return;
     }
 
@@ -1866,78 +1861,22 @@ function AgendaPanel({
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Agenda</p>
-              <h2>{agendaModeTitle(activeMode)}</h2>
+              <h2>{agendaModeTitle(activeMode, tenantAgendaViewMode)}</h2>
             </div>
             <span className="pill">
               {filteredAppointments.length} agendamentos · Preferencia{" "}
               {agendaViewModeLabel(tenantAgendaViewMode)}
             </span>
           </div>
-          <div className="agenda-tabs" role="tablist" aria-label="Modo da agenda">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeMode === "day"}
-              className={activeMode === "day" ? "stock-tab stock-tab--active" : "stock-tab"}
-              onClick={() => void changeMode("day")}
-            >
-              Agenda diaria
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeMode === "week"}
-              className={activeMode === "week" ? "stock-tab stock-tab--active" : "stock-tab"}
-              onClick={() => void changeMode("week")}
-            >
-              Agenda semanal
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeMode === "calendar"}
-              className={activeMode === "calendar" ? "stock-tab stock-tab--active" : "stock-tab"}
-              onClick={() => void changeMode("calendar")}
-            >
-              Calendario visual
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeMode === "kanban"}
-              className={activeMode === "kanban" ? "stock-tab stock-tab--active" : "stock-tab"}
-              onClick={() => void changeMode("kanban")}
-            >
-              Kanban por status
-            </button>
-            {canReadCheckIns ? (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeMode === "checkins"}
-                className={activeMode === "checkins" ? "stock-tab stock-tab--active" : "stock-tab"}
-                onClick={() => void changeMode("checkins")}
-              >
-                Check-ins
-              </button>
-            ) : null}
-          </div>
-          {activeMode === "day" ? (
-            <DailyAgendaTable
-              appointments={filteredAppointments}
-              canCancel={canCancel}
-              canWrite={canWrite}
-              onCancel={setPendingCancel}
-              onCheckIn={startAppointmentCheckIn}
-              onEdit={editAppointment}
-              onSelect={setSelectedAppointment}
-            />
+          {activeMode === "agenda" && tenantAgendaViewMode === "table" ? (
+            <WeeklyAgenda appointments={filteredAppointments} onSelect={editAppointment} />
           ) : null}
-          {activeMode === "week" ? <WeeklyAgenda appointments={filteredAppointments} /> : null}
-          {activeMode === "calendar" ? (
-            <CalendarAgenda appointments={filteredAppointments} />
+          {activeMode === "agenda" && tenantAgendaViewMode === "calendar" ? (
+            <CalendarAgenda appointments={filteredAppointments} onSelect={editAppointment} />
           ) : null}
-          {activeMode === "kanban" ? <KanbanAgenda appointments={filteredAppointments} /> : null}
+          {activeMode === "agenda" && tenantAgendaViewMode === "kanban" ? (
+            <KanbanAgenda appointments={filteredAppointments} onSelect={editAppointment} />
+          ) : null}
           {activeMode === "checkins" ? (
             <CheckInsTable
               checkIns={checkIns}
@@ -1994,8 +1933,17 @@ function AgendaPanel({
             className="button-secondary"
             onClick={() => void refreshCurrentMode()}
           >
-            Atualizar agenda
+            {activeMode === "checkins" ? "Atualizar check-ins" : "Atualizar agenda"}
           </button>
+          {canReadCheckIns ? (
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => void changeMode(activeMode === "checkins" ? "agenda" : "checkins")}
+            >
+              {activeMode === "checkins" ? "Voltar para agenda" : "Ver check-ins"}
+            </button>
+          ) : null}
           <button
             type="button"
             className="button-secondary"
@@ -2044,6 +1992,31 @@ function AgendaPanel({
                   <dd>{selectedAppointment.origin}</dd>
                 </div>
               </dl>
+              <div className="button-row">
+                {canWrite ? (
+                  <button type="button" onClick={() => startAppointmentCheckIn(selectedAppointment)}>
+                    Fazer check-in
+                  </button>
+                ) : null}
+                {canWrite ? (
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => editAppointment(selectedAppointment)}
+                  >
+                    Editar
+                  </button>
+                ) : null}
+                {canCancel ? (
+                  <button
+                    type="button"
+                    className="button-danger"
+                    onClick={() => setPendingCancel(selectedAppointment)}
+                  >
+                    Cancelar
+                  </button>
+                ) : null}
+              </div>
             </section>
           ) : null}
           {selectedCheckIn ? (
@@ -2202,85 +2175,6 @@ function AgendaPanel({
         </div>
       ) : null}
     </section>
-  );
-}
-
-function DailyAgendaTable({
-  appointments,
-  canCancel,
-  canWrite,
-  onCancel,
-  onCheckIn,
-  onEdit,
-  onSelect,
-}: {
-  appointments: Appointment[];
-  canCancel: boolean;
-  canWrite: boolean;
-  onCancel: (appointment: Appointment) => void;
-  onCheckIn: (appointment: Appointment) => void;
-  onEdit: (appointment: Appointment) => void;
-  onSelect: (appointment: Appointment) => void;
-}) {
-  return (
-    <div className="table-wrap agenda-table-wrap">
-      <table aria-label="Agenda diaria">
-        <thead>
-          <tr>
-            <th scope="col">Horario</th>
-            <th scope="col">Cliente</th>
-            <th scope="col">Veiculo</th>
-            <th scope="col">Placa</th>
-            <th scope="col">Servico previsto</th>
-            <th scope="col">Status</th>
-            <th scope="col">Origem</th>
-            <th scope="col">Acoes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {appointments.map((appointment) => (
-            <tr key={appointment.id} onClick={() => onSelect(appointment)}>
-              <td className="numeric-cell">{formatAgendaTime(appointment.startsAt)}</td>
-              <td>{appointment.customer.name}</td>
-              <td>{appointment.vehicle.id}</td>
-              <td>{appointment.vehicle.plateNormalized ?? "Sem placa"}</td>
-              <td>{appointment.expectedService}</td>
-              <td>
-                <span className={statusClassName(appointment.status)}>{appointment.status}</span>
-              </td>
-              <td>{appointment.origin}</td>
-              <td>
-                <div className="table-actions">
-                  {canWrite ? (
-                    <button type="button" onClick={() => onCheckIn(appointment)}>
-                      Fazer check-in
-                    </button>
-                  ) : null}
-                  {canWrite ? (
-                    <button
-                      type="button"
-                      className="button-secondary"
-                      onClick={() => onEdit(appointment)}
-                    >
-                      Editar
-                    </button>
-                  ) : null}
-                  {canCancel ? (
-                    <button
-                      type="button"
-                      className="button-danger"
-                      onClick={() => onCancel(appointment)}
-                    >
-                      Cancelar
-                    </button>
-                  ) : null}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -2873,7 +2767,13 @@ function CheckInDetailPanel({
   );
 }
 
-function WeeklyAgenda({ appointments }: { appointments: Appointment[] }) {
+function WeeklyAgenda({
+  appointments,
+  onSelect,
+}: {
+  appointments: Appointment[];
+  onSelect: (appointment: Appointment) => void;
+}) {
   const days = ["Segunda", "Terca", "Quarta", "Quinta", "Sexta"];
 
   return (
@@ -2891,12 +2791,17 @@ function WeeklyAgenda({ appointments }: { appointments: Appointment[] }) {
               <span className="helper-text">Sem agendamentos</span>
             ) : (
               dayAppointments.map((appointment) => (
-                <article key={appointment.id} className="appointment-chip">
+                <button
+                  key={appointment.id}
+                  type="button"
+                  className="appointment-chip appointment-chip--button"
+                  onClick={() => onSelect(appointment)}
+                >
                   <strong>{formatAgendaTime(appointment.startsAt)}</strong>
                   <span>{appointment.customer.name}</span>
                   <span>{appointment.expectedService}</span>
                   <span>{appointment.vehicle.plateNormalized ?? "Sem placa"}</span>
-                </article>
+                </button>
               ))
             )}
           </div>
@@ -2906,22 +2811,39 @@ function WeeklyAgenda({ appointments }: { appointments: Appointment[] }) {
   );
 }
 
-function CalendarAgenda({ appointments }: { appointments: Appointment[] }) {
+function CalendarAgenda({
+  appointments,
+  onSelect,
+}: {
+  appointments: Appointment[];
+  onSelect: (appointment: Appointment) => void;
+}) {
   return (
     <section className="weekly-agenda" aria-label="Calendario visual da agenda">
       {appointments.map((appointment) => (
-        <article key={appointment.id} className="appointment-chip">
+        <button
+          key={appointment.id}
+          type="button"
+          className="appointment-chip appointment-chip--button"
+          onClick={() => onSelect(appointment)}
+        >
           <strong>{formatAgendaTime(appointment.startsAt)}</strong>
           <span>{appointment.customer.name}</span>
           <span>{appointment.expectedService}</span>
           <span>{appointment.vehicle.plateNormalized ?? "Sem placa"}</span>
-        </article>
+        </button>
       ))}
     </section>
   );
 }
 
-function KanbanAgenda({ appointments }: { appointments: Appointment[] }) {
+function KanbanAgenda({
+  appointments,
+  onSelect,
+}: {
+  appointments: Appointment[];
+  onSelect: (appointment: Appointment) => void;
+}) {
   const statuses: Appointment["status"][] = ["Agendado", "Convertido", "Cancelado"];
 
   return (
@@ -2932,11 +2854,16 @@ function KanbanAgenda({ appointments }: { appointments: Appointment[] }) {
           {appointments
             .filter((appointment) => appointment.status === status)
             .map((appointment) => (
-              <article key={appointment.id} className="appointment-chip">
+              <button
+                key={appointment.id}
+                type="button"
+                className="appointment-chip appointment-chip--button"
+                onClick={() => onSelect(appointment)}
+              >
                 <strong>{formatAgendaTime(appointment.startsAt)}</strong>
                 <span>{appointment.customer.name}</span>
                 <span>{appointment.expectedService}</span>
-              </article>
+              </button>
             ))}
         </div>
       ))}
@@ -3010,7 +2937,15 @@ function formatMileage(value: number | null): string {
   return value === null ? "Nao informado" : `${value} km`;
 }
 
-function agendaModeTitle(mode: AgendaVisualMode): string {
+function agendaModeTitle(mode: AgendaMode, viewMode: AgendaViewMode): string {
+  if (mode === "checkins") {
+    return "Check-ins";
+  }
+
+  return agendaViewModeLabel(viewMode);
+}
+
+function agendaViewModeLabel(mode: AgendaViewMode): string {
   if (mode === "calendar") {
     return "Calendario visual";
   }
@@ -3019,23 +2954,7 @@ function agendaModeTitle(mode: AgendaVisualMode): string {
     return "Kanban por status";
   }
 
-  if (mode === "checkins") {
-    return "Check-ins";
-  }
-
-  return mode === "day" ? "Agenda diaria" : "Agenda semanal";
-}
-
-function agendaViewModeLabel(mode: AgendaViewMode): string {
-  if (mode === "calendar") {
-    return "calendario";
-  }
-
-  if (mode === "kanban") {
-    return "kanban";
-  }
-
-  return "tabela";
+  return "Agenda semanal";
 }
 
 function statusClassName(status: Appointment["status"]): string {
@@ -3118,7 +3037,7 @@ function SettingsPanel({
             value={agendaViewMode}
             onChange={(event) => setAgendaViewMode(event.target.value as AgendaViewMode)}
           >
-            <option value="table">Tabela por horario</option>
+            <option value="table">Agenda semanal</option>
             <option value="calendar">Calendario visual</option>
             <option value="kanban">Kanban por status</option>
           </select>
