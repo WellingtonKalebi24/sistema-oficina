@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 6 — Diagnóstico e Orçamento
+current_phase: 06
 status: executing
-stopped_at: Phase 6 UI-SPEC approved
-last_updated: "2026-07-28T17:23:27.997Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-07-28T20:47:28.181Z"
 progress:
   total_phases: 12
   completed_phases: 5
-  total_plans: 26
-  completed_plans: 26
-  percent: 42
+  total_plans: 30
+  completed_plans: 27
+  percent: 90
 ---
 
 # Project State: JO.IA
 
 **Last updated:** 2026-07-22
-**Status:** Ready to execute
-**Current phase:** 6 — Diagnóstico e Orçamento
+**Status:** Executing Phase 06
+**Current phase:** 06
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 **Core value:** Uma oficina consegue executar e auditar todo o ciclo de atendimento de um veÃ­culo, da entrada ao pagamento, com isolamento seguro por tenant e sem depender de comunicaÃ§Ãµes automÃ¡ticas com o cliente.
-**Current focus:** Continuar agenda e recepcao com check-in, checklist, anexos, auditoria e isolamento por tenant.
+**Current focus:** Phase 06 — diagn-stico-e-or-amento
 
 ## Completed
 
@@ -77,7 +77,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-14)
 
 ## Next Step
 
-Continue Phase 5 with agenda and reception planning/execution.
+Continue Phase 6 with 06-02 draft quote API implementation.
 
 ### Quick Tasks Completed
 
@@ -112,9 +112,9 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-28T16:40:21.669Z
-**Stopped at:** Phase 6 UI-SPEC approved
-**Resume file:** .planning/phases/06-diagn-stico-e-or-amento/06-UI-SPEC.md
+**Last session:** 2026-07-28T20:47:28.140Z
+**Stopped at:** Completed 06-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -146,6 +146,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P08 | 10min | 2 tasks | 6 files |
 | Phase 05 P09 | 9min | 2 tasks | 4 files |
 | Phase 05 P10 | 22min | 2 tasks | 17 files |
+| Phase 06 P01 | 7 min | 2 tasks | 7 files |
 
 ## Decisions
 
@@ -216,3 +217,5 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 10 stores agenda visualization as CompanySetting.agendaViewMode because D-13/D-14 require tenant office-level configuration, not a user preference.
 - [Phase 05]: Plan 10 keeps the daily agenda table as the default first anchor while exposing calendar and kanban as alternate views over the same tenant-scoped appointment data.
 - [Phase 05]: Plan 10 applied Prettier only to Phase 5 files reported by the final verify gate so close-out quality passed without broad unrelated cleanup.
+- [Phase 06]: Phase 6 stores quote status as text with the agreed values Rascunho, Publicado, Enviado, Expirado and Cancelado, guarded by migration check constraints.
+- [Phase 06]: Discount limit handling starts as warning metadata, not a blocking permission rule, matching D-08.
