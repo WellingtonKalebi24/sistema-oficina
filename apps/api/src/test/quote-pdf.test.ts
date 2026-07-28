@@ -165,7 +165,7 @@ describe("quote PDF API contract", () => {
     expect(pdfResponse.status).toBe(200);
     expect(pdfResponse.headers.get("content-type")).toContain("application/pdf");
 
-    const pdfText = Buffer.from(await pdfResponse.arrayBuffer()).toString("latin1");
+    const pdfText = decodePdfText(Buffer.from(await pdfResponse.arrayBuffer()));
     expect(pdfText).toContain("Oficina PDF");
     expect(pdfText).toContain("Cliente PDF");
     expect(pdfText).toContain("Toyota Corolla");
@@ -212,4 +212,13 @@ async function readData<T>(response: Response, status: number): Promise<T> {
 
   const body = (await response.json()) as ApiData<T>;
   return body.data;
+}
+
+function decodePdfText(buffer: Buffer): string {
+  const raw = buffer.toString("latin1");
+  const decodedHex = Array.from(raw.matchAll(/<([0-9a-fA-F]+)>/g))
+    .map((match) => Buffer.from(match[1]!, "hex").toString("latin1"))
+    .join("");
+
+  return `${raw}\n${decodedHex}`;
 }

@@ -148,7 +148,12 @@ export const updateQuoteDraftSchema = z.object({
   validUntil: optionalDate,
 });
 
+export const quoteApprovalLinkSchema = z.object({
+  expiresAt: optionalDate,
+});
+
 export type QuoteListInput = z.infer<typeof quoteListSchema>;
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
 export type QuoteItemInput = z.infer<typeof quoteItemSchema>;
+export type QuoteApprovalLinkInput = z.infer<typeof quoteApprovalLinkSchema>;
 export type UpdateQuoteDraftInput = z.infer<typeof updateQuoteDraftSchema>;

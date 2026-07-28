@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from "node:crypto";
+
 import { Prisma } from "@prisma/client";
 
 import { writeAuditLog } from "../audit/auditService.js";
@@ -7,6 +9,7 @@ import { notFound, requireTenantCustomerVehicleLink } from "../tenancy/tenantSco
 import { calculateQuoteTotals } from "./quoteCalculator.js";
 import type {
   CreateQuoteInput,
+  QuoteApprovalLinkInput,
   QuoteItemInput,
   QuoteListInput,
   UpdateQuoteDraftInput,
@@ -22,6 +25,10 @@ type ActorContext = {
 
 type QuoteWithRelations = Prisma.QuoteGetPayload<{
   include: typeof quoteIncludes;
+}>;
+
+export type QuoteVersionWithRelations = Prisma.QuoteVersionGetPayload<{
+  include: typeof quoteVersionIncludes;
 }>;
 
 type PreparedQuoteItem = Omit<
@@ -246,6 +253,325 @@ export async function updateQuoteDraft(
   });
 }
 
+export async function publishQuoteVersion(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+): Promise<QuoteVersionWithRelations> {
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.findFirst({
+      include: publishQuoteIncludes,
+      where: {
+        id: quoteId,
+        tenantId: actor.tenantId,
+      },
+    });
+
+    if (!quote) {
+      throw notFound();
+    }
+
+    if (quote.status !== QUOTE_STATUS.draft) {
+      throw new HttpError(409, "Only draft quotes can be published.");
+    }
+
+    const missing = publishMissingFields(quote);
+    if (missing.length > 0) {
+      throw badRequest(`Quote is missing required publication fields: ${missing.join(", ")}.`);
+    }
+
+    const preparedItems = quote.items.map(itemFromCurrent);
+    const itemTotals = calculateQuoteTotals({
+      discountWarningPercent: quote.discountWarningPercent.toFixed(2),
+      items: preparedItems,
+      quoteDiscountAmount: "0.00",
+      quoteSurchargeAmount: "0.00",
+    });
+    const latest = await tx.quoteVersion.aggregate({
+      _max: {
+        versionNumber: true,
+      },
+      where: {
+        quoteId: quote.id,
+        tenantId: actor.tenantId,
+      },
+    });
+    const versionNumber = (latest._max.versionNumber ?? 0) + 1;
+    const settings = await tx.companySetting.findUnique({
+      where: {
+        tenantId: actor.tenantId,
+      },
+    });
+    const vehicleLabel = [quote.vehicle.brand, quote.vehicle.model].filter(Boolean).join(" ").trim();
+
+    const version = await tx.quoteVersion.create({
+      data: {
+        checkInId: quote.checkInId,
+        customerDocument: quote.customer.document,
+        customerEmail: quote.customer.email,
+        customerId: quote.customerId,
+        customerName: quote.customer.name,
+        customerNotes: quote.customerNotes,
+        customerPhone: quote.customer.phone,
+        diagnosisCausa: quote.diagnosisCausa,
+        diagnosisProblema: quote.diagnosisProblema,
+        diagnosisRecomendacao: quote.diagnosisRecomendacao,
+        discountAmount: quote.discountAmount,
+        discountWarningMessage: quote.discountWarningMessage,
+        discountWarningPercent: quote.discountWarningPercent,
+        discountWarningTriggered: quote.discountWarningTriggered,
+        estimatedDeliveryAt: quote.estimatedDeliveryAt,
+        items: {
+          create: preparedItems.map((item, index) =>
+            toVersionItemCreate(actor.tenantId, item, itemTotals.items[index]!, index),
+          ),
+        },
+        publishedByUserId: actor.userId,
+        quoteId: quote.id,
+        sourceKind: quote.sourceKind,
+        status: QUOTE_STATUS.published,
+        subtotalAmount: quote.subtotalAmount,
+        surchargeAmount: quote.surchargeAmount,
+        tenantId: actor.tenantId,
+        totalAmount: quote.totalAmount,
+        validUntil: quote.validUntil!,
+        vehicleBrand: quote.vehicle.brand,
+        vehicleId: quote.vehicleId,
+        vehicleLabel: vehicleLabel || quote.vehicle.plateNormalized || quote.vehicle.id,
+        vehicleModel: quote.vehicle.model,
+        vehiclePlate: quote.vehicle.plateNormalized,
+        vehicleYear: quote.vehicle.year,
+        versionNumber,
+        workshopDocument: settings?.document ?? null,
+        workshopLegalName: settings?.legalName ?? null,
+        workshopTradeName: settings?.tradeName ?? "Oficina",
+      },
+      include: quoteVersionIncludes,
+    });
+
+    await tx.quote.update({
+      data: {
+        currentVersionId: version.id,
+        status: QUOTE_STATUS.published,
+        updatedByUserId: actor.userId,
+      },
+      where: {
+        id: quote.id,
+      },
+    });
+
+    await writeVersionAudit(tx as PrismaDatabase, actor, version, "quotes.version.published");
+    if (quote.discountWarningTriggered) {
+      await writeAuditLog(tx as PrismaDatabase, {
+        action: "quotes.discount.warning",
+        entity: "quote_version",
+        ipAddress: actor.ipAddress,
+        metadata: {
+          discountWarningPercent: version.discountWarningPercent.toFixed(2),
+          discountWarningTriggered: version.discountWarningTriggered,
+          totalAmount: version.totalAmount.toFixed(2),
+          totalDiscountAmount: version.discountAmount.toFixed(2),
+          versionNumber: version.versionNumber,
+        },
+        recordId: version.id,
+        tenantId: actor.tenantId,
+        userAgent: actor.userAgent,
+        userId: actor.userId,
+      });
+    }
+
+    return version;
+  });
+}
+
+export async function createNewQuoteVersionDraft(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+): Promise<QuoteWithRelations> {
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.findFirst({
+      include: {
+        currentVersion: {
+          include: {
+            items: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+            },
+          },
+        },
+      },
+      where: {
+        id: quoteId,
+        tenantId: actor.tenantId,
+      },
+    });
+
+    if (!quote) {
+      throw notFound();
+    }
+
+    if (!quote.currentVersion) {
+      throw new HttpError(409, "Quote does not have a published version to copy.");
+    }
+
+    await tx.quoteItem.deleteMany({
+      where: {
+        quoteId: quote.id,
+        tenantId: actor.tenantId,
+      },
+    });
+
+    await tx.quote.update({
+      data: {
+        customerNotes: quote.currentVersion.customerNotes,
+        diagnosisCausa: quote.currentVersion.diagnosisCausa,
+        diagnosisProblema: quote.currentVersion.diagnosisProblema,
+        diagnosisRecomendacao: quote.currentVersion.diagnosisRecomendacao,
+        discountAmount: quote.currentVersion.discountAmount,
+        discountWarningMessage: quote.currentVersion.discountWarningMessage,
+        discountWarningPercent: quote.currentVersion.discountWarningPercent,
+        discountWarningTriggered: quote.currentVersion.discountWarningTriggered,
+        estimatedDeliveryAt: quote.currentVersion.estimatedDeliveryAt,
+        items: {
+          create: quote.currentVersion.items.map((item) => ({
+            description: item.description,
+            discountAmount: item.discountAmount,
+            kind: item.kind,
+            productId: item.productId,
+            quantity: item.quantity,
+            serviceCatalogEntryId: item.serviceCatalogEntryId,
+            sortOrder: item.sortOrder,
+            surchargeAmount: item.surchargeAmount,
+            tenantId: actor.tenantId,
+            totalAmount: item.totalAmount,
+            unitPrice: item.unitPrice,
+          })),
+        },
+        status: QUOTE_STATUS.draft,
+        subtotalAmount: quote.currentVersion.subtotalAmount,
+        surchargeAmount: quote.currentVersion.surchargeAmount,
+        totalAmount: quote.currentVersion.totalAmount,
+        updatedByUserId: actor.userId,
+        validUntil: quote.currentVersion.validUntil,
+      },
+      where: {
+        id: quote.id,
+      },
+    });
+
+    const updated = await tx.quote.findFirstOrThrow({
+      include: quoteIncludes,
+      where: {
+        id: quote.id,
+        tenantId: actor.tenantId,
+      },
+    });
+
+    await writeQuoteAudit(tx as PrismaDatabase, actor, {
+      action: "quotes.version.draft.created",
+      fields: ["currentVersionId"],
+      quote: updated,
+    });
+
+    return updated;
+  });
+}
+
+export async function getPublishedQuoteVersion(
+  prisma: PrismaDatabase,
+  tenantId: string,
+  quoteId: string,
+  versionId: string,
+): Promise<QuoteVersionWithRelations> {
+  const version = await prisma.quoteVersion.findFirst({
+    include: quoteVersionIncludes,
+    where: {
+      id: versionId,
+      quoteId,
+      tenantId,
+    },
+  });
+
+  if (!version) {
+    throw notFound();
+  }
+
+  return version;
+}
+
+export async function createQuoteApprovalLink(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+  versionId: string,
+  input: QuoteApprovalLinkInput,
+  baseUrl: string,
+): Promise<{ approvalUrl: string; expiresAt: string | null; quoteVersionId: string }> {
+  const version = await getPublishedQuoteVersion(prisma, actor.tenantId, quoteId, versionId);
+
+  if (version.status !== QUOTE_STATUS.published && version.status !== QUOTE_STATUS.sent) {
+    throw new HttpError(409, "Approval links are available only for published quote versions.");
+  }
+
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const link = await prisma.quoteApprovalLink.create({
+    data: {
+      createdByUserId: actor.userId,
+      expiresAt: input.expiresAt,
+      quoteVersionId: version.id,
+      tenantId: actor.tenantId,
+      tokenHash,
+    },
+  });
+
+  await writeAuditLog(prisma, {
+    action: "quotes.link.created",
+    entity: "quote_approval_link",
+    ipAddress: actor.ipAddress,
+    metadata: {
+      expiresAt: link.expiresAt,
+      quoteId,
+      quoteVersionId: version.id,
+      versionNumber: version.versionNumber,
+    },
+    recordId: link.id,
+    tenantId: actor.tenantId,
+    userAgent: actor.userAgent,
+    userId: actor.userId,
+  });
+
+  return {
+    approvalUrl: `${baseUrl.replace(/\/$/, "")}/quote-approval/${token}`,
+    expiresAt: link.expiresAt?.toISOString() ?? null,
+    quoteVersionId: version.id,
+  };
+}
+
+export async function markQuoteSent(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+): Promise<QuoteVersionWithRelations> {
+  return updateManualQuoteStatus(prisma, actor, quoteId, QUOTE_STATUS.sent, "quotes.status.sent");
+}
+
+export async function cancelQuote(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+): Promise<QuoteVersionWithRelations> {
+  return updateManualQuoteStatus(
+    prisma,
+    actor,
+    quoteId,
+    QUOTE_STATUS.cancelled,
+    "quotes.status.cancelled",
+  );
+}
+
 export function serializeQuote(quote: QuoteWithRelations) {
   const missing = publishMissingFields(quote);
 
@@ -303,6 +629,71 @@ export function serializeQuote(quote: QuoteWithRelations) {
   };
 }
 
+export function serializeQuoteVersion(version: QuoteVersionWithRelations) {
+  return {
+    checkInId: version.checkInId,
+    customer: {
+      document: version.customerDocument,
+      email: version.customerEmail,
+      name: version.customerName,
+      phone: version.customerPhone,
+    },
+    customerId: version.customerId,
+    customerNotes: version.customerNotes,
+    diagnosis: {
+      causa: version.diagnosisCausa,
+      problema: version.diagnosisProblema,
+      recomendacao: version.diagnosisRecomendacao,
+    },
+    discountWarning: {
+      message: version.discountWarningMessage,
+      percent: version.discountWarningPercent.toFixed(2),
+      triggered: version.discountWarningTriggered,
+    },
+    estimatedDeliveryAt: version.estimatedDeliveryAt?.toISOString() ?? null,
+    id: version.id,
+    items: version.items.map((item) => ({
+      description: item.description,
+      discountAmount: item.discountAmount.toFixed(2),
+      id: item.id,
+      kind: item.kind,
+      productId: item.productId,
+      quantity: item.quantity.toFixed(3),
+      serviceCatalogEntryId: item.serviceCatalogEntryId,
+      sortOrder: item.sortOrder,
+      surchargeAmount: item.surchargeAmount.toFixed(2),
+      totalAmount: item.totalAmount.toFixed(2),
+      unitPrice: item.unitPrice.toFixed(2),
+    })),
+    publishedAt: version.publishedAt.toISOString(),
+    quoteId: version.quoteId,
+    sourceKind: version.sourceKind === "check-in" ? "check_in" : version.sourceKind,
+    status: version.status,
+    tenantId: version.tenantId,
+    totals: {
+      discountAmount: version.discountAmount.toFixed(2),
+      subtotalAmount: version.subtotalAmount.toFixed(2),
+      surchargeAmount: version.surchargeAmount.toFixed(2),
+      totalAmount: version.totalAmount.toFixed(2),
+    },
+    validUntil: version.validUntil.toISOString(),
+    vehicle: {
+      brand: version.vehicleBrand,
+      label: version.vehicleLabel,
+      model: version.vehicleModel,
+      plate: version.vehiclePlate,
+      year: version.vehicleYear,
+    },
+    vehicleId: version.vehicleId,
+    versionNumber: version.versionNumber,
+    workshop: {
+      document: version.workshopDocument,
+      legalName: version.workshopLegalName,
+      tradeName: version.workshopTradeName,
+    },
+  };
+}
+
 const quoteIncludes = {
   customer: {
     select: {
@@ -319,6 +710,40 @@ const quoteIncludes = {
     select: {
       id: true,
       plateNormalized: true,
+    },
+  },
+} satisfies Prisma.QuoteInclude;
+
+const quoteVersionIncludes = {
+  items: {
+    orderBy: {
+      sortOrder: "asc",
+    },
+  },
+} satisfies Prisma.QuoteVersionInclude;
+
+const publishQuoteIncludes = {
+  customer: {
+    select: {
+      document: true,
+      email: true,
+      id: true,
+      name: true,
+      phone: true,
+    },
+  },
+  items: {
+    orderBy: {
+      sortOrder: "asc",
+    },
+  },
+  vehicle: {
+    select: {
+      brand: true,
+      id: true,
+      model: true,
+      plateNormalized: true,
+      year: true,
     },
   },
 } satisfies Prisma.QuoteInclude;
@@ -430,6 +855,27 @@ async function prepareItems(
 }
 
 function toItemCreate(
+  tenantId: string,
+  item: PreparedQuoteItem,
+  totals: { discountAmount: string; surchargeAmount: string; totalAmount: string; unitPrice: string },
+  index: number,
+) {
+  return {
+    description: item.description,
+    discountAmount: new Prisma.Decimal(totals.discountAmount),
+    kind: item.kind,
+    productId: item.productId,
+    quantity: new Prisma.Decimal(item.quantity),
+    serviceCatalogEntryId: item.serviceCatalogEntryId,
+    sortOrder: index,
+    surchargeAmount: new Prisma.Decimal(totals.surchargeAmount),
+    tenantId,
+    totalAmount: new Prisma.Decimal(totals.totalAmount),
+    unitPrice: new Prisma.Decimal(totals.unitPrice),
+  };
+}
+
+function toVersionItemCreate(
   tenantId: string,
   item: PreparedQuoteItem,
   totals: { discountAmount: string; surchargeAmount: string; totalAmount: string; unitPrice: string },
@@ -565,6 +1011,78 @@ async function writeDiscountWarningAudit(
       totalAmount: quote.totalAmount.toFixed(2),
     },
     recordId: quote.id,
+    tenantId: actor.tenantId,
+    userAgent: actor.userAgent,
+    userId: actor.userId,
+  });
+}
+
+async function updateManualQuoteStatus(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  quoteId: string,
+  status: string,
+  action: string,
+): Promise<QuoteVersionWithRelations> {
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.findFirst({
+      select: {
+        currentVersionId: true,
+        id: true,
+      },
+      where: {
+        id: quoteId,
+        tenantId: actor.tenantId,
+      },
+    });
+
+    if (!quote?.currentVersionId) {
+      throw new HttpError(409, "Quote does not have a published version.");
+    }
+
+    await tx.quote.update({
+      data: {
+        status,
+        updatedByUserId: actor.userId,
+      },
+      where: {
+        id: quote.id,
+      },
+    });
+    const version = await tx.quoteVersion.update({
+      data: {
+        status,
+        statusChangedAt: new Date(),
+        statusChangedByUserId: actor.userId,
+      },
+      include: quoteVersionIncludes,
+      where: {
+        id: quote.currentVersionId,
+      },
+    });
+
+    await writeVersionAudit(tx as PrismaDatabase, actor, version, action);
+
+    return version;
+  });
+}
+
+async function writeVersionAudit(
+  prisma: PrismaDatabase,
+  actor: ActorContext,
+  version: QuoteVersionWithRelations,
+  action: string,
+): Promise<void> {
+  await writeAuditLog(prisma, {
+    action,
+    entity: "quote_version",
+    ipAddress: actor.ipAddress,
+    metadata: {
+      quoteId: version.quoteId,
+      status: version.status,
+      versionNumber: version.versionNumber,
+    },
+    recordId: version.id,
     tenantId: actor.tenantId,
     userAgent: actor.userAgent,
     userId: actor.userId,
