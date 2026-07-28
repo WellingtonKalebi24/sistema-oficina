@@ -1,17 +1,17 @@
-﻿---
+---
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Agenda e Recepcao
 status: ready
-stopped_at: Completed 05-07-PLAN.md
-last_updated: "2026-07-28T02:38:16.866Z"
+stopped_at: Completed 05-08-PLAN.md
+last_updated: "2026-07-28T02:52:00.320Z"
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 26
-  completed_plans: 23
-  percent: 88
+  completed_plans: 24
+  percent: 92
 ---
 
 # Project State: JO.IA
@@ -112,8 +112,8 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-28T02:38:16.816Z
-**Stopped at:** Completed 05-07-PLAN.md
+**Last session:** 2026-07-28T02:51:59.328Z
+**Stopped at:** Completed 05-08-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -143,6 +143,7 @@ Continue Phase 5 with agenda and reception planning/execution.
 | Phase 05 P05 | 8min | 2 tasks | 3 files |
 | Phase 05 P06 | 10min | 2 tasks | 5 files |
 | Phase 05 P07 | 18min | 2 tasks | 11 files |
+| Phase 05 P08 | 10min | 2 tasks | 6 files |
 
 ## Decisions
 
@@ -204,4 +205,6 @@ Continue Phase 5 with agenda and reception planning/execution.
 - [Phase 05]: Plan 07 installed only the approved `multer` runtime dependency and used a local narrow declaration instead of the SUS `@types/multer` package.
 - [Phase 05]: Plan 07 configured `RECEPTION_UPLOAD_ROOT=uploads/reception` as a private API filesystem root with Docker volume wiring and no public static serving.
 - [Phase 05]: Plan 07 stores attachment categories as text plus a PostgreSQL check constraint for the D-09 canonical values.
-
+- [Phase 05]: Plan 08 mounted /reception/check-ins/:checkInId/attachments as authenticated API routes only; no public static upload route was added.
+- [Phase 05]: Plan 08 requires attachment write permission before Multer parses multipart bodies.
+- [Phase 05]: Plan 08 uses generated server-side stored names and keeps original filenames as metadata only.

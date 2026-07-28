@@ -12,7 +12,7 @@
 | 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
 | 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
 | 4 | Serviços, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
-| 5 | Agenda e Recepção | 7/10 | In Progress|  |
+| 5 | Agenda e Recepção | 8/10 | In Progress|  |
 | 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
 | 7 | Aprovação Pública Segura | Permitir decisão do cliente por token vinculado à versão exata | QTE-12..QTE-18 | yes |
 | 8 | Ordem de Serviço | Converter orçamento aprovado em OS auditável e transacional | WOP-01..WOP-08, WOP-12..WOP-14 | yes |
@@ -232,7 +232,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08
 **UI hint:** yes
-**Plans:** 7/10 plans executed
+**Plans:** 8/10 plans executed
 
 Plans:
 **Wave 1**
@@ -265,7 +265,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 05-08-PLAN.md — API de anexos com upload, download, delete autorizado, soft-delete e auditoria.
+- [x] 05-08-PLAN.md — API de anexos com upload, download, delete autorizado, soft-delete e auditoria.
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
