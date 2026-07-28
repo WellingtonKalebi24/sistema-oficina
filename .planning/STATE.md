@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-07-28T21:25:50.447Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-07-28T21:53:58.904Z"
 progress:
   total_phases: 12
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 30
-  completed_plans: 29
-  percent: 97
+  completed_plans: 30
+  percent: 50
 ---
 
 # Project State: JO.IA
@@ -112,8 +112,8 @@ Continue Phase 6 with 06-04 authenticated quote UI.
 
 ## Session
 
-**Last session:** 2026-07-28T21:25:50.379Z
-**Stopped at:** Completed 06-03-PLAN.md
+**Last session:** 2026-07-28T21:51:45.395Z
+**Stopped at:** Completed 06-04-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -149,6 +149,7 @@ Continue Phase 6 with 06-04 authenticated quote UI.
 | Phase 06 P01 | 7 min | 2 tasks | 7 files |
 | Phase 06 P02 | 15 min | 2 tasks | 8 files |
 | Phase 06 P03 | 14 min | 3 tasks | 9 files |
+| Phase 06 P04 | 22 min | 3 tasks | 9 files |
 
 ## Decisions
 
@@ -225,3 +226,6 @@ Continue Phase 6 with 06-04 authenticated quote UI.
 - [Phase 06]: Draft quote totals store aggregate discount and surcharge values, with quote-level adjustment details recalculated from submitted payloads during this MVP slice.
 - [Phase 06]: Published quote versions preserve persisted draft aggregate totals from 06-02 because the MVP draft schema stores aggregate quote-level adjustments, not separate quote-level adjustment components.
 - [Phase 06]: Quote approval links use SHA-256 token hashes in storage and expose the plaintext token only as part of the authenticated manual-copy URL response.
+- [Phase 06]: Warning discounts remain warning-only in the quote UI; users can save/publish but see explicit margin-risk messaging. — Carries D-08 from the backend calculator into the visible workflow without silently blocking commercial decisions.
+- [Phase 06]: Published quote versions are represented as locked commercial state in the UI; edits require Criar nova versao. — Matches backend immutability from 06-03 and prevents accidental changes to values exposed to approval/PDF artifacts.
+- [Phase 06]: Quote workspace uses backend quote APIs exclusively; approval links and PDFs are generated server-side and copied/opened manually from the UI. — Preserves backend authorization, tenant scoping and the no-automatic-communication boundary while meeting QTE-09 and D-06.
