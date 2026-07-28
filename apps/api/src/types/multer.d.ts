@@ -6,7 +6,11 @@ declare module "multer" {
   export type DiskStorageOptions = {
     destination?:
       | string
-      | ((req: Request, file: Express.Multer.File, callback: (error: Error | null, destination: string) => void) => void);
+      | ((
+          req: Request,
+          file: Express.Multer.File,
+          callback: (error: Error | null, destination: string) => void,
+        ) => void);
     filename?: (
       req: Request,
       file: Express.Multer.File,
@@ -25,8 +29,16 @@ declare module "multer" {
   };
 
   export type StorageEngine = {
-    _handleFile(req: Request, file: Express.Multer.File, callback: (error?: unknown, info?: Partial<Express.Multer.File>) => void): void;
-    _removeFile(req: Request, file: Express.Multer.File, callback: (error: Error | null) => void): void;
+    _handleFile(
+      req: Request,
+      file: Express.Multer.File,
+      callback: (error?: unknown, info?: Partial<Express.Multer.File>) => void,
+    ): void;
+    _removeFile(
+      req: Request,
+      file: Express.Multer.File,
+      callback: (error: Error | null) => void,
+    ): void;
   };
 
   export type Multer = {
