@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 6 — Diagnóstico e Orçamento
 status: planning
-stopped_at: Completed 05-10-PLAN.md
-last_updated: "2026-07-28T03:54:11.413Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-07-28T16:32:02.857Z"
 progress:
   total_phases: 12
   completed_phases: 5
@@ -112,9 +112,9 @@ Continue Phase 5 with agenda and reception planning/execution.
 
 ## Session
 
-**Last session:** 2026-07-28T03:29:27.854Z
-**Stopped at:** Completed 05-10-PLAN.md
-**Resume file:** None
+**Last session:** 2026-07-28T16:32:02.803Z
+**Stopped at:** Phase 6 context gathered
+**Resume file:** .planning/phases/06-diagn-stico-e-or-amento/06-CONTEXT.md
 
 ## Performance Metrics
 
