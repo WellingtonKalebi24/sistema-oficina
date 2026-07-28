@@ -1,4 +1,4 @@
-# Roadmap: JO.IA - Sistema de Gestão para Oficina Automotiva
+﻿# Roadmap: JO.IA - Sistema de GestÃ£o para Oficina Automotiva
 
 **Created:** 2026-07-14
 **Project mode:** Vertical MVP
@@ -8,24 +8,24 @@
 
 | # | Phase | Goal | Requirements | UI hint |
 |---|-------|------|--------------|---------|
-| 1 | Fundação Técnica e Contrato Visual | 1/3 | In Progress|  |
-| 2 | Autenticação, Tenant e Permissões | 6/6 | Complete   | 2026-07-19 |
-| 3 | Clientes e Veículos | 3/3 | Complete   | 2026-07-21 |
-| 4 | Serviços, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
-| 5 | Agenda e Recepção | 10/10 | Complete    | 2026-07-28 |
-| 6 | Diagnóstico e Orçamento | Criar orçamento versionado com cálculo, PDF e link manual | QTE-01..QTE-11 | yes |
-| 7 | Aprovação Pública Segura | Permitir decisão do cliente por token vinculado à versão exata | QTE-12..QTE-18 | yes |
-| 8 | Ordem de Serviço | Converter orçamento aprovado em OS auditável e transacional | WOP-01..WOP-08, WOP-12..WOP-14 | yes |
-| 9 | Produção e Tarefas | Organizar execução operacional em quadro de tarefas | WOP-09..WOP-11 | yes |
-| 10 | Financeiro | Registrar recebimentos, obrigações, caixa e estornos | FIN-01..FIN-15 | yes |
-| 11 | Dashboard, Histórico e Portal | Consolidar dados operacionais e consultas seguras | DPR-01..DPR-05 | yes |
-| 12 | Relatórios e Produção | Preparar relatórios, auditoria final, backup, testes e deploy | DPR-06..DPR-11 | yes |
+| 1 | FundaÃ§Ã£o TÃ©cnica e Contrato Visual | 1/3 | In Progress|  |
+| 2 | AutenticaÃ§Ã£o, Tenant e PermissÃµes | 6/6 | Complete   | 2026-07-19 |
+| 3 | Clientes e VeÃ­culos | 3/3 | Complete   | 2026-07-21 |
+| 4 | ServiÃ§os, Produtos, Compras e Estoque | 4/4 | Complete   | 2026-07-22 |
+| 5 | Agenda e RecepÃ§Ã£o | 10/10 | Complete    | 2026-07-28 |
+| 6 | DiagnÃ³stico e OrÃ§amento | Criar orÃ§amento versionado com cÃ¡lculo, PDF e link manual | QTE-01..QTE-11 | yes |
+| 7 | AprovaÃ§Ã£o PÃºblica Segura | Permitir decisÃ£o do cliente por token vinculado Ã  versÃ£o exata | QTE-12..QTE-18 | yes |
+| 8 | Ordem de ServiÃ§o | Converter orÃ§amento aprovado em OS auditÃ¡vel e transacional | WOP-01..WOP-08, WOP-12..WOP-14 | yes |
+| 9 | ProduÃ§Ã£o e Tarefas | Organizar execuÃ§Ã£o operacional em quadro de tarefas | WOP-09..WOP-11 | yes |
+| 10 | Financeiro | Registrar recebimentos, obrigaÃ§Ãµes, caixa e estornos | FIN-01..FIN-15 | yes |
+| 11 | Dashboard, HistÃ³rico e Portal | Consolidar dados operacionais e consultas seguras | DPR-01..DPR-05 | yes |
+| 12 | RelatÃ³rios e ProduÃ§Ã£o | Preparar relatÃ³rios, auditoria final, backup, testes e deploy | DPR-06..DPR-11 | yes |
 
 ## Phases
 
-### Phase 1: Fundação Técnica e Contrato Visual
+### Phase 1: FundaÃ§Ã£o TÃ©cnica e Contrato Visual
 
-**Goal:** Criar uma base técnica executável, testável e preparada para evolução, com contrato visual mínimo da JO.IA antes das telas principais.
+**Goal:** Criar uma base tÃ©cnica executÃ¡vel, testÃ¡vel e preparada para evoluÃ§Ã£o, com contrato visual mÃ­nimo da JO.IA antes das telas principais.
 **Mode:** mvp
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, VUX-01, VUX-02, VUX-03, VUX-04, VUX-05
 **UI hint:** yes
@@ -34,15 +34,15 @@
 Plans:
 **Wave 1**
 
-- [x] 01-01-PLAN.md — Gated npm workspace scaffold and RED walking-skeleton contract.
+- [x] 01-01-PLAN.md â€” Gated npm workspace scaffold and RED walking-skeleton contract.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 01-02-PLAN.md — Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
+- [x] 01-02-PLAN.md â€” Prisma, PostgreSQL, Express health, error/logging and foundation write/read API.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 01-03-PLAN.md — Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
+- [x] 01-03-PLAN.md â€” Web UI interaction, Docker web service, local docs, visual contract and SKELETON.md.
 
 **Scope**
 
@@ -50,8 +50,8 @@ Plans:
 - Docker Compose com PostgreSQL.
 - Prisma, migrations e seed controlado.
 - Health check, tratamento global de erros e logs estruturados.
-- Lint, formatação, type check, testes e documentação local.
-- Contrato visual JO.IA cobrindo paleta, tipografia, espaçamento, componentes, estados, acessibilidade e formatos de data/moeda.
+- Lint, formataÃ§Ã£o, type check, testes e documentaÃ§Ã£o local.
+- Contrato visual JO.IA cobrindo paleta, tipografia, espaÃ§amento, componentes, estados, acessibilidade e formatos de data/moeda.
 
 **Dependencies**
 
@@ -59,9 +59,9 @@ Plans:
 
 **Risks**
 
-- Escolher estrutura que dificulte módulos posteriores.
-- Criar UI sem contrato visual e gerar inconsistência futura.
-- Seed ou ambiente local depender de configuração manual não documentada.
+- Escolher estrutura que dificulte mÃ³dulos posteriores.
+- Criar UI sem contrato visual e gerar inconsistÃªncia futura.
+- Seed ou ambiente local depender de configuraÃ§Ã£o manual nÃ£o documentada.
 
 **Success Criteria**
 
@@ -69,11 +69,11 @@ Plans:
 2. Frontend abre, API responde health check e API conecta ao PostgreSQL.
 3. Migration inicial executa em banco limpo.
 4. Lint, type check e testes iniciais passam.
-5. Contrato visual está documentado e pronto para guiar as próximas telas.
+5. Contrato visual estÃ¡ documentado e pronto para guiar as prÃ³ximas telas.
 
-### Phase 2: Autenticação, Tenant e Permissões
+### Phase 2: AutenticaÃ§Ã£o, Tenant e PermissÃµes
 
-**Goal:** Garantir acesso seguro, configuração da oficina e isolamento entre empresas.
+**Goal:** Garantir acesso seguro, configuraÃ§Ã£o da oficina e isolamento entre empresas.
 **Mode:** mvp
 **Requirements:** IDT-01, IDT-02, IDT-03, IDT-04, IDT-05, IDT-06, IDT-07, IDT-08, IDT-09, IDT-10, IDT-11, IDT-12, IDT-13
 **UI hint:** yes
@@ -82,33 +82,33 @@ Plans:
 Plans:
 **Wave 1**
 
-- [x] 02-01-PLAN.md — Package legitimacy checkpoint and approved auth/admin dependency installation.
+- [x] 02-01-PLAN.md â€” Package legitimacy checkpoint and approved auth/admin dependency installation.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 02-02-PLAN.md — Identity, tenant, session, permission and audit schema with RED auth fixture tests.
+- [x] 02-02-PLAN.md â€” Identity, tenant, session, permission and audit schema with RED auth fixture tests.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 02-03-PLAN.md — Bootstrap, login, browser-managed opaque refresh sessions, current-session logout and current-user API.
+- [x] 02-03-PLAN.md â€” Bootstrap, login, browser-managed opaque refresh sessions, current-session logout and current-user API.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [x] 02-04-PLAN.md — Password reset, change password, EmailSender adapter, sanitized auth audit and requireAuth middleware.
+- [x] 02-04-PLAN.md â€” Password reset, change password, EmailSender adapter, sanitized auth audit and requireAuth middleware.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [x] 02-05-PLAN.md — Permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
+- [x] 02-05-PLAN.md â€” Permission resolver, tenant scope helpers, admin routes, backend authorization, tenant isolation and audit.
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [x] 02-06-PLAN.md — Authenticated admin UI, visual-contract compliance, local setup updates and final phase verification.
+- [x] 02-06-PLAN.md â€” Authenticated admin UI, visual-contract compliance, local setup updates and final phase verification.
 
 **Scope**
 
-- `Tenant`, `CompanySetting`, usuários, roles, permissões e permissões específicas.
-- Login, refresh token, logout, recuperação de senha e troca de senha.
-- Proteção de rotas, autorização backend e auditoria de acesso/permissões.
+- `Tenant`, `CompanySetting`, usuÃ¡rios, roles, permissÃµes e permissÃµes especÃ­ficas.
+- Login, refresh token, logout, recuperaÃ§Ã£o de senha e troca de senha.
+- ProteÃ§Ã£o de rotas, autorizaÃ§Ã£o backend e auditoria de acesso/permissÃµes.
 - Testes de isolamento entre tenants.
 
 **Dependencies**
@@ -117,21 +117,21 @@ Plans:
 
 **Risks**
 
-- Autorização ficar apenas no frontend.
-- Tokens não serem invalidados corretamente.
+- AutorizaÃ§Ã£o ficar apenas no frontend.
+- Tokens nÃ£o serem invalidados corretamente.
 - Consultas sem filtro de tenant.
 
 **Success Criteria**
 
 1. Administrador consegue entrar e configurar a oficina.
-2. Usuário sem permissão recebe bloqueio adequado no backend.
-3. Usuário de um tenant não acessa dados de outro.
-4. Refresh token e logout invalidam sessões de forma segura.
-5. Eventos relevantes de acesso e permissões são auditados.
+2. UsuÃ¡rio sem permissÃ£o recebe bloqueio adequado no backend.
+3. UsuÃ¡rio de um tenant nÃ£o acessa dados de outro.
+4. Refresh token e logout invalidam sessÃµes de forma segura.
+5. Eventos relevantes de acesso e permissÃµes sÃ£o auditados.
 
-### Phase 3: Clientes e Veículos
+### Phase 3: Clientes e VeÃ­culos
 
-**Goal:** Permitir gestão segura da base de clientes e veículos da oficina.
+**Goal:** Permitir gestÃ£o segura da base de clientes e veÃ­culos da oficina.
 **Mode:** mvp
 **Requirements:** CAV-01, CAV-02, CAV-03, CAV-04, CAV-05, CAV-06, CAV-07, CAV-08, CAV-09
 **UI hint:** yes
@@ -140,22 +140,22 @@ Plans:
 Plans:
 **Wave 1**
 
-- [x] 03-01-PLAN.md — Customer/vehicle schema, permissions, tenant helpers and RED backend contracts.
+- [x] 03-01-PLAN.md â€” Customer/vehicle schema, permissions, tenant helpers and RED backend contracts.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 03-02-PLAN.md — Protected tenant-scoped customer/vehicle API routes, services, audit, history and isolation.
+- [x] 03-02-PLAN.md â€” Protected tenant-scoped customer/vehicle API routes, services, audit, history and isolation.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 03-03-PLAN.md — Authenticated customer/vehicle UI, setup notes and final Phase 3 verification. (completed 2026-07-21)
+- [x] 03-03-PLAN.md â€” Authenticated customer/vehicle UI, setup notes and final Phase 3 verification. (completed 2026-07-21)
 
 **Scope**
 
-- Cadastro, edição, listagem, busca e exclusão lógica de clientes e veículos.
-- Relacionamento cliente-veículo.
+- Cadastro, ediÃ§Ã£o, listagem, busca e exclusÃ£o lÃ³gica de clientes e veÃ­culos.
+- Relacionamento cliente-veÃ­culo.
 - Busca por nome, telefone, documento, placa e cliente relacionado.
-- Histórico básico, validações de duplicidade e auditoria.
+- HistÃ³rico bÃ¡sico, validaÃ§Ãµes de duplicidade e auditoria.
 
 **Dependencies**
 
@@ -163,21 +163,21 @@ Plans:
 
 **Risks**
 
-- Excluir logicamente um registro e quebrar histórico.
-- Permitir vínculo com cliente ou veículo de outro tenant.
-- Falta de auditoria em dados sensíveis.
+- Excluir logicamente um registro e quebrar histÃ³rico.
+- Permitir vÃ­nculo com cliente ou veÃ­culo de outro tenant.
+- Falta de auditoria em dados sensÃ­veis.
 
 **Success Criteria**
 
-1. Usuário cadastra cliente e veículo e relaciona ambos.
-2. Usuário encontra registros por diferentes campos.
-3. Duplicidades configuradas são bloqueadas.
-4. Exclusão lógica preserva registros relacionados.
+1. UsuÃ¡rio cadastra cliente e veÃ­culo e relaciona ambos.
+2. UsuÃ¡rio encontra registros por diferentes campos.
+3. Duplicidades configuradas sÃ£o bloqueadas.
+4. ExclusÃ£o lÃ³gica preserva registros relacionados.
 5. Testes comprovam bloqueio de acesso entre tenants.
 
-### Phase 4: Serviços, Produtos, Compras e Estoque
+### Phase 4: ServiÃ§os, Produtos, Compras e Estoque
 
-**Goal:** Disponibilizar recursos de precificação e controle transacional de peças.
+**Goal:** Disponibilizar recursos de precificaÃ§Ã£o e controle transacional de peÃ§as.
 **Mode:** mvp
 **Requirements:** STK-01, STK-02, STK-03, STK-04, STK-05, STK-06, STK-07, STK-08, STK-09, STK-10, STK-11, STK-12, STK-13, STK-14
 **UI hint:** yes
@@ -186,26 +186,26 @@ Plans:
 Plans:
 **Wave 1**
 
-- [x] 04-01-PLAN.md — Tenant-scoped catalog schema, permissions, service/product/supplier APIs and RED contracts.
+- [x] 04-01-PLAN.md â€” Tenant-scoped catalog schema, permissions, service/product/supplier APIs and RED contracts.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 04-02-PLAN.md — Transactional purchases, stock entries/exits/adjustments, movement history and concurrency safety.
+- [x] 04-02-PLAN.md â€” Transactional purchases, stock entries/exits/adjustments, movement history and concurrency safety.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 04-03-PLAN.md — Reservations and cancellation semantics with availability-safe transactions.
+- [x] 04-03-PLAN.md â€” Reservations and cancellation semantics with availability-safe transactions.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [x] 04-04-PLAN.md — Authenticated Estoque UI, stock web client and final Phase 4 verification. (completed 2026-07-22)
+- [x] 04-04-PLAN.md â€” Authenticated Estoque UI, stock web client and final Phase 4 verification. (completed 2026-07-22)
 
 **Scope**
 
-- Catálogo de serviços.
+- CatÃ¡logo de serviÃ§os.
 - Produtos, categorias, fornecedores, compras e itens de compra.
-- Entrada, saída, ajuste autorizado, reserva e cancelamento de reserva.
-- Estoque mínimo, alertas visuais, histórico de movimentações e rastreabilidade.
+- Entrada, saÃ­da, ajuste autorizado, reserva e cancelamento de reserva.
+- Estoque mÃ­nimo, alertas visuais, histÃ³rico de movimentaÃ§Ãµes e rastreabilidade.
 
 **Dependencies**
 
@@ -214,21 +214,21 @@ Plans:
 
 **Risks**
 
-- Corrida de concorrência alterar saldo incorretamente.
-- Reserva afetar saldo físico em vez de disponibilidade.
-- Ajuste sem permissão ou sem auditoria.
+- Corrida de concorrÃªncia alterar saldo incorretamente.
+- Reserva afetar saldo fÃ­sico em vez de disponibilidade.
+- Ajuste sem permissÃ£o ou sem auditoria.
 
 **Success Criteria**
 
 1. Entrada de compra aumenta saldo via movimento transacional.
-2. Saída reduz saldo com origem rastreável.
-3. Reserva e cancelamento alteram disponibilidade sem corromper saldo físico.
-4. Ajuste exige permissão e registra auditoria.
-5. Operações concorrentes não produzem saldos negativos ou incorretos.
+2. SaÃ­da reduz saldo com origem rastreÃ¡vel.
+3. Reserva e cancelamento alteram disponibilidade sem corromper saldo fÃ­sico.
+4. Ajuste exige permissÃ£o e registra auditoria.
+5. OperaÃ§Ãµes concorrentes nÃ£o produzem saldos negativos ou incorretos.
 
-### Phase 5: Agenda e Recepção
+### Phase 5: Agenda e RecepÃ§Ã£o
 
-**Goal:** Cobrir o agendamento e a entrada física do veículo na oficina.
+**Goal:** Cobrir o agendamento e a entrada fÃ­sica do veÃ­culo na oficina.
 **Mode:** mvp
 **Requirements:** REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08
 **UI hint:** yes
@@ -237,50 +237,50 @@ Plans:
 Plans:
 **Wave 1**
 
-- [x] 05-01-PLAN.md — Schema, permissoes e contratos RED de agendamentos tenant-scoped.
+- [x] 05-01-PLAN.md â€” Schema, permissoes e contratos RED de agendamentos tenant-scoped.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 05-02-PLAN.md — API protegida de agenda com CRUD, listagem diaria/semanal, tenant isolation e auditoria.
+- [x] 05-02-PLAN.md â€” API protegida de agenda com CRUD, listagem diaria/semanal, tenant isolation e auditoria.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 05-03-PLAN.md — UI Agenda table-first com criacao, edicao, cancelamento e comportamento mobile.
+- [x] 05-03-PLAN.md â€” UI Agenda table-first com criacao, edicao, cancelamento e comportamento mobile.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [x] 05-04-PLAN.md — Schema, permissoes e contratos RED de check-in, checklist e auditoria.
+- [x] 05-04-PLAN.md â€” Schema, permissoes e contratos RED de check-in, checklist e auditoria.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [x] 05-05-PLAN.md — API transacional de check-in e checklist por agendamento ou direto.
+- [x] 05-05-PLAN.md â€” API transacional de check-in e checklist por agendamento ou direto.
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [x] 05-06-PLAN.md — UI de check-in, consulta posterior, edicao auditada e hardening de isolamento.
+- [x] 05-06-PLAN.md â€” UI de check-in, consulta posterior, edicao auditada e hardening de isolamento.
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [x] 05-07-PLAN.md — Dependencia aprovada, configuracao e schema de anexos protegidos.
+- [x] 05-07-PLAN.md â€” Dependencia aprovada, configuracao e schema de anexos protegidos.
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [x] 05-08-PLAN.md — API de anexos com upload, download, delete autorizado, soft-delete e auditoria.
+- [x] 05-08-PLAN.md â€” API de anexos com upload, download, delete autorizado, soft-delete e auditoria.
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [x] 05-09-PLAN.md — UI de anexos opcionais no detalhe do check-in.
+- [x] 05-09-PLAN.md â€” UI de anexos opcionais no detalhe do check-in.
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [x] 05-10-PLAN.md — Preferencia tenant-level de visualizacao, smoke docs e validacao final da Phase 5.
+- [x] 05-10-PLAN.md â€” Preferencia tenant-level de visualizacao, smoke docs e validacao final da Phase 5.
 
 **Scope**
 
-- Agenda diária e semanal.
-- Criação e edição de agendamentos.
-- Check-in vinculado a cliente e veículo.
-- Checklist de entrada, quilometragem, combustível, avarias, fotos, anexos e itens deixados.
+- Agenda diÃ¡ria e semanal.
+- CriaÃ§Ã£o e ediÃ§Ã£o de agendamentos.
+- Check-in vinculado a cliente e veÃ­culo.
+- Checklist de entrada, quilometragem, combustÃ­vel, avarias, fotos, anexos e itens deixados.
 
 **Dependencies**
 
@@ -290,44 +290,48 @@ Plans:
 **Risks**
 
 - Anexos sem isolamento de tenant.
-- Check-in sem vínculo rastreável ao cliente/veículo.
-- Dados de recepção não auditados.
+- Check-in sem vÃ­nculo rastreÃ¡vel ao cliente/veÃ­culo.
+- Dados de recepÃ§Ã£o nÃ£o auditados.
 
 **Success Criteria**
 
-1. Usuário cria agendamento e visualiza na agenda.
-2. Usuário realiza check-in vinculado ao cliente e veículo.
-3. Checklist, fotos, quilometragem, combustível e avarias ficam consultáveis.
+1. UsuÃ¡rio cria agendamento e visualiza na agenda.
+2. UsuÃ¡rio realiza check-in vinculado ao cliente e veÃ­culo.
+3. Checklist, fotos, quilometragem, combustÃ­vel e avarias ficam consultÃ¡veis.
 4. Anexos respeitam tenant.
-5. Alterações relevantes são auditadas.
+5. AlteraÃ§Ãµes relevantes sÃ£o auditadas.
 
-### Phase 6: Diagnóstico e Orçamento
+### Phase 6: DiagnÃ³stico e OrÃ§amento
 
-**Goal:** Transformar diagnóstico técnico em proposta comercial versionada, calculada e compartilhável manualmente.
+**Goal:** Transformar diagnÃ³stico tÃ©cnico em proposta comercial versionada, calculada e compartilhÃ¡vel manualmente.
 **Mode:** mvp
 **Requirements:** QTE-01, QTE-02, QTE-03, QTE-04, QTE-05, QTE-06, QTE-07, QTE-08, QTE-09, QTE-10, QTE-11
 **UI hint:** yes
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Diagnóstico e orçamento em rascunho com itens e totais backend-authoritative.
+- [ ] 06-01-PLAN.md — Pacotes aprovados, schema, permissoes e setup base de orcamentos.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-02-PLAN.md — Publicação imutável, nova versão, PDF e link manual a partir de snapshot.
+- [ ] 06-02-PLAN.md — API de diagnostico e orcamento em rascunho com itens e totais backend-authoritative.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-03-PLAN.md — UI autenticada de Orçamentos com criação, publicação, PDF e cópia manual.
+- [ ] 06-03-PLAN.md — Publicacao imutavel, nova versao, PDF e link manual a partir de snapshot.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 06-04-PLAN.md — UI autenticada de Orcamentos com criacao, publicacao, PDF e copia manual.
 
 **Scope**
 
-- Diagnóstico, serviços e peças recomendadas.
-- Orçamento em rascunho com itens de serviço/produto, desconto, acréscimo, validade e prazo.
-- Cálculo de subtotal e total.
-- Publicação de versão imutável, nova versão, PDF, impressão e cópia manual do link seguro.
+- DiagnÃ³stico, serviÃ§os e peÃ§as recomendadas.
+- OrÃ§amento em rascunho com itens de serviÃ§o/produto, desconto, acrÃ©scimo, validade e prazo.
+- CÃ¡lculo de subtotal e total.
+- PublicaÃ§Ã£o de versÃ£o imutÃ¡vel, nova versÃ£o, PDF, impressÃ£o e cÃ³pia manual do link seguro.
 
 **Dependencies**
 
@@ -337,32 +341,32 @@ Plans:
 
 **Risks**
 
-- Alterar versão publicada em vez de criar nova.
-- Desconto sem permissão.
-- PDF divergente do orçamento persistido.
-- Introduzir botões de envio automático proibidos.
+- Alterar versÃ£o publicada em vez de criar nova.
+- Desconto sem permissÃ£o.
+- PDF divergente do orÃ§amento persistido.
+- Introduzir botÃµes de envio automÃ¡tico proibidos.
 
 **Success Criteria**
 
-1. Usuário cria diagnóstico e orçamento com serviços e peças.
-2. Totais, descontos e acréscimos são calculados corretamente.
-3. Desconto acima do limite exibe alerta e permanece permitido, conforme decisão D-08.
-4. Versão publicada fica imutável e nova versão preserva a anterior.
-5. PDF e link podem ser gerados para entrega manual, sem envio automático.
+1. UsuÃ¡rio cria diagnÃ³stico e orÃ§amento com serviÃ§os e peÃ§as.
+2. Totais, descontos e acrÃ©scimos sÃ£o calculados corretamente.
+3. Desconto acima do limite exibe alerta e permanece permitido, conforme decisÃ£o D-08.
+4. VersÃ£o publicada fica imutÃ¡vel e nova versÃ£o preserva a anterior.
+5. PDF e link podem ser gerados para entrega manual, sem envio automÃ¡tico.
 
-### Phase 7: Aprovação Pública Segura
+### Phase 7: AprovaÃ§Ã£o PÃºblica Segura
 
-**Goal:** Permitir que o cliente consulte e decida sobre uma versão exata do orçamento por token seguro.
+**Goal:** Permitir que o cliente consulte e decida sobre uma versÃ£o exata do orÃ§amento por token seguro.
 **Mode:** mvp
 **Requirements:** QTE-12, QTE-13, QTE-14, QTE-15, QTE-16, QTE-17, QTE-18
 **UI hint:** yes
 
 **Scope**
 
-- Página pública por token.
-- Visualização apenas de dados autorizados.
-- Aprovação total, aprovação parcial, recusa, observação e confirmação de nome.
-- Registro de visualização, decisão, itens aprovados/recusados, IP/user agent quando permitido e auditoria.
+- PÃ¡gina pÃºblica por token.
+- VisualizaÃ§Ã£o apenas de dados autorizados.
+- AprovaÃ§Ã£o total, aprovaÃ§Ã£o parcial, recusa, observaÃ§Ã£o e confirmaÃ§Ã£o de nome.
+- Registro de visualizaÃ§Ã£o, decisÃ£o, itens aprovados/recusados, IP/user agent quando permitido e auditoria.
 
 **Dependencies**
 
@@ -370,31 +374,31 @@ Plans:
 
 **Risks**
 
-- Token previsível ou vazando existência de registros.
-- Aprovação não vinculada à versão exata.
-- Exposição de dados internos, custos, margem ou fornecedores.
+- Token previsÃ­vel ou vazando existÃªncia de registros.
+- AprovaÃ§Ã£o nÃ£o vinculada Ã  versÃ£o exata.
+- ExposiÃ§Ã£o de dados internos, custos, margem ou fornecedores.
 
 **Success Criteria**
 
-1. Token válido exibe somente a versão e os dados autorizados.
-2. Token inválido, expirado ou incorreto não revela informações protegidas.
+1. Token vÃ¡lido exibe somente a versÃ£o e os dados autorizados.
+2. Token invÃ¡lido, expirado ou incorreto nÃ£o revela informaÃ§Ãµes protegidas.
 3. Cliente aprova todos, aprova parcialmente ou recusa.
-4. Decisão fica vinculada à versão exata.
-5. Dados técnicos e auditoria são registrados sem armazenar segredos.
+4. DecisÃ£o fica vinculada Ã  versÃ£o exata.
+5. Dados tÃ©cnicos e auditoria sÃ£o registrados sem armazenar segredos.
 
-### Phase 8: Ordem de Serviço
+### Phase 8: Ordem de ServiÃ§o
 
-**Goal:** Controlar formalmente a execução dos trabalhos autorizados com snapshots, status e consumo de peças.
+**Goal:** Controlar formalmente a execuÃ§Ã£o dos trabalhos autorizados com snapshots, status e consumo de peÃ§as.
 **Mode:** mvp
 **Requirements:** WOP-01, WOP-02, WOP-03, WOP-04, WOP-05, WOP-06, WOP-07, WOP-08, WOP-12, WOP-13, WOP-14
 **UI hint:** yes
 
 **Scope**
 
-- Conversão transacional de orçamento aprovado em OS.
-- Itens com snapshots de descrições e preços.
-- Status, histórico, responsáveis, prazos, fotos e anexos.
-- Regras de finalização, reabertura autorizada, utilização de peças e auditoria.
+- ConversÃ£o transacional de orÃ§amento aprovado em OS.
+- Itens com snapshots de descriÃ§Ãµes e preÃ§os.
+- Status, histÃ³rico, responsÃ¡veis, prazos, fotos e anexos.
+- Regras de finalizaÃ§Ã£o, reabertura autorizada, utilizaÃ§Ã£o de peÃ§as e auditoria.
 
 **Dependencies**
 
@@ -404,30 +408,30 @@ Plans:
 **Risks**
 
 - Converter itens recusados.
-- Usar preços mutáveis do catálogo.
-- Consumir peças sem transação.
-- Reabrir OS sem autorização.
+- Usar preÃ§os mutÃ¡veis do catÃ¡logo.
+- Consumir peÃ§as sem transaÃ§Ã£o.
+- Reabrir OS sem autorizaÃ§Ã£o.
 
 **Success Criteria**
 
-1. Orçamento aprovado gera OS apenas com itens aprovados.
-2. Descrições e preços permanecem preservados após alterações no catálogo.
-3. Transições inválidas são bloqueadas.
-4. Reabertura exige permissão.
-5. Uso de peças atualiza estoque corretamente e registra auditoria.
+1. OrÃ§amento aprovado gera OS apenas com itens aprovados.
+2. DescriÃ§Ãµes e preÃ§os permanecem preservados apÃ³s alteraÃ§Ãµes no catÃ¡logo.
+3. TransiÃ§Ãµes invÃ¡lidas sÃ£o bloqueadas.
+4. Reabertura exige permissÃ£o.
+5. Uso de peÃ§as atualiza estoque corretamente e registra auditoria.
 
-### Phase 9: Produção e Tarefas
+### Phase 9: ProduÃ§Ã£o e Tarefas
 
-**Goal:** Organizar a execução operacional da ordem de serviço em tarefas e quadro de produção.
+**Goal:** Organizar a execuÃ§Ã£o operacional da ordem de serviÃ§o em tarefas e quadro de produÃ§Ã£o.
 **Mode:** mvp
 **Requirements:** WOP-09, WOP-10, WOP-11
 **UI hint:** yes
 
 **Scope**
 
-- Tarefas da OS, responsável, prioridade, prazo, tempo estimado e ordenação.
-- Quadro Kanban, alteração de status e identificação de atrasos.
-- Regras de autorização e histórico relevante.
+- Tarefas da OS, responsÃ¡vel, prioridade, prazo, tempo estimado e ordenaÃ§Ã£o.
+- Quadro Kanban, alteraÃ§Ã£o de status e identificaÃ§Ã£o de atrasos.
+- Regras de autorizaÃ§Ã£o e histÃ³rico relevante.
 
 **Dependencies**
 
@@ -436,29 +440,29 @@ Plans:
 **Risks**
 
 - Quadro refletir estado visual diferente do persistido.
-- Transição sem permissão.
-- Alertas virarem notificações persistentes.
+- TransiÃ§Ã£o sem permissÃ£o.
+- Alertas virarem notificaÃ§Ãµes persistentes.
 
 **Success Criteria**
 
-1. Usuário cria tarefa e atribui responsável.
-2. Usuário altera status e o quadro reflete a mudança.
-3. Transição sem permissão é bloqueada.
-4. Tarefas atrasadas são identificadas por cálculo.
-5. Histórico relevante é preservado.
+1. UsuÃ¡rio cria tarefa e atribui responsÃ¡vel.
+2. UsuÃ¡rio altera status e o quadro reflete a mudanÃ§a.
+3. TransiÃ§Ã£o sem permissÃ£o Ã© bloqueada.
+4. Tarefas atrasadas sÃ£o identificadas por cÃ¡lculo.
+5. HistÃ³rico relevante Ã© preservado.
 
 ### Phase 10: Financeiro
 
-**Goal:** Registrar recebimentos, obrigações, despesas e movimentações de caixa com integridade.
+**Goal:** Registrar recebimentos, obrigaÃ§Ãµes, despesas e movimentaÃ§Ãµes de caixa com integridade.
 **Mode:** mvp
 **Requirements:** FIN-01, FIN-02, FIN-03, FIN-04, FIN-05, FIN-06, FIN-07, FIN-08, FIN-09, FIN-10, FIN-11, FIN-12, FIN-13, FIN-14, FIN-15
 **UI hint:** yes
 
 **Scope**
 
-- Categorias financeiras, contas a receber, contas a pagar, despesas e comissões.
+- Categorias financeiras, contas a receber, contas a pagar, despesas e comissÃµes.
 - Pagamentos integrais/parciais, parcelamento, estorno, caixa e movimentos de caixa.
-- Situação financeira da OS, fluxo de caixa e alertas visuais de vencimento.
+- SituaÃ§Ã£o financeira da OS, fluxo de caixa e alertas visuais de vencimento.
 
 **Dependencies**
 
@@ -467,30 +471,30 @@ Plans:
 **Risks**
 
 - Pagamentos e movimentos de caixa divergirem.
-- Estorno apagar histórico em vez de gerar movimento inverso.
-- Operações financeiras sem transação.
+- Estorno apagar histÃ³rico em vez de gerar movimento inverso.
+- OperaÃ§Ãµes financeiras sem transaÃ§Ã£o.
 
 **Success Criteria**
 
 1. Pagamento parcial atualiza saldo pendente.
-2. Pagamento integral liquida a obrigação.
-3. Estorno exige autorização e gera movimento inverso rastreável.
-4. Totais do caixa correspondem às movimentações.
-5. Operações críticas usam transações e são auditadas.
+2. Pagamento integral liquida a obrigaÃ§Ã£o.
+3. Estorno exige autorizaÃ§Ã£o e gera movimento inverso rastreÃ¡vel.
+4. Totais do caixa correspondem Ã s movimentaÃ§Ãµes.
+5. OperaÃ§Ãµes crÃ­ticas usam transaÃ§Ãµes e sÃ£o auditadas.
 
-### Phase 11: Dashboard, Histórico e Portal
+### Phase 11: Dashboard, HistÃ³rico e Portal
 
-**Goal:** Consolidar informações operacionais e disponibilizar consultas seguras para oficina e cliente.
+**Goal:** Consolidar informaÃ§Ãµes operacionais e disponibilizar consultas seguras para oficina e cliente.
 **Mode:** mvp
 **Requirements:** DPR-01, DPR-02, DPR-03, DPR-04, DPR-05
 **UI hint:** yes
 
 **Scope**
 
-- Dashboard com OS abertas, produção, orçamentos, estoque, agenda, pagamentos, despesas e faturamento.
+- Dashboard com OS abertas, produÃ§Ã£o, orÃ§amentos, estoque, agenda, pagamentos, despesas e faturamento.
 - Alertas visuais calculados.
-- Histórico completo do veículo.
-- Portal do cliente com dados autorizados e sem notificações.
+- HistÃ³rico completo do veÃ­culo.
+- Portal do cliente com dados autorizados e sem notificaÃ§Ãµes.
 
 **Dependencies**
 
@@ -498,32 +502,32 @@ Plans:
 
 **Risks**
 
-- Dashboard usar dados estáticos.
+- Dashboard usar dados estÃ¡ticos.
 - Portal expor custos internos, margens, fornecedores ou dados de outro cliente.
-- Alertas visuais se transformarem em central de notificações.
+- Alertas visuais se transformarem em central de notificaÃ§Ãµes.
 
 **Success Criteria**
 
 1. Dashboard apresenta dados reais.
-2. Alertas são calculados sem criar registros de notificação.
-3. Histórico do veículo consolida registros relacionados.
-4. Cliente acessa apenas os próprios dados autorizados.
-5. Informações internas não aparecem no portal.
+2. Alertas sÃ£o calculados sem criar registros de notificaÃ§Ã£o.
+3. HistÃ³rico do veÃ­culo consolida registros relacionados.
+4. Cliente acessa apenas os prÃ³prios dados autorizados.
+5. InformaÃ§Ãµes internas nÃ£o aparecem no portal.
 
-### Phase 12: Relatórios e Produção
+### Phase 12: RelatÃ³rios e ProduÃ§Ã£o
 
-**Goal:** Preparar a aplicação para operação real com relatórios, auditoria final, testes críticos, backup e documentação.
+**Goal:** Preparar a aplicaÃ§Ã£o para operaÃ§Ã£o real com relatÃ³rios, auditoria final, testes crÃ­ticos, backup e documentaÃ§Ã£o.
 **Mode:** mvp
 **Requirements:** DPR-06, DPR-07, DPR-08, DPR-09, DPR-10, DPR-11
 **UI hint:** yes
 
 **Scope**
 
-- Relatórios essenciais e exportações.
+- RelatÃ³rios essenciais e exportaÃ§Ãµes.
 - Auditoria administrativa.
-- Revisão de segurança e isolamento entre tenants.
-- Testes de integração e end-to-end dos fluxos críticos.
-- Backup, restauração testada, observabilidade, variáveis de ambiente, deploy e documentação.
+- RevisÃ£o de seguranÃ§a e isolamento entre tenants.
+- Testes de integraÃ§Ã£o e end-to-end dos fluxos crÃ­ticos.
+- Backup, restauraÃ§Ã£o testada, observabilidade, variÃ¡veis de ambiente, deploy e documentaÃ§Ã£o.
 
 **Dependencies**
 
@@ -531,18 +535,18 @@ Plans:
 
 **Risks**
 
-- Relatórios ignorarem filtros de tenant.
-- Backup não restaurar.
-- Fluxo crítico não ser validado com dados reais.
-- Variáveis de produção ficarem implícitas ou inseguras.
+- RelatÃ³rios ignorarem filtros de tenant.
+- Backup nÃ£o restaurar.
+- Fluxo crÃ­tico nÃ£o ser validado com dados reais.
+- VariÃ¡veis de produÃ§Ã£o ficarem implÃ­citas ou inseguras.
 
 **Success Criteria**
 
-1. Relatórios apresentam dados corretos e respeitam tenant.
-2. Exportações respeitam filtros e isolamento.
+1. RelatÃ³rios apresentam dados corretos e respeitam tenant.
+2. ExportaÃ§Ãµes respeitam filtros e isolamento.
 3. Backup pode ser restaurado em ambiente controlado.
-4. Fluxos críticos do MVP passam em ambiente próximo de produção.
-5. Documentação permite instalação, operação e validação do sistema.
+4. Fluxos crÃ­ticos do MVP passam em ambiente prÃ³ximo de produÃ§Ã£o.
+5. DocumentaÃ§Ã£o permite instalaÃ§Ã£o, operaÃ§Ã£o e validaÃ§Ã£o do sistema.
 
 ## Global MVP Completion
 

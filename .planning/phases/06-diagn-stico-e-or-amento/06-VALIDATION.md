@@ -19,18 +19,18 @@ created: 2026-07-28
 |----------|-------|
 | **Framework** | Vitest 4.1.10 for API and web |
 | **Config file** | `apps/api/vitest.config.ts`; `apps/web/vite.config.ts` |
-| **Quick run command** | `npm run test -w apps/api -- quote-contract quote-calculator quote-versioning quote-pdf && npm run test -w apps/web -- quote-ui` |
+| **Quick run command** | `npm run test -w apps/api -- quote-calculator` for pure totals; `npm run test -w apps/api -- quote-contract` for draft API; `npm run test -w apps/api -- quote-pdf` for backend PDF; `npm run test -w apps/web -- quote-ui` for UI smoke |
 | **Full suite command** | `npm run verify` |
-| **Estimated runtime** | ~180 seconds |
+| **Estimated runtime** | ~30 seconds for the fastest single targeted smoke; ~120 seconds for the combined targeted quote slice when API integration, PDF rendering and web jsdom tests all run |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run the targeted quote API/web test for the touched slice.
+- **After every task commit:** Run the fastest targeted quote API/web test for the touched slice, preferring `npm run test -w apps/api -- quote-calculator` for pure totals and `npm run test -w apps/web -- quote-ui` for UI-only changes.
 - **After every plan wave:** Run `npm run verify`.
 - **Before `$gsd-verify-work`:** Full suite must be green.
-- **Max feedback latency:** 180 seconds for targeted checks; full verify may take longer.
+- **Max feedback latency:** 30 seconds for the fastest single targeted smoke where available; the full targeted quote slice may still take about 120 seconds because it combines database-backed API integration, PDF generation and web jsdom tests. Full verify may take longer.
 
 ---
 
@@ -38,11 +38,12 @@ created: 2026-07-28
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 06-W0-01 | 01 | 0 | QTE-01..QTE-04 | T-06-tenant | Diagnosis and quote create paths are tenant-scoped and permission-protected | integration | `npm run test -w apps/api -- quote-contract` | no - W0 | pending |
-| 06-W0-02 | 01 | 0 | QTE-05, QTE-06, QTE-07 | T-06-totals | Totals are backend-calculated; above-limit discount is warning-only per D-08 | unit + integration | `npm run test -w apps/api -- quote-calculator quote-contract` | no - W0 | pending |
-| 06-W0-03 | 02 | 1 | QTE-08, QTE-09 | T-06-immutable | Published commercial snapshots cannot be mutated in place | integration | `npm run test -w apps/api -- quote-versioning` | no - W0 | pending |
-| 06-W0-04 | 03 | 2 | QTE-10 | T-06-pdf | PDF renders from persisted published version snapshot and hides internal data | integration | `npm run test -w apps/api -- quote-pdf` | no - W0 | pending |
-| 06-W0-05 | 04 | 2 | QTE-11 | T-06-manual-link | Link/PDF actions are available only after publication and never send automatically | UI + integration | `npm run test -w apps/web -- quote-ui` | no - W0 | pending |
+| 06-W0-01 | 01 | 1 | QTE-01..QTE-07 | T-06-setup | Quote schema, settings, permissions and cleanup support exist before API implementation | migration + permissions | `npm run db:migrate && npm run test -w apps/api -- prisma-baseline` | no - W0 | pending |
+| 06-W0-02 | 02 | 2 | QTE-01..QTE-04 | T-06-tenant | Diagnosis and quote create paths are tenant-scoped and permission-protected | integration | `npm run test -w apps/api -- quote-contract` | no - W0 | pending |
+| 06-W0-03 | 02 | 2 | QTE-05, QTE-06, QTE-07 | T-06-totals | Totals are backend-calculated; above-limit discount is warning-only per D-08 | unit + integration | `npm run test -w apps/api -- quote-calculator` then `npm run test -w apps/api -- quote-calculator quote-contract` | no - W0 | pending |
+| 06-W0-04 | 03 | 3 | QTE-08, QTE-09 | T-06-immutable | Published commercial snapshots cannot be mutated in place | integration | `npm run test -w apps/api -- quote-versioning` | no - W0 | pending |
+| 06-W0-05 | 03 | 3 | QTE-10 | T-06-pdf | PDF renders from persisted published version snapshot and hides internal data | integration | `npm run test -w apps/api -- quote-pdf` | no - W0 | pending |
+| 06-W0-06 | 04 | 4 | QTE-11 | T-06-manual-link | Link/PDF actions are available only after publication and never send automatically | UI + integration | `npm run test -w apps/web -- quote-ui` | no - W0 | pending |
 
 *Status: pending, green, red, flaky*
 
@@ -72,7 +73,7 @@ created: 2026-07-28
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify.
 - [ ] Wave 0 covers all missing references.
 - [ ] No watch-mode flags.
-- [ ] Feedback latency < 180s for targeted checks.
+- [ ] Feedback latency <= 30s for fastest single targeted smoke commands where available; combined targeted quote slice justified at ~120s because it exercises API integration, PDF and web UI together.
 - [ ] `nyquist_compliant: true` set in frontmatter after Wave 0 tests exist and pass.
 
 **Approval:** pending
