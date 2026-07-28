@@ -8,6 +8,9 @@ export const PERMISSIONS = {
   receptionAppointmentsCancel: "reception.appointments.cancel",
   receptionAppointmentsRead: "reception.appointments.read",
   receptionAppointmentsWrite: "reception.appointments.write",
+  receptionAttachmentsDelete: "reception.attachments.delete",
+  receptionAttachmentsRead: "reception.attachments.read",
+  receptionAttachmentsWrite: "reception.attachments.write",
   receptionCheckInsRead: "reception.checkins.read",
   receptionCheckInsWrite: "reception.checkins.write",
   rolesManage: "roles.manage",
@@ -65,6 +68,9 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   PERMISSIONS.receptionAppointmentsCancel,
   PERMISSIONS.receptionCheckInsRead,
   PERMISSIONS.receptionCheckInsWrite,
+  PERMISSIONS.receptionAttachmentsRead,
+  PERMISSIONS.receptionAttachmentsWrite,
+  PERMISSIONS.receptionAttachmentsDelete,
   PERMISSIONS.rolesManage,
   PERMISSIONS.permissionsManage,
   PERMISSIONS.auditRead,
@@ -195,6 +201,18 @@ export const PERMISSION_DETAILS: Record<PermissionKey, { description: string; na
   [PERMISSIONS.receptionCheckInsWrite]: {
     description: "Permite criar e editar check-ins de recepcao com checklist operacional.",
     name: "Gerenciar check-ins de recepcao",
+  },
+  [PERMISSIONS.receptionAttachmentsRead]: {
+    description: "Permite consultar e baixar anexos de check-ins do tenant autenticado.",
+    name: "Ler anexos de recepcao",
+  },
+  [PERMISSIONS.receptionAttachmentsWrite]: {
+    description: "Permite anexar fotos e documentos opcionais aos check-ins de recepcao.",
+    name: "Adicionar anexos de recepcao",
+  },
+  [PERMISSIONS.receptionAttachmentsDelete]: {
+    description: "Permite excluir logicamente anexos de check-ins mantendo metadados auditaveis.",
+    name: "Excluir anexos de recepcao",
   },
   [PERMISSIONS.rolesManage]: {
     description: "Permite criar e ajustar papeis do tenant autenticado.",

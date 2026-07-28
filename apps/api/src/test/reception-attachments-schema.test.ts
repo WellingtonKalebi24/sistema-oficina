@@ -46,15 +46,15 @@ describe("reception attachment schema contract", () => {
 
   it("adds read, write and delete permissions for reception attachments", () => {
     const requiredPermissions = [
-      "reception.attachments.read",
-      "reception.attachments.write",
-      "reception.attachments.delete",
-    ];
+      PERMISSIONS.receptionAttachmentsRead,
+      PERMISSIONS.receptionAttachmentsWrite,
+      PERMISSIONS.receptionAttachmentsDelete,
+    ] as const;
 
     expect(PERMISSIONS.receptionAttachmentsRead).toBe(requiredPermissions[0]);
     expect(PERMISSIONS.receptionAttachmentsWrite).toBe(requiredPermissions[1]);
     expect(PERMISSIONS.receptionAttachmentsDelete).toBe(requiredPermissions[2]);
-    expect(ALL_PERMISSIONS).toEqual(expect.arrayContaining(requiredPermissions));
+    expect(ALL_PERMISSIONS).toEqual(expect.arrayContaining([...requiredPermissions]));
 
     for (const permission of requiredPermissions) {
       expect(PERMISSION_DETAILS[permission]).toEqual({

@@ -44,6 +44,7 @@ model Tenant {
   appointments                 Appointment[]
   receptionCheckIns            ReceptionCheckIn[]
   receptionChecklistItems      ReceptionChecklistItem[]
+  checkInAttachments           CheckInAttachment[]
 
   @@index([status])
   @@map("tenants")
@@ -91,6 +92,8 @@ model User {
   cancelledAppointments        Appointment[]                 @relation("AppointmentCancelledByUser")
   createdReceptionCheckIns     ReceptionCheckIn[]            @relation("ReceptionCheckInCreatedByUser")
   updatedReceptionCheckIns     ReceptionCheckIn[]            @relation("ReceptionCheckInUpdatedByUser")
+  uploadedCheckInAttachments   CheckInAttachment[]           @relation("CheckInAttachmentUploadedByUser")
+  deletedCheckInAttachments    CheckInAttachment[]           @relation("CheckInAttachmentDeletedByUser")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -574,6 +577,7 @@ model ReceptionCheckIn {
   createdByUser User?                    @relation("ReceptionCheckInCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
   updatedByUser User?                    @relation("ReceptionCheckInUpdatedByUser", fields: [updatedByUserId], references: [id], onDelete: SetNull)
   checklist     ReceptionChecklistItem[]
+  attachments   CheckInAttachment[]
 
   @@index([tenantId, enteredAt])
   @@index([tenantId, status, enteredAt])
@@ -598,4 +602,31 @@ model ReceptionChecklistItem {
   @@index([tenantId, checkInId])
   @@index([tenantId, label])
   @@map("reception_checklist_items")
+}
+
+model CheckInAttachment {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id")
+  checkInId        String    @map("check_in_id")
+  category         String
+  originalName     String    @map("original_name")
+  storedName       String    @map("stored_name")
+  relativePath     String    @map("relative_path")
+  mimeType         String    @map("mime_type")
+  sizeBytes        Int       @map("size_bytes")
+  uploadedByUserId String?   @map("uploaded_by_user_id")
+  deletedAt        DateTime? @map("deleted_at")
+  deletedByUserId  String?   @map("deleted_by_user_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  checkIn        ReceptionCheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  uploadedByUser User?            @relation("CheckInAttachmentUploadedByUser", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  deletedByUser  User?            @relation("CheckInAttachmentDeletedByUser", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, checkInId, deletedAt])
+  @@index([tenantId, category])
+  @@index([tenantId, deletedAt])
+  @@map("check_in_attachments")
 }
