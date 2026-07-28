@@ -152,7 +152,13 @@ describe("quote versioning API contract", () => {
     });
     const session = await loginAs({ baseUrl }, fixture.adminEmail, fixture.adminPassword);
     const headers = authHeaders(session.accessToken);
-    const draft = await createReadyDraft(headers, customer.customerId, vehicle.vehicleId, service.id, product.id);
+    const draft = await createReadyDraft(
+      headers,
+      customer.customerId,
+      vehicle.vehicleId,
+      service.id,
+      product.id,
+    );
 
     const publishResponse = await fetch(`${baseUrl}/quotes/${draft.id}/publish`, {
       method: "POST",

@@ -3284,7 +3284,8 @@ function QuotesPanel({
 
   useEffect(() => {
     const firstCustomerId = customers[0]?.id ?? "";
-    const firstVehicleId = vehicles.find((vehicle) => vehicle.customerId === firstCustomerId)?.id ?? "";
+    const firstVehicleId =
+      vehicles.find((vehicle) => vehicle.customerId === firstCustomerId)?.id ?? "";
 
     setCreateForm((current) => ({
       ...current,
@@ -3364,7 +3365,8 @@ function QuotesPanel({
       const checkIn = checkIns.find((item) => item.id === createForm.checkInId);
       const customerId =
         createForm.source === "check_in" ? checkIn?.customerId : createForm.customerId;
-      const vehicleId = createForm.source === "check_in" ? checkIn?.vehicleId : createForm.vehicleId;
+      const vehicleId =
+        createForm.source === "check_in" ? checkIn?.vehicleId : createForm.vehicleId;
 
       if (!customerId || !vehicleId) {
         throw new Error("Selecione cliente e veiculo para criar o orcamento.");
@@ -3645,8 +3647,8 @@ function QuotesPanel({
           <div className="empty-state">
             <strong>Nenhum orcamento encontrado</strong>
             <span>
-              Crie um orcamento a partir de um check-in ou selecione cliente e veiculo para
-              iniciar direto.
+              Crie um orcamento a partir de um check-in ou selecione cliente e veiculo para iniciar
+              direto.
             </span>
           </div>
         ) : (
@@ -3759,8 +3761,8 @@ function QuotesPanel({
             />
             {isPublished ? (
               <p className="callout quote-lock" role="status">
-                Versao publicada: valores comerciais ficam bloqueados. Crie nova versao para
-                alterar itens ou totais.
+                Versao publicada: valores comerciais ficam bloqueados. Crie nova versao para alterar
+                itens ou totais.
               </p>
             ) : null}
             <div className="quote-item-adders">
@@ -3995,7 +3997,9 @@ function QuotesPanel({
               </div>
               <div className="history-row">
                 <span>
-                  {selectedQuote.currentVersionId ? "Versao publicada preservada" : "Rascunho atual"}
+                  {selectedQuote.currentVersionId
+                    ? "Versao publicada preservada"
+                    : "Rascunho atual"}
                 </span>
                 <strong>{selectedQuote.status}</strong>
                 <span>{formatUpdatedAt(selectedQuote.updatedAt)}</span>

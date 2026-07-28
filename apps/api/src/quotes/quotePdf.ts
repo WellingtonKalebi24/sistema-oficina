@@ -59,8 +59,16 @@ function writePdfContent(doc: PDFKit.PDFDocument, version: QuoteVersionWithRelat
   }
 
   writeDiagnosis(doc, version);
-  writeItems(doc, "Servicos", version.items.filter((item) => item.kind === "service"));
-  writeItems(doc, "Produtos", version.items.filter((item) => item.kind === "product"));
+  writeItems(
+    doc,
+    "Servicos",
+    version.items.filter((item) => item.kind === "service"),
+  );
+  writeItems(
+    doc,
+    "Produtos",
+    version.items.filter((item) => item.kind === "product"),
+  );
 
   doc.moveDown();
   doc.fontSize(12).text("Totais");

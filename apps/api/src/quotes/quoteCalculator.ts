@@ -41,7 +41,10 @@ export type QuoteTotals = {
 
 export function calculateQuoteTotals(input: QuoteCalculatorInput): QuoteTotals {
   const itemTotals = input.items.map((item) => calculateItem(item));
-  const subtotalCents = itemTotals.reduce((sum, item) => sum + moneyToCents(item.subtotalAmount), 0);
+  const subtotalCents = itemTotals.reduce(
+    (sum, item) => sum + moneyToCents(item.subtotalAmount),
+    0,
+  );
   const itemDiscountCents = itemTotals.reduce(
     (sum, item) => sum + moneyToCents(item.discountAmount),
     0,

@@ -186,10 +186,7 @@ export async function publishQuoteVersion(
   return request(`/quotes/${quoteId}/publish`, accessToken, { method: "POST" });
 }
 
-export async function createNewQuoteVersion(
-  accessToken: string,
-  quoteId: string,
-): Promise<Quote> {
+export async function createNewQuoteVersion(accessToken: string, quoteId: string): Promise<Quote> {
   return request(`/quotes/${quoteId}/new-version`, accessToken, { method: "POST" });
 }
 
@@ -235,10 +232,7 @@ export async function fetchQuotePdf(
   return response.blob();
 }
 
-export async function markQuoteSent(
-  accessToken: string,
-  quoteId: string,
-): Promise<QuoteVersion> {
+export async function markQuoteSent(accessToken: string, quoteId: string): Promise<QuoteVersion> {
   return request(`/quotes/${quoteId}/mark-sent`, accessToken, { method: "POST" });
 }
 

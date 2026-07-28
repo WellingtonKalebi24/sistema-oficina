@@ -110,7 +110,9 @@ export async function createQuote(
         estimatedDeliveryAt: input.estimatedDeliveryAt,
         internalNotes: input.internalNotes,
         items: {
-          create: preparedItems.map((item, index) => toItemCreate(actor.tenantId, item, totals.items[index]!, index)),
+          create: preparedItems.map((item, index) =>
+            toItemCreate(actor.tenantId, item, totals.items[index]!, index),
+          ),
         },
         sourceKind: input.checkInId ? "check-in" : "direct",
         status: QUOTE_STATUS.draft,
@@ -302,7 +304,10 @@ export async function publishQuoteVersion(
         tenantId: actor.tenantId,
       },
     });
-    const vehicleLabel = [quote.vehicle.brand, quote.vehicle.model].filter(Boolean).join(" ").trim();
+    const vehicleLabel = [quote.vehicle.brand, quote.vehicle.model]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
     const version = await tx.quoteVersion.create({
       data: {
@@ -858,7 +863,12 @@ async function prepareItems(
 function toItemCreate(
   tenantId: string,
   item: PreparedQuoteItem,
-  totals: { discountAmount: string; surchargeAmount: string; totalAmount: string; unitPrice: string },
+  totals: {
+    discountAmount: string;
+    surchargeAmount: string;
+    totalAmount: string;
+    unitPrice: string;
+  },
   index: number,
 ) {
   return {
@@ -879,7 +889,12 @@ function toItemCreate(
 function toVersionItemCreate(
   tenantId: string,
   item: PreparedQuoteItem,
-  totals: { discountAmount: string; surchargeAmount: string; totalAmount: string; unitPrice: string },
+  totals: {
+    discountAmount: string;
+    surchargeAmount: string;
+    totalAmount: string;
+    unitPrice: string;
+  },
   index: number,
 ) {
   return {
@@ -948,7 +963,11 @@ function publishMissingFields(quote: QuoteWithRelations): string[] {
   return missing;
 }
 
-function hasDiagnosis(input: { causa: string | null; problema: string | null; recomendacao: string | null }): boolean {
+function hasDiagnosis(input: {
+  causa: string | null;
+  problema: string | null;
+  recomendacao: string | null;
+}): boolean {
   return Boolean(input.causa || input.problema || input.recomendacao);
 }
 

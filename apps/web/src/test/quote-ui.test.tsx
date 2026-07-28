@@ -38,7 +38,7 @@ describe("JO.IA quote UI", () => {
   it("QTE-01 exposes Orcamentos navigation only for quotes.read sessions", async () => {
     globalThis.fetch = createFetchMock([
       route("GET", "/bootstrap/status", { data: { bootstrapped: true } }),
-      route("POST", "/auth/login", sessionPayload(["tenant.settings.read"]) ),
+      route("POST", "/auth/login", sessionPayload(["tenant.settings.read"])),
       ...adminRoutes(),
     ]);
 
@@ -90,7 +90,9 @@ describe("JO.IA quote UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "Orcamentos" }));
 
     expect(await screen.findByRole("button", { name: "Criar orcamento" })).toBeInTheDocument();
-    expect(screen.getByText("Publique a versao para copiar o link seguro ou gerar PDF.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Publique a versao para copiar o link seguro ou gerar PDF."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copiar link" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Imprimir/Gerar PDF" })).not.toBeInTheDocument();
 
@@ -150,7 +152,11 @@ describe("JO.IA quote UI", () => {
     });
     fireEvent.click(within(workspace).getByRole("button", { name: "Publicar versao" }));
 
-    expect(await screen.findByText("Versao publicada: valores comerciais ficam bloqueados. Crie nova versao para alterar itens ou totais.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Versao publicada: valores comerciais ficam bloqueados. Crie nova versao para alterar itens ou totais.",
+      ),
+    ).toBeInTheDocument();
     assertNoAutomaticCommunicationLanguage();
   });
 
@@ -173,7 +179,9 @@ describe("JO.IA quote UI", () => {
         },
       }),
       route("GET", "/quotes/quote-1/versions/version-1/pdf", new Blob(["pdf"]), 200),
-      route("POST", "/quotes/quote-1/mark-sent", { data: { ...publishedVersion, status: "Enviado" } }),
+      route("POST", "/quotes/quote-1/mark-sent", {
+        data: { ...publishedVersion, status: "Enviado" },
+      }),
       route("GET", "/quotes", { data: [{ ...publishedQuote, status: "Enviado" }] }),
       route("POST", "/quotes/quote-1/new-version", { data: draftQuote }),
       route("GET", "/quotes", { data: [draftQuote] }),
@@ -184,13 +192,21 @@ describe("JO.IA quote UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "Orcamentos" }));
 
     const workspace = await screen.findByRole("region", { name: "Detalhe do orcamento" });
-    expect(workspace).toHaveTextContent("Entrega manual fora do sistema. JO.IA nao envia mensagens automaticamente.");
+    expect(workspace).toHaveTextContent(
+      "Entrega manual fora do sistema. JO.IA nao envia mensagens automaticamente.",
+    );
     expect(within(workspace).getByLabelText("Problema")).toBeDisabled();
     expect(within(workspace).getByLabelText("Desconto do orcamento")).toBeDisabled();
-    expect(within(workspace).getByRole("button", { name: "Criar nova versao" })).toBeInTheDocument();
+    expect(
+      within(workspace).getByRole("button", { name: "Criar nova versao" }),
+    ).toBeInTheDocument();
     expect(within(workspace).getByRole("button", { name: "Copiar link" })).toBeInTheDocument();
-    expect(within(workspace).getByRole("button", { name: "Imprimir/Gerar PDF" })).toBeInTheDocument();
-    expect(within(workspace).getByRole("button", { name: "Marcar como enviado" })).toBeInTheDocument();
+    expect(
+      within(workspace).getByRole("button", { name: "Imprimir/Gerar PDF" }),
+    ).toBeInTheDocument();
+    expect(
+      within(workspace).getByRole("button", { name: "Marcar como enviado" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(within(workspace).getByRole("button", { name: "Copiar link" }));
     expect(await screen.findByText("Link copiado para entrega manual.")).toBeInTheDocument();
@@ -206,10 +222,14 @@ describe("JO.IA quote UI", () => {
     );
 
     fireEvent.click(within(workspace).getByRole("button", { name: "Marcar como enviado" }));
-    expect(await screen.findByText("Orcamento marcado como enviado manualmente.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Orcamento marcado como enviado manualmente."),
+    ).toBeInTheDocument();
 
     fireEvent.click(within(workspace).getByRole("button", { name: "Criar nova versao" }));
-    expect(await screen.findByText("Nova versao em rascunho criada a partir da publicada.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Nova versao em rascunho criada a partir da publicada."),
+    ).toBeInTheDocument();
     assertNoAutomaticCommunicationLanguage();
   });
 

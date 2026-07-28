@@ -307,7 +307,7 @@ Plans:
 **Mode:** mvp
 **Requirements:** QTE-01, QTE-02, QTE-03, QTE-04, QTE-05, QTE-06, QTE-07, QTE-08, QTE-09, QTE-10, QTE-11
 **UI hint:** yes
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -324,7 +324,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 06-04-PLAN.md — UI autenticada de Orcamentos com criacao, publicacao, PDF e copia manual.
+- [x] 06-04-PLAN.md — UI autenticada de Orcamentos com criacao, publicacao, PDF e copia manual.
 
 **Scope**
 
